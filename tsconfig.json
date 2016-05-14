@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "outDir": "target",
+    "rootDir": "src",
+    "module": "umd",
+    "sourceMap": true
+  },
+  "exclude": [
+  ]
+}
