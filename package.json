@@ -1,0 +1,15 @@
+{
+  "name": "datapipe",
+  "version": "1.0.0",
+  "description": "super efficient functional helpers",
+  "main": "target/datapipe.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Zoltán Mihályi",
+  "license": "ISC",
+  "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-jasmine-nodejs": "^1.5.3"
+  }
+}
