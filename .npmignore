@@ -1,6 +1,6 @@
 /test
 /.idea
-/datapipe.iml
+/undersorcery.iml
 /src
 /node_modules
 /**/.baseDir.js*
