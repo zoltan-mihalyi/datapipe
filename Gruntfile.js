@@ -12,7 +12,7 @@ module.exports = function(grunt) {
             }
         },
         clean: {
-            target: ['target']
+            dist: ['dist']
         },
         ts: {
             compile: {

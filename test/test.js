@@ -1,4 +1,4 @@
-var dp = require('../target/datapipe');
+var dp = require('../dist/datapipe');
 
 describe('Test functions without chaining', function () {
     it('Mapping an array should return an array with items mapped with the function.', function () {

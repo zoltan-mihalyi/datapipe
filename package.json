@@ -2,7 +2,7 @@
   "name": "datapipe",
   "version": "1.0.0",
   "description": "super efficient functional helpers",
-  "main": "target/datapipe.js",
+  "main": "dist/datapipe.js",
   "scripts": {
     "prepublish": "grunt build",
     "test": "grunt test"

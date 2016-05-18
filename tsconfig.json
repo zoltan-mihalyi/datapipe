@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "outDir": "target",
+    "outDir": "dist",
     "rootDir": "src",
     "module": "umd",
     "sourceMap": true
   },
   "exclude": [
     "node_modules",
-    "target",
+    "dist",
     "test"
   ]
 }
