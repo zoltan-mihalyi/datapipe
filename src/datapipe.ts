@@ -131,10 +131,15 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
     }
 
     process(data:R[]):T[] {
+        this.compile();
+        return this.processor(data);
+    }
+
+    compile():ChildDataPipe<R,P,T> {
         if (this.processor === null) {
             this.processor = this.createProcessor();
         }
-        return this.processor(data);
+        return this;
     }
 
     private createProcessor():Function {
