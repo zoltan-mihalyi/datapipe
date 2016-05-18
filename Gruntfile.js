@@ -1,4 +1,4 @@
-module.exports = function (grunt) {
+module.exports = function(grunt) {
 
     grunt.initConfig({
         jasmine_nodejs: {
@@ -10,10 +10,21 @@ module.exports = function (grunt) {
                     "test/**"
                 ]
             }
+        },
+        clean: {
+            target: ['target']
+        },
+        ts: {
+            compile: {
+                tsconfig: '.'
+            }
         }
     });
 
     grunt.loadNpmTasks('grunt-jasmine-nodejs');
+    grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-ts');
 
-    grunt.registerTask('default', ['jasmine_nodejs']);
+    grunt.registerTask('test', ['jasmine_nodejs']);
+    grunt.registerTask('build', ['clean', 'ts']);
 };

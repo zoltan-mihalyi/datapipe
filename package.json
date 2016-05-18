@@ -4,12 +4,15 @@
   "description": "super efficient functional helpers",
   "main": "target/datapipe.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepublish": "grunt build",
+    "test": "grunt test"
   },
   "author": "Zoltán Mihályi",
   "license": "ISC",
   "devDependencies": {
     "grunt": "^1.0.1",
-    "grunt-jasmine-nodejs": "^1.5.3"
+    "grunt-contrib-clean": "^1.0.0",
+    "grunt-jasmine-nodejs": "^1.5.3",
+    "grunt-ts": "^5.5.1"
   }
 }

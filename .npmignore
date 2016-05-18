@@ -1,0 +1,6 @@
+/test
+/.idea
+/datapipe.iml
+/src
+/node_modules
+/**/.baseDir.js*
