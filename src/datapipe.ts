@@ -201,4 +201,4 @@ function createCodeRow(text:CodeText, params:any[]) {
     return result;
 }
 
-export = RootDataPipe;
+export = <T>() => new RootDataPipe<T>();
