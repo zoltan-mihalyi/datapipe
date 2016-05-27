@@ -152,6 +152,57 @@ describe('Test functions without chaining', function() {
             ).toBe(true);
         });
     });
+
+    describe('contains tests', function() {
+        it('Calling contains on an array which contains the item should return true.', function() {
+            expect(dp()
+                .contains(1)
+                .process([0, 1, 2])
+            ).toBe(true);
+        });
+
+        it('Calling contains on an array which does not contain the item should return false.', function() {
+            expect(dp()
+                .contains(3)
+                .process([0, 1, 2])
+            ).toBe(false);
+        });
+
+        it('Calling contains on an empty array should return false.', function() {
+            expect(dp()
+                .contains(1)
+                .process([])
+            ).toBe(false);
+        });
+    });
+
+    describe('flatten tests', function() {
+        it('should flatten the array', function() {
+            expect(dp()
+                .flatten(true)
+                .process([[1, 2], [3, [4]]])
+            ).toEqual([1, 2, 3, [4]]);
+        });
+
+        it('flatten should work with non-array values', function() {
+            expect(dp()
+                .flatten()
+                .process([1, 2, [3, 4]])
+            ).toEqual([1, 2, 3, 4]);
+
+            expect(dp()
+                .flatten(true)
+                .process([1, 2, [3, 4]])
+            ).toEqual([1, 2, 3, 4]);
+        });
+
+        it('flatten should work deep when the first parameter is not true', function() {
+            expect(dp()
+                .flatten()
+                .process([1, 2, [3, [4]]])
+            ).toEqual([1, 2, 3, 4]);
+        });
+    });
 });
 
 describe('Test functions with chaining', function() {

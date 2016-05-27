@@ -9,6 +9,12 @@ interface DataPipeResult<R,T> {
     compile():DataPipeResult<R,T>;
 }
 
+type Primitive = string|number|boolean|void;
+
+type Provider<T> = {():T}|Primitive&T;
+
+var push = Array.prototype.push;
+
 abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     map<O>(fn:(t:T)=>O):ChildDataPipe<R,T,O> { //todo is there a correlation between fields?
         return this.subPipe<O>({
@@ -41,9 +47,9 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         });
     }
 
-    reduce<M>(reducer:(memo:M[], t:T)=>M[], memo:M[]):ChildDataPipe<R,T,M>;
-    reduce<M>(reducer:(memo:M, t:T)=>M, memo:M):DataPipeResult<R,M>;
-    reduce<M>(reducer:(memo:M, t:T)=>M, memo:M) {
+    reduce<M>(reducer:(memo:M[], t:T)=>M[], memo:Provider<M[]>):ChildDataPipe<R,T,M>;
+    reduce<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>):DataPipeResult<R,M>;
+    reduce<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>) {
         var memoProvider = '';
         if (!isPrimitive(memo)) {
             if (typeof memo !== 'function') {
@@ -62,9 +68,9 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         });
     }
 
-    reduceRight<M>(reducer:(memo:M[], t:T)=>M[], memo:M[]):ChildDataPipe<R,T,M>;
-    reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:M):DataPipeResult<R,M>;
-    reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:M) {
+    reduceRight<M>(reducer:(memo:M[], t:T)=>M[], memo:Provider<M[]>):ChildDataPipe<R,T,M>;
+    reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>):DataPipeResult<R,M>;
+    reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>) {
         return this.subPipe<M>({
             rename: true,
             before: ['data = ', [memo]],
@@ -117,6 +123,36 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     some(predicate:(t:T) => boolean):DataPipeResult<R, boolean> {
         return this.everyLike(predicate, true);
+    }
+
+    contains(value:T):DataPipeResult<R, boolean> {
+        return this.some(x => x === value); //todo fromIndex parameter, use indexOf if not merged
+    }
+
+    flatten(shallow?:boolean):ChildDataPipe<R,T,any> {
+        var reducer:(memo:T[], x) => T[];
+        if (shallow) {
+            reducer = (memo, x)=> {
+                if (x && (x as any).length) {
+                    push.apply(memo, x);
+                } else {
+                    memo.push(x);
+                }
+                return memo;
+            };
+        } else {
+            reducer = (memo, x) => {
+                if (x && (x as any).length) {
+                    for (let i = 0; i < x.length; i++) {
+                        reducer(memo, x[i]);
+                    }
+                } else {
+                    memo.push(x);
+                }
+                return memo;
+            };
+        }
+        return this.reduce(reducer, () => []);
     }
 
     private everyLike(predicate:(t:T)=>boolean, inverted?:boolean):DataPipeResult<R, boolean> {
