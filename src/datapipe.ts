@@ -8,40 +8,80 @@ type Code = {
     mergeEnd:boolean;
     reversed?:boolean;
     rename?:boolean;
+    usesCount?:boolean;
+    changesCount?:boolean;
 };
 
 class Accumulator {
     before = '';
-    text = '';
+    rows:string[] = [];
     after = '';
     lastMergeEnd = true;
     reversed:boolean = null;
     rename = false;
+    isCountDirty = false;
+    lastCountId = 0;
+    counts = [];
 
     put(code:Code, params:any[]) {
+        var text:CodeText = code.text;
         this.lastMergeEnd = code.mergeEnd;
-        this.text += createCodeRow(code.text, params) + '\n';
+
+        text = this.handleCount(code, text);
+
+        this.rows.push(createCodeRow(text, params));
         if (code.before) {
             this.before = createCodeRow(code.before, params) + '\n';
         }
         this.rename = this.rename || code.rename;
         if (code.after) { //todo redundant
-            this.after = createCodeRow(code.after, params) + '\n';
+            this.after = '\n' + createCodeRow(code.after, params);
         }
         if (this.reversed === null) {
             this.reversed = !!code.reversed;
         }
     }
 
+    private handleCount(code:Code, text:CodeText) {
+        if (code.changesCount) {
+            this.isCountDirty = true;
+        }
+        if (code.usesCount) {
+            let countName:string;
+
+            if (this.isCountDirty) {
+                this.lastCountId++;
+            }
+
+            if (!this.isCountDirty && this.counts.length === 0) {
+                countName = '(i+1)';
+            } else {
+                countName = this.getLastCountName();
+            }
+
+            if (this.isCountDirty) {
+                this.counts.push(`var ${countName} = 0;\n`);
+                this.rows.push(`${countName}++;`);
+                this.isCountDirty = false;
+            }
+            text = copyAndReplace(text, /count/g, countName);
+        }
+        return text;
+    }
+
     canPut(code:Code) {
-        return this.text === '' || this.lastMergeEnd && code.mergeStart;
+        return this.rows.length === 0 || this.lastMergeEnd && code.mergeStart;
     }
 
     toCode() {
         var dataName = this.rename ? 'dataOld' : 'data';
         var rename = this.rename ? `var ${dataName} = data;\n` : '';
-        var loop = this.reversed ? `var i = ${dataName}.length-1; i >= 0; i--` : `var i = 0; i < ${dataName}.length; i++`;
-        return `${rename}${this.before}for(${loop}){\nvar x = ${dataName}[i];\n${this.text}${this.after}}`;
+        var indexModifier = this.reversed ? `${dataName}.length-1-` : '';
+        return `${rename}${this.before}${this.counts.join('')}for(var i = 0; i < ${dataName}.length; i++){\nvar x = ${dataName}[${indexModifier}i];\n${this.rows.join('\n')}${this.after}}`;
+    }
+
+    private getLastCountName() {
+        return `i_${this.lastCountId}`;
     }
 }
 //todo use result only when necessary
@@ -69,6 +109,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     filter(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
             rename: true,
+            changesCount: true,
             before: filterMapBefore,
             after: filterMapAfter,
             text: ['if(!', [predicate], '(x)) continue;'],
@@ -128,6 +169,18 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             text: ['if(', [predicate], '(x)) {data = x; break;}'],
             mergeStart: true,
             mergeEnd: false
+        });
+    }
+
+    take(count:number):ChildDataPipe<R,T,T> {
+        return this.subPipe<T>({
+            rename: true,
+            usesCount: true,
+            before: filterMapBefore,
+            after: filterMapAfter,
+            text: ['if (count>', [count], ') {break;}'],
+            mergeStart: true,
+            mergeEnd: true
         });
     }
 
@@ -226,6 +279,18 @@ function createCodeRow(text:CodeText, params:any[]) {
 
 function isPrimitive(value:any) {
     return value === null || (typeof value !== 'function' && typeof value !== 'object');
+}
+
+function copyAndReplace(codeText:CodeText, search:RegExp, replacement):CodeText {
+    var result = [];
+    for (var i = 0; i < codeText.length; i++) {
+        let fragment = codeText[i];
+        if (typeof fragment === 'string') {
+            fragment = (fragment as string).replace(search, replacement);
+        }
+        result.push(fragment);
+    }
+    return result;
 }
 
 export = <T>() => new RootDataPipe<T>();

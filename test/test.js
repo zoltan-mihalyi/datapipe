@@ -65,14 +65,16 @@ describe('Test functions without chaining', function() {
             }).process([1, 2, 3])).toBeUndefined()
         });
     });
+
+    it('Calling take should work as expected.', function() {
+        expect(dp().take(3).process([1, 2, 3, 4, 5, 6])).toEqual([1, 2, 3]);
+    });
 });
 
 describe('Test functions with chaining', function() {
     it('map and filter', function() {
         expect(dp()
-            .map(function(x) {
-                return x * 10;
-            })
+            .map(tenTimes)
             .filter(function(x) {
                 return x % 20 === 0;
             })
@@ -82,9 +84,7 @@ describe('Test functions with chaining', function() {
     it('map and each', function() {
         var result = [];
         dp()
-            .map(function(x) {
-                return x * 10;
-            })
+            .map(tenTimes)
             .each(function(x) {
                 result.push(x);
             })
@@ -95,12 +95,66 @@ describe('Test functions with chaining', function() {
 
     it('map and reduce', function() {
         expect(dp()
-            .map(function(x) {
-                return x * 10;
-            })
+            .map(tenTimes)
             .reduce(function(memo, x) {
                 return memo + x;
             }, '')
             .process([1, 2, 3, 4])).toEqual('10203040');
     });
+
+    it('map and reduceRight', function() {
+        expect(dp()
+            .map(tenTimes)
+            .reduceRight(function(memo, x) {
+                return memo + x;
+            }, '')
+            .process([1, 2, 3, 4])).toEqual('40302010');
+    });
+
+
+    describe('Chaining with take', function() {
+
+        it('map and take', function() {
+            expect(dp()
+                .map(tenTimes)
+                .take(2)
+                .process([1, 2, 3, 4])).toEqual([10, 20]);
+        });
+
+        it('filter and take', function() {
+            expect(dp()
+                .filter(function(x) {
+                    return x % 2 === 0;
+                })
+                .take(2)
+                .process([1, 2, 3, 4, 5, 6, 7])).toEqual([2, 4]);
+        });
+
+        it('filter, take, filter, take', function() {
+            expect(dp()
+                .filter(function(x) {
+                    return x % 2 === 0;
+                })
+                .take(10)
+                .filter(function(x) {
+                    return x !== 4;
+                })
+                .take(2)
+                .process([1, 2, 3, 4, 5, 6, 7, 8, 9])).toEqual([2, 6]);
+        });
+
+        it('filter, take, take', function() {
+            expect(dp()
+                .filter(function(x) {
+                    return x % 2 === 0;
+                })
+                .take(3)
+                .take(2)
+                .process([1, 2, 3, 4, 5, 6, 7, 8, 9])).toEqual([2, 4]);
+        });
+    });
 });
+
+function tenTimes(x) {
+    return x * 10;
+}
