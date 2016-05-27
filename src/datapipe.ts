@@ -7,6 +7,7 @@ type Code = {
     mergeStart:boolean;
     mergeEnd:boolean;
     reversed?:boolean;
+    rename?:boolean;
 };
 
 class Accumulator {
@@ -15,7 +16,7 @@ class Accumulator {
     after = '';
     lastMergeEnd = true;
     reversed:boolean = null;
-
+    rename = false;
 
     put(code:Code, params:any[]) {
         this.lastMergeEnd = code.mergeEnd;
@@ -23,6 +24,7 @@ class Accumulator {
         if (code.before) {
             this.before = createCodeRow(code.before, params) + '\n';
         }
+        this.rename = this.rename || code.rename;
         if (code.after) { //todo redundant
             this.after = createCodeRow(code.after, params) + '\n';
         }
@@ -36,22 +38,26 @@ class Accumulator {
     }
 
     toCode() {
-        var loop = this.reversed ? 'var i = data.length-1; i >= 0; i--' : 'var i = 0; i < data.length; i++';
-        return `${this.before}for(${loop}){\nvar x = data[i];\n${this.text}${this.after}}\ndata = result;`;
+        var dataName = this.rename ? 'dataOld' : 'data';
+        var rename = this.rename ? `var ${dataName} = data;\n` : '';
+        var loop = this.reversed ? `var i = ${dataName}.length-1; i >= 0; i--` : `var i = 0; i < ${dataName}.length; i++`;
+        return `${rename}${this.before}for(${loop}){\nvar x = ${dataName}[i];\n${this.text}${this.after}}`;
     }
 }
 //todo use result only when necessary
 //todo no context, no index, no list!
-var filterMapBefore = ['var result=[];'];
-var filterMapAfter = ['result.push(x);'];
+var filterMapBefore = ['data = []'];
+var filterMapAfter = ['data.push(x);'];
 
 interface DataPipeResult<R,T> {
     process(data:R[]):T;
+    compile():DataPipeResult<R,T>;
 }
 
 abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     map<O>(fn:(t:T)=>O):ChildDataPipe<R,T,O> { //todo is there a correlation between fields?
         return this.subPipe<O>({
+            rename: true,
             before: filterMapBefore,
             after: filterMapAfter,
             text: ['x = ', [fn], '(x);'],
@@ -62,6 +68,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     filter(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
+            rename: true,
             before: filterMapBefore,
             after: filterMapAfter,
             text: ['if(!', [predicate], '(x)) continue;'],
@@ -70,9 +77,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         });
     }
 
-    each(callback:(t:T)=>any):DataPipe<R,T,T> {
+    each(callback:(t:T)=>any):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
-            before: ['var result = data;'],
             text: [[callback], '(x);'],
             mergeStart: true,
             mergeEnd: true
@@ -82,10 +88,19 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     reduce<M>(reducer:(memo:M[], t:T)=>M[], memo:M[]):ChildDataPipe<R,T,M>;
     reduce<M>(reducer:(memo:M, t:T)=>M, memo:M):DataPipeResult<R,M>;
     reduce<M>(reducer:(memo:M, t:T)=>M, memo:M) {
+        var memoProvider = '';
+        if (!isPrimitive(memo)) {
+            if (typeof memo !== 'function') {
+                throw new Error('The memo should be primitive, or a provider function, otherwise reusing the datapipe should produce unexpected results.');
+            } else {
+                memoProvider = '()';
+            }
+        }
         return this.subPipe<M>({
-            before: ['var result=', [memo]],
+            rename: true,
+            before: ['data = ', [memo], memoProvider + ';'],
             after: [],
-            text: ['result=', [reducer], '(result, x)'],
+            text: ['data = ', [reducer], '(data, x);'],
             mergeStart: true,
             mergeEnd: false
         });
@@ -95,9 +110,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:M):DataPipeResult<R,M>;
     reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:M) {
         return this.subPipe<M>({
-            before: ['var result=', [memo]],
+            rename: true,
+            before: ['data = ', [memo]],
             after: [],
-            text: ['result=', [reducer], '(result, x)'],
+            text: ['data = ', [reducer], '(data, x);'],
             reversed: true,
             mergeStart: false, //TODO because iteration is reversed. Can be calculated from other properties?
             mergeEnd: false
@@ -106,9 +122,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     find(predicate:(t:T) => boolean):DataPipeResult<R,any> {
         return this.subPipe<any>({
-            before: ['var result=void 0;'],
+            rename: true,
+            before: ['data = void 0;'],
             after: [],
-            text: ['if(', [predicate], '(x)) {result=x; break;}'],
+            text: ['if(', [predicate], '(x)) {data = x; break;}'],
             mergeStart: true,
             mergeEnd: false
         });
@@ -117,6 +134,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     abstract process(data:R[]):T[];
 
     abstract getCodes():Code[];
+
+    abstract compile():DataPipe<R,P,T>;
 
     private subPipe<X>(code:Code):ChildDataPipe<R,T,X> {
         return new ChildDataPipe<R,T,X>(this, code);
@@ -179,6 +198,10 @@ class RootDataPipe<T> extends DataPipe<T,T,T> {
         return data;
     }
 
+    compile():RootDataPipe<T> {
+        return this;
+    }
+
     getCodes():Code[] {
         return [];
     }
@@ -199,6 +222,10 @@ function createCodeRow(text:CodeText, params:any[]) {
         }
     }
     return result;
+}
+
+function isPrimitive(value:any) {
+    return value === null || (typeof value !== 'function' && typeof value !== 'object');
 }
 
 export = <T>() => new RootDataPipe<T>();
