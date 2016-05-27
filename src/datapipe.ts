@@ -110,13 +110,24 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     reject(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
         return this.filter(t => !predicate(t)); //TODO can be reduced to on function call
     }
-    
-    every(predicate:(t:T) => boolean):DataPipeResult<R, boolean>{
+
+    every(predicate:(t:T) => boolean):DataPipeResult<R, boolean> {
+        return this.everyLike(predicate);
+    }
+
+    some(predicate:(t:T) => boolean):DataPipeResult<R, boolean> {
+        return this.everyLike(predicate, true);
+    }
+
+    private everyLike(predicate:(t:T)=>boolean, inverted?:boolean):DataPipeResult<R, boolean> {
+        var predicatePrefix = inverted ? '' : '!';
+        var initial = inverted ? 'false' : 'true';
+        var noMatch = inverted ? 'true' : 'false';
         return this.subPipe({
             rename: true,
-            before: ['data = true;'],
+            before: [`data = ${initial};`],
             after: [],
-            text: ['if(!', [predicate], '(x)) { data = false; break;}'],
+            text: ['if(', predicatePrefix, [predicate], `(x)) { data = ${noMatch}; break;}`],
             mergeStart: true,
             mergeEnd: false
         }) as DataPipeResult<R, any>;
