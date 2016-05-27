@@ -99,6 +99,24 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         });
     }
 
+    where(properties):ChildDataPipe<R,T,T> {
+        var fn = 'return function(x){\n';
+        for (let i in properties) {
+            if (properties.hasOwnProperty(i)) {
+                let propAccess = `[${escapeProperty(i)}]`;
+                fn += `if(x${propAccess}!==properties${propAccess}) {return false;}\n`;
+            }
+        }
+        fn += 'return true;\n};';
+        console.log(fn);
+
+        function escapeProperty(property) {
+            return JSON.stringify(property); //todo
+        }
+
+        return this.filter((new Function('properties', fn))(properties));
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getCodes():Code[];

@@ -69,6 +69,18 @@ describe('Test functions without chaining', function() {
     it('Calling take should work as expected.', function() {
         expect(dp().take(3).process([1, 2, 3, 4, 5, 6])).toEqual([1, 2, 3]);
     });
+
+    describe('where tests', function() {
+        it('Calling where should work as expected.', function() {
+            expect(dp().where({x: 1}).process([{x: 1}, {x: 2, y: 3}, {x: 1, y: 4}])).toEqual([{x: 1}, {x: 1, y: 4}]);
+        });
+
+        it('special property names', function() {
+            var properties = {'\'\n\r\\':1};
+            expect(dp().where(properties).process([{'\'\n\r\\':1}]).length).toEqual(1);
+            expect(dp().where(properties).process([{'\'\n\r\\':2}]).length).toEqual(0);
+        });
+    });
 });
 
 describe('Test functions with chaining', function() {
