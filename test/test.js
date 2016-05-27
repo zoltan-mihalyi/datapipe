@@ -93,6 +93,35 @@ describe('Test functions without chaining', function() {
             return x % 2 === 0;
         }).process([0, 1, 2, 3, 4, 5])).toEqual([1, 3, 5]);
     });
+
+    describe('every tests', function() {
+        it('every should return true if all of the elements match the predicate', function() {
+            expect(dp()
+                .every(function(x) {
+                    return x % 2 === 0;
+                })
+                .process([2, 4, 6, 8])
+            ).toBe(true);
+        });
+
+        it('every should return true on empty arrays', function() {
+            expect(dp()
+                .every(function() {
+                    throw new Error('Predicate called on what?');
+                })
+                .process([])
+            ).toBe(true);
+        });
+
+        it('every should return false if any of the elements does not match the predicate', function() {
+            expect(dp()
+                .every(function(x) {
+                    return x % 2 === 0;
+                })
+                .process([2, 4, 5, 8])
+            ).toBe(false);
+        });
+    });
 });
 
 describe('Test functions with chaining', function() {

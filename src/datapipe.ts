@@ -110,6 +110,17 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     reject(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
         return this.filter(t => !predicate(t)); //TODO can be reduced to on function call
     }
+    
+    every(predicate:(t:T) => boolean):DataPipeResult<R, boolean>{
+        return this.subPipe({
+            rename: true,
+            before: ['data = true;'],
+            after: [],
+            text: ['if(!', [predicate], '(x)) { data = false; break;}'],
+            mergeStart: true,
+            mergeEnd: false
+        }) as DataPipeResult<R, any>;
+    }
 
     abstract process(data:R[]):T[];
 
