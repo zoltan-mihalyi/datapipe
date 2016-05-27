@@ -76,10 +76,16 @@ describe('Test functions without chaining', function() {
         });
 
         it('special property names', function() {
-            var properties = {'\'\n\r\\':1};
-            expect(dp().where(properties).process([{'\'\n\r\\':1}]).length).toEqual(1);
-            expect(dp().where(properties).process([{'\'\n\r\\':2}]).length).toEqual(0);
+            var properties = {'\'\n\r\\': 1};
+            expect(dp().where(properties).process([{'\'\n\r\\': 1}]).length).toEqual(1);
+            expect(dp().where(properties).process([{'\'\n\r\\': 2}]).length).toEqual(0);
         });
+    });
+
+    it('Calling findWhere should work as expected.', function() {
+        expect(dp().findWhere({x: 1}).process([{x: 2}, {x: 1, y: 3}, {x: 1, y: 4}])).toEqual({x: 1, y: 3});
+
+        expect(dp().findWhere({x: 1}).process([{x: 2}, {x: 2, y: 3}])).toBeUndefined();
     });
 });
 

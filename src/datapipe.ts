@@ -100,21 +100,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     where(properties):ChildDataPipe<R,T,T> {
-        var fn = 'return function(x){\n';
-        for (let i in properties) {
-            if (properties.hasOwnProperty(i)) {
-                let propAccess = `[${escapeProperty(i)}]`;
-                fn += `if(x${propAccess}!==properties${propAccess}) {return false;}\n`;
-            }
-        }
-        fn += 'return true;\n};';
-        console.log(fn);
+        return this.filter(whereFilter(properties));
+    }
 
-        function escapeProperty(property) {
-            return JSON.stringify(property); //todo
-        }
-
-        return this.filter((new Function('properties', fn))(properties));
+    findWhere(properties):DataPipeResult<R,any> {
+        return this.find(whereFilter(properties));
     }
 
     abstract process(data:R[]):T[];
@@ -195,6 +185,23 @@ class RootDataPipe<T> extends DataPipe<T,T,T> {
 
 function isPrimitive(value:any) {
     return value === null || (typeof value !== 'function' && typeof value !== 'object');
+}
+
+function whereFilter(properties) {
+    var fn = 'return function(x){\n';
+    for (let i in properties) {
+        if (properties.hasOwnProperty(i)) {
+            let propAccess = `[${escapeProperty(i)}]`;
+            fn += `if(x${propAccess}!==properties${propAccess}) {return false;}\n`;
+        }
+    }
+    fn += 'return true;\n};';
+
+    function escapeProperty(property) {
+        return JSON.stringify(property); //todo
+    }
+
+    return (new Function('properties', fn))(properties);
 }
 
 export = <T>() => new RootDataPipe<T>();
