@@ -87,6 +87,12 @@ describe('Test functions without chaining', function() {
 
         expect(dp().findWhere({x: 1}).process([{x: 2}, {x: 2, y: 3}])).toBeUndefined();
     });
+
+    it('Rejecting an array should return an array of the items NOT matching the predicate.', function() {
+        expect(dp().reject(function(x) {
+            return x % 2 === 0;
+        }).process([0, 1, 2, 3, 4, 5])).toEqual([1, 3, 5]);
+    });
 });
 
 describe('Test functions with chaining', function() {

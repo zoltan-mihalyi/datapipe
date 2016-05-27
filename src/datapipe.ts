@@ -107,6 +107,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.find(whereFilter(properties));
     }
 
+    reject(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
+        return this.filter(t => !predicate(t)); //TODO can be reduced to on function call
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getCodes():Code[];
