@@ -1,5 +1,6 @@
 //todo use result only when necessary
 //todo no context, no index, no list!
+//todo asm.js
 import Accumulator = require("./accumulator");
 var filterMapBefore = ['data = []'];
 var filterMapAfter = ['data.push(x);'];
@@ -43,47 +44,24 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     reduce<M>(reducer:(memo:M[], t:T)=>M[], memo:Provider<M[]>):ChildDataPipe<R,T,M>;
     reduce<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>):DataPipeResult<R,M>;
     reduce<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>) {
-        var memoProvider = '';
-        if (!isPrimitive(memo)) {
-            if (typeof memo !== 'function') {
-                throw new Error('The memo should be primitive, or a provider function, otherwise reusing the datapipe should produce unexpected results.');
-            } else {
-                memoProvider = '()';
-            }
-        }
-        return this.subPipe<M>({
-            rename: true,
-            before: ['data = ', [memo], memoProvider + ';'],
-            after: [],
-            text: ['data = ', [reducer], '(data, x);'],
-            mergeStart: true,
-            mergeEnd: false
-        });
+        return this.reduceLikeWithProvider<M>(reducer, memo, false);
     }
 
     reduceRight<M>(reducer:(memo:M[], t:T)=>M[], memo:Provider<M[]>):ChildDataPipe<R,T,M>;
     reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>):DataPipeResult<R,M>;
     reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>) {
-        return this.subPipe<M>({
-            rename: true,
-            before: ['data = ', [memo]],
-            after: [],
-            text: ['data = ', [reducer], '(data, x);'],
-            reversed: true,
-            mergeStart: false, //TODO because iteration is reversed. Can be calculated from other properties?
-            mergeEnd: false
-        });
+        return this.reduceLikeWithProvider<M>(reducer, memo, true);
     }
 
-    find(predicate:(t:T) => boolean):DataPipeResult<R,any> {
-        return this.subPipe<any>({
+    find(predicate:(t:T) => boolean):DataPipeResult<R,T> {
+        return this.subPipe({
             rename: true,
             before: ['data = void 0;'],
             after: [],
             text: ['if(', [predicate], '(x)) {data = x; break;}'],
             mergeStart: true,
             mergeEnd: false
-        });
+        }) as any;
     }
 
     take(count:number):ChildDataPipe<R,T,T> {
@@ -175,6 +153,29 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.mapLike<any>([`x=x==null?void 0:x[${propAccessor}];`]);
     }
 
+
+    min(fn:string|((x:T) => number)):DataPipeResult<R, T>;
+    min():DataPipeResult<R, number>;
+    min(iteratee?:(x:T) => number) {
+        return this.edge('Infinity', '<', iteratee);
+    }
+
+    max(fn:string|((x:T) => number)):DataPipeResult<R, T>;
+    max():DataPipeResult<R, number>;
+    max(iteratee?:(x:T) => number) {
+        return this.edge('-Infinity', '>', iteratee);
+    }
+
+    private edge(opposite:string, operator:string, fn?:string|((x:T)=>number)):DataPipeResult<R,any> {
+        if (!fn) {
+            return this.reduceLike([opposite], [`if(x${operator}data){data=x;}`], false) as any;
+        }
+
+        var evaluator:CodeText = (typeof fn === 'string') ? [`x=[${JSON.stringify(fn)}]`] : [[fn], '(x)'];
+        var text = ['var value=', ...evaluator, `;\nif(value${operator}edgeValue){edgeValue=value;data=x;}`];
+        return this.reduceLike([`${opposite};\nvar edgeValue=${opposite};`], text, false) as any;
+    }
+
     private everyLike(predicate:(t:T)=>boolean, inverted?:boolean):DataPipeResult<R, boolean> {
         var predicatePrefix = inverted ? '' : '!';
         var initial = inverted ? 'false' : 'true';
@@ -198,6 +199,30 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeStart: true,
             mergeEnd: true
         });
+    }
+
+    private reduceLikeWithProvider<M>(reducer:(memo:M, t:T) => M, memo:Provider<M>, reversed:boolean) {
+        var memoProvider = '';
+        if (!isPrimitive(memo)) {
+            if (typeof memo !== 'function') {
+                throw new Error('The memo should be primitive, or a provider function, otherwise reusing the datapipe should produce unexpected results.');
+            } else {
+                memoProvider = '()';
+            }
+        }
+        return this.reduceLike([[memo], memoProvider + ';'], ['data = ', [reducer], '(data, x);'], reversed);
+    }
+
+    private reduceLike<X>(before:CodeText, text:CodeText, reversed:boolean):ChildDataPipe<R,T,X> {
+        return this.subPipe<X>({
+            rename: true,
+            before: ['data = ', ...before],
+            after: [],
+            text: text,
+            mergeStart: !reversed,
+            mergeEnd: false,
+            reversed: reversed
+        })
     }
 
     abstract process(data:R[]):T[];
@@ -245,7 +270,6 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
             accumulator.put(code, params);
         }
         codeStr += accumulator.toCode();
-
 
         var fnBody = `return function(data){\n${codeStr}\nreturn data;\n}`;
         var paramNames = [];

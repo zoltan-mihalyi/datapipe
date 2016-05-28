@@ -254,6 +254,84 @@ describe('Test functions without chaining', function() {
             .process([{x: 0}, {}, null])
         ).toEqual([0, void 0, void 0]);
     });
+
+    describe('min tests', function() {
+        it('min should work as expected', function() {
+            expect(dp()
+                .min()
+                .process([5, 6, 3, 2, 4])
+            ).toBe(2);
+        });
+
+        it('min with iteratee', function() {
+            expect(dp()
+                .min(function(x) {
+                    return x.x;
+                })
+                .process([{x: 3}, {x: 2}, {x: 1}, {x: 4}])
+            ).toEqual({x: 1});
+        });
+
+        it('min with property', function() {
+            expect(dp()
+                .min('x')
+                .process([{x: 3}, {x: 2}, {x: 1}, {x: 4}])
+            ).toEqual({x: 1});
+        });
+
+        it('min with 0 element', function() {
+            expect(dp()
+                .min()
+                .process([])
+            ).toBe(Infinity);
+
+            expect(dp()
+                .min(function(x) {
+                    return x.x;
+                })
+                .process([])
+            ).toBe(Infinity);
+        });
+    });
+
+    describe('max tests', function() {
+        it('max should work as expected', function() {
+            expect(dp()
+                .max()
+                .process([5, 6, 3, 2, 4])
+            ).toBe(6);
+        });
+
+        it('max with iteratee', function() {
+            expect(dp()
+                .max(function(x) {
+                    return x.x;
+                })
+                .process([{x: 3}, {x: 2}, {x: 4}, {x: 1}])
+            ).toEqual({x: 4});
+        });
+
+        it('max with property', function() {
+            expect(dp()
+                .max('x')
+                .process([{x: 3}, {x: 2}, {x: 4}, {x: 1}])
+            ).toEqual({x: 4});
+        });
+
+        it('max with 0 element', function() {
+            expect(dp()
+                .max()
+                .process([])
+            ).toBe(-Infinity);
+
+            expect(dp()
+                .max(function(x) {
+                    return x.x;
+                })
+                .process([])
+            ).toBe(-Infinity);
+        });
+    });
 });
 
 describe('Test functions with chaining', function() {
