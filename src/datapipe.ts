@@ -17,14 +17,7 @@ var push = Array.prototype.push;
 
 abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     map<O>(fn:(t:T)=>O):ChildDataPipe<R,T,O> { //todo is there a correlation between fields?
-        return this.subPipe<O>({
-            rename: true,
-            before: filterMapBefore,
-            after: filterMapAfter,
-            text: ['x = ', [fn], '(x);'],
-            mergeStart: true,
-            mergeEnd: true
-        });
+        return this.mapLike<O>(['x = ', [fn], '(x);']);
     }
 
     filter(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
@@ -155,6 +148,33 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.reduce(reducer, () => []);
     }
 
+    invoke(method:string, ...methodArgs:any[]):ChildDataPipe<R,T,any>;
+    invoke<O>(method:(...args:any[]) => O, ...methodArgs:any[]):ChildDataPipe<R,T,O>;
+    invoke(method:string|Function, ...methodArgs:any[]) {
+        var text:CodeText;
+        if (typeof method === 'string') {
+            let accessor = JSON.stringify(method);
+            text = [`x=x[${accessor}]==null?x[${accessor}]:x[${accessor}](`];
+        } else {
+            text = ['x=', [method], '.call(x' + (methodArgs.length ? ',' : '')];
+        }
+
+        for (var i = 1; i < arguments.length; i++) {
+            text.push([arguments[i]]);
+            if (i < arguments.length - 1) {
+                text.push(',');
+            }
+        }
+        text.push(');');
+
+        return this.mapLike(text);
+    }
+
+    pluck(property:string|number):ChildDataPipe<R,T,any> {
+        var propAccessor = JSON.stringify(property);
+        return this.mapLike<any>([`x=x==null?void 0:x[${propAccessor}];`]);
+    }
+
     private everyLike(predicate:(t:T)=>boolean, inverted?:boolean):DataPipeResult<R, boolean> {
         var predicatePrefix = inverted ? '' : '!';
         var initial = inverted ? 'false' : 'true';
@@ -167,6 +187,17 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeStart: true,
             mergeEnd: false
         }) as DataPipeResult<R, any>;
+    }
+
+    private mapLike<O>(text:CodeText):ChildDataPipe<R,T,O> {
+        return this.subPipe<O>({
+            rename: true,
+            before: filterMapBefore,
+            after: filterMapAfter,
+            text: text,
+            mergeStart: true,
+            mergeEnd: true
+        });
     }
 
     abstract process(data:R[]):T[];
