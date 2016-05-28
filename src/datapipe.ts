@@ -171,7 +171,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             return this.reduceLike([opposite], [`if(x${operator}data){data=x;}`], false) as any;
         }
 
-        var evaluator:CodeText = (typeof fn === 'string') ? [`x=[${JSON.stringify(fn)}]`] : [[fn], '(x)'];
+        var evaluator:CodeText = (typeof fn === 'string') ? [`x[${JSON.stringify(fn)}]`] : [[fn], '(x)'];
         var text = ['var value=', ...evaluator, `;\nif(value${operator}edgeValue){edgeValue=value;data=x;}`];
         return this.reduceLike([`${opposite};\nvar edgeValue=${opposite};`], text, false) as any;
     }
