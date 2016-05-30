@@ -9,11 +9,11 @@ interface AccumulatorStrategy {
 class SimpleStrategy implements AccumulatorStrategy {
     private code:string = null;
 
-    put(code:CodeText, params:any[]):void {
+    put(code:CodeText<any>, params:any[]):void {
         this.code = codeTextToString(code, params);
     }
 
-    canPut(code:CodeText):boolean {
+    canPut(code:CodeText<any>):boolean {
         return this.code === null;
     }
 
@@ -35,7 +35,7 @@ class LoopStrategy implements AccumulatorStrategy {
 
     put(loop:Loop, params:any[]) {
 
-        var text:CodeText = loop.text;
+        var text:CodeText<any> = loop.text;
         this.lastMergeEnd = loop.mergeEnd;
 
         text = this.handleCount(loop, text);
@@ -53,7 +53,7 @@ class LoopStrategy implements AccumulatorStrategy {
         }
     }
 
-    private handleCount(loop:Loop, text:CodeText) {
+    private handleCount(loop:Loop, text:CodeText<any>) {
         if (loop.changesCount) {
             this.isCountDirty = true;
         }
@@ -117,7 +117,7 @@ class Accumulator {
     }
 }
 
-function copyAndReplace(codeText:CodeText, search:RegExp, replacement):CodeText {
+function copyAndReplace(codeText:CodeText<any>, search:RegExp, replacement):CodeText<any> { //todo change
     var result = [];
     for (var i = 0; i < codeText.length; i++) {
         let fragment = codeText[i];

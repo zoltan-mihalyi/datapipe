@@ -41,7 +41,7 @@ import {
 } from "./code-helpers";
 
 var filterMapBefore = setResult(array());
-var filterMapAfter = call(prop(result, 'push'), [current]);
+var filterMapAfter = call(prop<()=>any>(result, 'push'), [current]);
 
 interface DataPipeResult<R,T> {
     process(data:R[]):T;
@@ -57,11 +57,11 @@ type Mapper<I,O> = (data:I[])=>O[];
 var push = Array.prototype.push;
 
 abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
-    map<O>(fn:(t:T)=>O):ChildDataPipe<R,T,O> { //todo is there a correlation between fields?
+    map<O>(fn:(t?:T)=>O):ChildDataPipe<R,T,O> { //todo is there a correlation between fields?
         return this.mapLike<O>(assign(current, call(param(fn), [current])));
     }
 
-    filter(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
+    filter(predicate:(t?:T) => boolean):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
             rename: true,
             changesCount: true,
@@ -79,7 +79,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         });
     }
 
-    each(callback:(t:T)=>any):ChildDataPipe<R,T,T> {
+    each(callback:(t?:T)=>any):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
             text: call(param(callback), [current]),
             mergeStart: true,
@@ -99,7 +99,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.reduceLikeWithProvider<M>(reducer, memo, true);
     }
 
-    find(predicate:(t:T) => boolean):DataPipeResult<R,T> {
+    find(predicate:(t?:T) => boolean):DataPipeResult<R,T> {
         return this.subPipe({
             rename: true,
             before: setResult(undef),
@@ -183,11 +183,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     invoke(method:string, ...methodArgs:any[]):ChildDataPipe<R,T,any>;
     invoke<O>(method:(...args:any[]) => O, ...methodArgs:any[]):ChildDataPipe<R,T,O>;
-    invoke(method:string|Function, ...methodArgs:any[]) {
-        var newValue:CodeText;
+    invoke(method:string|(()=>any), ...methodArgs:any[]) {
+        var newValue:CodeText<any>;
         var methodParams = params(methodArgs);
         if (typeof method === 'string') {
-            let access = prop(current, method);
+            let access = prop<()=>any>(current, method);
             newValue = ternary(
                 eql(access, nullValue),
                 access,
@@ -202,7 +202,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     pluck(property:string|number):ChildDataPipe<R,T,any> {
         return this.mapLike<any>(assign(current,
-            ternary(
+            ternary<any>(
                 eql(current, nullValue),
                 undef,
                 prop(current, property)
@@ -223,12 +223,12 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     groupBy(fn:string|((x:T)=>string|number)):ChildDataPipe<R,T,{[index:string]:T[]}> {
-        var group = named('group');
-        var text:CodeText = seq([
-            declare('group', access(fn)),
-            ternary(
-                prop(result, group),
-                call(prop(prop(result, group), 'push'), [current]),
+        var group = named<string>('group');
+        var text:CodeText<any> = seq([
+            declare(group, access(fn)),
+            ternary<any>(
+                prop<boolean>(result, group),
+                call(prop(prop<any[]>(result, group), 'push'), [current]),
                 assign(prop(result, group), array(current))
             )
         ]);
@@ -243,9 +243,9 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     sortBy(fn:string|((x:T)=>number)):ChildDataPipe<R,T,T> {
         //todo advanced logic, when used after map-like processors
         if (!fn) {
-            return this.subPipe<T>(call(prop(result, 'sort')));
+            return this.subPipe<T>(call(prop<()=>any>(result, 'sort')));
         } else {
-            return this.subPipe<T>(call(prop(result, 'sort'), [func(['a', 'b'],
+            return this.subPipe<T>(call(prop<()=>any>(result, 'sort'), [func(['a', 'b'],
                 ret(minus(
                     access(fn, 'a'),
                     access(fn, 'b')
@@ -254,7 +254,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }
     }
 
-    private edge(initial:CodeText, operator:(l:CodeText, r:CodeText)=>CodeText, fn?:string|((x:T)=>number)):DataPipeResult<R,any> {
+    private edge(initial:CodeText<number>, operator:(l:CodeText<number>, r:CodeText<number>)=>CodeText<boolean>, fn?:string|((x:T)=>number)):DataPipeResult<R,any> {
         var initialize = setResult(initial);
         if (!fn) {
             return this.reduceLike(initialize, conditional(
@@ -263,10 +263,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             ), false) as any;
         }
 
-        var edge = named('edgeValue'); //todo named and not named?
-        var value = named('value');
+        var edge = named<number>('edgeValue');
+        var value = named<number>('value');
         var text = seq([
-            declare('value', access(fn)),
+            declare(value, access(fn)),
             conditional(
                 operator(value, edge),
                 seq([
@@ -275,10 +275,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ])
             )
         ]);
-        return this.reduceLike(seq([initialize, declare('edgeValue', initial)]), text, false) as any;
+        return this.reduceLike(seq([initialize, declare(edge, initial)]), text, false) as any;
     }
 
-    private everyLike(predicate:(t:T)=>boolean, inverted?:boolean):DataPipeResult<R, boolean> {
+    private everyLike(predicate:(t?:T)=>boolean, inverted?:boolean):DataPipeResult<R, boolean> {
         var condition = call(param(predicate), [current]);
 
         if (!inverted) {
@@ -303,7 +303,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }) as DataPipeResult<R, any>;
     }
 
-    private mapLike<O>(text:CodeText):ChildDataPipe<R,T,O> {
+    private mapLike<O>(text:CodeText<any>):ChildDataPipe<R,T,O> {
         return this.subPipe<O>({
             rename: true,
             before: filterMapBefore,
@@ -314,19 +314,19 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         });
     }
 
-    private reduceLikeWithProvider<M>(reducer:(memo:M, t:T) => M, memo:Provider<M>, reversed:boolean) {
-        var initial:CodeText = param(memo);
+    private reduceLikeWithProvider<M>(reducer:(memo?:M, t?:T) => M, memo:Provider<M>, reversed:boolean) {
+        var initial:CodeText<M|Provider<M>> = param(memo);
         if (!isPrimitive(memo)) {
             if (typeof memo !== 'function') {
                 throw new Error('The memo should be primitive, or a provider function, otherwise reusing the datapipe should produce unexpected results.');
             } else {
-                initial = call(initial);
+                initial = call(initial as CodeText<()=>M>);
             }
         }
         return this.reduceLike(setResult(initial), setResult(call(param(reducer), [result, current])), reversed);
     }
 
-    private reduceLike<X>(initialize:CodeText, text:CodeText, reversed:boolean):ChildDataPipe<R,T,X> {
+    private reduceLike<X>(initialize:CodeText<any>, text:CodeText<any>, reversed:boolean):ChildDataPipe<R,T,X> {
         return this.subPipe<X>({
             rename: true,
             before: initialize,
@@ -426,15 +426,15 @@ function isPrimitive(value:any) {
     return value === null || (typeof value !== 'function' && typeof value !== 'object');
 }
 
-function whereFilter(properties) {
+function whereFilter<T extends {[index:string]:any}>(properties:T) {
 
-    var statements:CodeText[] = [];
+    var statements:CodeText<void|Ret<boolean>>[] = [];
     for (let i in properties) {
         if (properties.hasOwnProperty(i)) {
             statements.push(conditional(
                 neq(
                     prop(current, i),
-                    prop(named('properties'), i)
+                    prop(named<T>('properties'), i)
                 ),
                 ret(falseValue)
             ));

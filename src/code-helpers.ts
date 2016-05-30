@@ -6,7 +6,7 @@ export function paramName(index:number) {
     return '_p' + index;
 }
 
-export function codeTextToString(text:CodeText, params:any[]):string {
+export function codeTextToString(text:CodeText<any>, params:any[]):string {
     var result = '';
     for (var j = 0; j < text.length; j++) {
         if (typeof text[j] === 'string') {
@@ -19,15 +19,15 @@ export function codeTextToString(text:CodeText, params:any[]):string {
     return result;
 }
 
-export function assign(lhs:CodeText, rhs:CodeText):CodeText {
-    return [...lhs, '=', ...rhs];
+export function assign<T>(lhs:CodeText<T>, rhs:CodeText<T>):CodeText<void> {
+    return [...lhs, '=', ...rhs, ';'];
 }
 
-export function named(name:string):CodeText {
+export function named<T>(name:string):CodeText<T> {
     return [name];
 }
 
-export function call(fn:CodeText, params?:CodeText[], context?:CodeText) {
+export function call<T>(fn:CodeText<()=>T>, params?:CodeText<any>[], context?:CodeText<any>):CodeText<T> {
     var call:string;
     if (context) {
         call = '.call';
@@ -36,7 +36,7 @@ export function call(fn:CodeText, params?:CodeText[], context?:CodeText) {
         call = '';
     }
 
-    var result:CodeText = [...fn, call + '('];
+    var result:CodeText<T> = [...fn, call + '('];
     if (params) {
         for (var i = 0; i < params.length; i++) {
             push.apply(result, params[i]);
@@ -50,31 +50,31 @@ export function call(fn:CodeText, params?:CodeText[], context?:CodeText) {
     return result;
 }
 
-export function conditional(condition:CodeText, statement:CodeText):CodeText {
+export function conditional(condition:CodeText<boolean>, statement:CodeText<any>):CodeText<void> {
     return ['if(', ...condition, '){', ...statement, '}'];
 }
 
-export function not(condition:CodeText) {
+export function not(condition:CodeText<boolean>) {
     return ['!', ...condition];
 }
 
-export function param(param:any):CodeText {
+export function param<T>(param:T):CodeText<T> {
     if (typeof param === 'string' || typeof param === 'number') {
         return [JSON.stringify(param)];
     }
     return [[param]];
 }
 
-export function params(params:any[]):CodeText[] {
-    var result:CodeText[] = [];
+export function params<T>(params:T[]):CodeText<T>[] {
+    var result:CodeText<T>[] = [];
     for (var i = 0; i < params.length; i++) {
         result.push(param(params[i]));
     }
     return result;
 }
 
-export function seq(texts:CodeText[]):CodeText {
-    var result:CodeText = [];
+export function seq<T>(texts:Array<CodeText<any>|CodeText<Ret<T>>>):CodeText<Ret<T>> {
+    var result:CodeText<Ret<T>> = [];
     for (var i = 0; i < texts.length; i++) {
         var text = texts[i];
         push.apply(result, text);
@@ -85,11 +85,11 @@ export function seq(texts:CodeText[]):CodeText {
     return result;
 }
 
-export function array(...values:CodeText[]):CodeText {
+export function array<T>(...values:CodeText<T>[]):CodeText<Array<T>> {
     if (values.length === 0) {
         return ['[]'];
     }
-    var result:CodeText = ['['];
+    var result:CodeText<Array<T>> = ['['];
     for (var i = 0; i < values.length; i++) {
         var code = values[i];
         push.apply(result, code);
@@ -101,11 +101,11 @@ export function array(...values:CodeText[]):CodeText {
     return result;
 }
 
-export function obj():CodeText {
+export function obj():CodeText<{}> {
     return ['{}'];
 }
 
-export function prop(object:CodeText, property:string|number|CodeText):CodeText {
+export function prop<T>(object:CodeText<{[index:string]:T}|{[index:number]:T}>, property:string|number|CodeText<string|number>):CodeText<T> {
     if (typeof property === 'object') {
         return [...object, '[', ...property, ']'];
     }
@@ -116,41 +116,36 @@ export function prop(object:CodeText, property:string|number|CodeText):CodeText 
     }
 }
 
-export function ternary(condition:CodeText, trueExpr:CodeText, falseExpr:CodeText):CodeText {
+export function ternary<T>(condition:CodeText<boolean>, trueExpr:CodeText<T>, falseExpr:CodeText<T>):CodeText<T> {
     return [...condition, '?', ...trueExpr, ':', ...falseExpr];
 }
 
-export function declare(variable:string, initial:CodeText) {
-    return [`var ${variable}=`, ...initial]
+export function declare<T>(variable:CodeText<T>, initial:CodeText<T>):CodeText<void> {
+    return [`var ${variable[0]}=`, ...initial]
 }
 
-export function setResult(value:CodeText) {
+export function setResult(value:CodeText<any>):CodeText<void> {
     return assign(result, value);
 }
 
-export function func(params:string[], text:CodeText):CodeText {
+export function func<T>(params:string[], text:CodeText<Ret<T>>):CodeText<T> {
     return ['function(' + params.join(',') + '){', ...text, '}'];
 }
 
-export function ret(code:CodeText) {
+export function ret<T>(code:CodeText<T>):CodeText<Ret<T>> {
     return ['return ', ...code, ';'];
 }
 
-export function access(fn:string|Function, variable?:string):CodeText {
+export function access(fn:string|Function, variable?:string):CodeText<any> {
     variable = variable || 'x';
     if (typeof fn === 'function') {
         return accessFunction([[fn]], null, [[variable]]);
     } else {
-        return [accessProperty(fn, variable)];
+        return prop(named<{[idx:string]:any}>(variable), fn);
     }
 }
 
-function accessProperty(property:string|number, variable?:string):string {
-    variable = variable || 'x';
-    return `${variable}[${JSON.stringify(property)}]`;
-}
-
-function accessFunction(fn:CodeText, context:CodeText, params:CodeText[]):CodeText {
+function accessFunction<T>(fn:CodeText<()=>T>, context:CodeText<any>, params:CodeText<any>[]):CodeText<T> {
     var call:string;
     if (context) {
         call = '.call';
@@ -159,7 +154,7 @@ function accessFunction(fn:CodeText, context:CodeText, params:CodeText[]):CodeTe
         call = '';
     }
 
-    var result:CodeText = [...fn, call + '('];
+    var result:CodeText<T> = [...fn, call + '('];
     for (var i = 0; i < params.length; i++) {
         push.apply(result, params[i]);
         if (i < params.length - 1) {
@@ -171,27 +166,27 @@ function accessFunction(fn:CodeText, context:CodeText, params:CodeText[]):CodeTe
     return result;
 }
 
-function operator(op:string) {
-    return function (a:CodeText, b:CodeText) {
+function operator<P,R>(op:string):(a:CodeText<P>, b:CodeText<P>)=>CodeText<R> {
+    return function (a:CodeText<P>, b:CodeText<P>):CodeText<R> {
         return [...a, op, ...b]
     };
 }
 
-export var eql = operator('==');
-export var neq = operator('!==');
-export var lt = operator('<');
-export var gt = operator('>');
-export var minus = operator('-');
+export var eql = operator<any,boolean>('==');
+export var neq = operator<any,boolean>('!==');
+export var lt = operator<number,boolean>('<');
+export var gt = operator<number, boolean>('>');
+export var minus = operator<number,number>('-');
 
-export var result = named('data');
-export var current = named('x');
-export var count = named('count');
-export var cont:CodeText = ['continue;'];
-export var br:CodeText = ['break;'];
-export var undef:CodeText = ['void 0'];
-export var nullValue:CodeText = ['null'];
-export var infinity:CodeText = ['Infinity'];
-export var trueValue:CodeText = ['true'];
-export var falseValue:CodeText = ['false'];
-export var negativeInfinity:CodeText = ['-Infinity'];
-export var empty:CodeText = [];
+export var result = named<any>('data');
+export var current = named<any>('x');
+export var count = named<number>('count');
+export var cont:CodeText<void> = ['continue;'];
+export var br:CodeText<void> = ['break;'];
+export var undef:CodeText<void> = ['void 0'];
+export var nullValue:CodeText<void> = ['null'];
+export var infinity:CodeText<number> = ['Infinity'];
+export var negativeInfinity:CodeText<number> = ['-Infinity'];
+export var trueValue:CodeText<boolean> = ['true'];
+export var falseValue:CodeText<boolean> = ['false'];
+export var empty:CodeText<void> = [];

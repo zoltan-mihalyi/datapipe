@@ -1,9 +1,13 @@
-type CodeText = Array<string|{0:any}>;
+interface ArrayT<T,E> extends Array<E> {
+    noSuchItem?:T; //only for type checks
+}
+
+type CodeText<T> = ArrayT<T,string|{0:any}>;
 
 interface Loop {
-    before?:CodeText;
-    after?:CodeText;
-    text:CodeText;
+    before?:CodeText<any>;
+    after?:CodeText<any>;
+    text:CodeText<any>;
     mergeStart:boolean;
     mergeEnd:boolean;
     reversed?:boolean;
@@ -12,4 +16,7 @@ interface Loop {
     changesCount?:boolean;
 }
 
-type Code = Loop | CodeText;
+interface Ret<T> {
+}
+
+type Code = Loop | CodeText<any>;
