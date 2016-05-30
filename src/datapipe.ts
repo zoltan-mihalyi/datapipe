@@ -166,13 +166,20 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.edge('-Infinity', '>', iteratee);
     }
 
+    groupBy(fn:string|((x:T)=>string|number)):ChildDataPipe<R,T,{[index:string]:T[]}> {
+        return this.reduceLike<{[index:string]:T[]}>(['{};'], ['var group=', ...access(fn), ';\nif(data[group]) {data[group].push(x);}\nelse {data[group]=[x];}'], false);
+    }
+
+    indexBy(fn:string|((x:T)=>string|number)):ChildDataPipe<R,T,{[index:string]:T}> {
+        return this.reduceLike<{[index:string]:T}>(['{};'], ['data[', ...access(fn), ']=x;'], false); //todo dont care order?
+    }
+
     private edge(opposite:string, operator:string, fn?:string|((x:T)=>number)):DataPipeResult<R,any> {
         if (!fn) {
             return this.reduceLike([opposite], [`if(x${operator}data){data=x;}`], false) as any;
         }
 
-        var evaluator:CodeText = (typeof fn === 'string') ? [`x[${JSON.stringify(fn)}]`] : [[fn], '(x)'];
-        var text = ['var value=', ...evaluator, `;\nif(value${operator}edgeValue){edgeValue=value;data=x;}`];
+        var text = ['var value=', ...access(fn), `;\nif(value${operator}edgeValue){edgeValue=value;data=x;}`];
         return this.reduceLike([`${opposite};\nvar edgeValue=${opposite};`], text, false) as any;
     }
 
@@ -319,6 +326,14 @@ function whereFilter(properties) {
     }
 
     return (new Function('properties', fn))(properties);
+}
+
+function access(fn:string|Function):CodeText {
+    if (typeof fn === 'function') {
+        return [[fn], '(x)'];
+    } else {
+        return [`x[${JSON.stringify(fn)}]`];
+    }
 }
 
 export = <T>() => new RootDataPipe<T>();
