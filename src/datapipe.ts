@@ -14,6 +14,8 @@ type Primitive = string|number|boolean|void;
 
 type Provider<T> = {():T}|Primitive&T;
 
+type Mapper<I,O> = (data:I[])=>O[];
+
 var push = Array.prototype.push;
 
 abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
@@ -238,13 +240,15 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     abstract compile():DataPipe<R,P,T>;
 
+    abstract fn():Mapper<R,T>;
+
     private subPipe<X>(code:Code):ChildDataPipe<R,T,X> {
         return new ChildDataPipe<R,T,X>(this, code);
     }
 }
 
 class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
-    private processor:Function = null;
+    private processor:Mapper<R,T> = null;
 
     constructor(private parent:DataPipe<R,any,P>, private code:Code) {
         super();
@@ -262,7 +266,11 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
         return this;
     }
 
-    private createProcessor():Function {
+    fn():Mapper<R,T> {
+        return this.compile().processor;
+    }
+
+    private createProcessor():Mapper<R,T> {
         var codes:Code[] = this.getCodes();
 
         var params = [];
@@ -300,6 +308,10 @@ class RootDataPipe<T> extends DataPipe<T,T,T> {
 
     compile():RootDataPipe<T> {
         return this;
+    }
+
+    fn():Mapper<T,T> {
+        return this.process;
     }
 
     getCodes():Code[] {

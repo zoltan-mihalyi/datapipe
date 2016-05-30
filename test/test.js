@@ -1,5 +1,18 @@
 var dp = require('../dist/datapipe');
 
+describe('Test general usage', function() {
+    it('fn method', function() {
+        var addOneToAll = dp().map(function(x) {
+            return x + 1;
+        }).fn();
+
+        expect(dp()
+            .map(addOneToAll)
+            .process([[1, 2], [3, 4]])
+        ).toEqual([[2, 3], [4, 5]]);
+    });
+});
+
 describe('Test functions without chaining', function() {
     it('Mapping an array should return an array with items mapped with the function.', function() {
         expect(dp().map(function(x) {
