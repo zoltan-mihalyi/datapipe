@@ -44,7 +44,7 @@ class LoopStrategy implements AccumulatorStrategy {
             this.before = createCodeRow(loop.before, params) + '\n';
         }
         this.rename = this.rename || loop.rename;
-        if (loop.after) { //todo redundant
+        if (loop.after) {
             this.after = '\n' + createCodeRow(loop.after, params);
         }
         if (this.reversed === null) {

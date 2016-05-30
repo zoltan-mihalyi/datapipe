@@ -1,8 +1,42 @@
 //todo no context, no index, no list!
 //todo asm.js
 import Accumulator = require("./accumulator");
-var filterMapBefore = ['data = []'];
-var filterMapAfter = ['data.push(x);'];
+import {
+    assign,
+    call,
+    param,
+    conditional,
+    not,
+    cont,
+    current,
+    result,
+    undef,
+    empty,
+    seq,
+    br,
+    count,
+    lt,
+    array,
+    prop,
+    ternary,
+    eql,
+    nullValue,
+    infinity,
+    negativeInfinity,
+    gt,
+    declare,
+    named,
+    setResult,
+    falseValue,
+    trueValue,
+    func,
+    ret,
+    minus,
+    obj, access
+} from "./code-helpers";
+
+var filterMapBefore = setResult(array());
+var filterMapAfter = call(prop(result, 'push'), [current]);
 
 interface DataPipeResult<R,T> {
     process(data:R[]):T;
@@ -19,7 +53,7 @@ var push = Array.prototype.push;
 
 abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     map<O>(fn:(t:T)=>O):ChildDataPipe<R,T,O> { //todo is there a correlation between fields?
-        return this.mapLike<O>(['x = ', ...access(fn), ';']);
+        return this.mapLike<O>(assign(current, call(param(fn), [current])));
     }
 
     filter(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
@@ -28,7 +62,13 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             changesCount: true,
             before: filterMapBefore,
             after: filterMapAfter,
-            text: ['if(!', ...access(predicate), ') continue;'],
+            text: conditional(
+                not(call(
+                    param(predicate),
+                    [current]
+                )),
+                cont
+            ),
             mergeStart: true,
             mergeEnd: true
         });
@@ -36,7 +76,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     each(callback:(t:T)=>any):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
-            text: [...access(callback), ';'],
+            text: call(param(callback), [current]),
             mergeStart: true,
             mergeEnd: true
         });
@@ -57,21 +97,30 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     find(predicate:(t:T) => boolean):DataPipeResult<R,T> {
         return this.subPipe({
             rename: true,
-            before: ['data = void 0;'],
-            after: [],
-            text: ['if(', ...access(predicate), ') {data = x; break;}'],
+            before: setResult(undef),
+            after: empty,
+            text: conditional(
+                call(param(predicate), [current]),
+                seq(
+                    setResult(current),
+                    br
+                )
+            ),
             mergeStart: true,
             mergeEnd: false
         }) as any;
     }
 
-    take(count:number):ChildDataPipe<R,T,T> {
+    take(cnt:number):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
-            rename: true,
+            rename: true, //todo calculate from codeText?
             usesCount: true,
             before: filterMapBefore,
             after: filterMapAfter,
-            text: ['if (count>', [count], ') {break;}'],
+            text: conditional(
+                gt(count, param(cnt)),
+                br
+            ),
             mergeStart: true,
             mergeEnd: true
         });
@@ -130,69 +179,120 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     invoke(method:string, ...methodArgs:any[]):ChildDataPipe<R,T,any>;
     invoke<O>(method:(...args:any[]) => O, ...methodArgs:any[]):ChildDataPipe<R,T,O>;
     invoke(method:string|Function, ...methodArgs:any[]) {
-        var text:CodeText;
+        var newValue:CodeText;
+        var params = asParams(methodArgs);
         if (typeof method === 'string') {
-            let access = accessProperty(method);
-            text = [`x=${access}==null?${access}:`, ...accessFunction([access], null, asParams(methodArgs))];
+            let access = prop(current, method);
+            newValue = ternary(
+                eql(access, nullValue),
+                access,
+                call(access, params)
+            );
         } else {
-            text = ['x=', ...accessFunction([[method]], ['x'], asParams(methodArgs)), ';'];
+            newValue = call(param(method), params, current);
         }
 
-        return this.mapLike(text);
+        return this.mapLike(assign(current, newValue));
     }
 
     pluck(property:string|number):ChildDataPipe<R,T,any> {
-        return this.mapLike<any>([`x=x==null?void 0:${accessProperty(property)};`]);
+        return this.mapLike<any>(assign(current,
+            ternary(
+                eql(current, nullValue),
+                undef,
+                prop(current, property)
+            )
+        ));
     }
-
 
     min(fn:string|((x:T) => number)):DataPipeResult<R, T>;
     min():DataPipeResult<R, number>;
-    min(iteratee?:(x:T) => number) {
-        return this.edge('Infinity', '<', iteratee);
+    min(iteratee?:string|((x:T) => number)) {
+        return this.edge(infinity, lt, iteratee);
     }
 
     max(fn:string|((x:T) => number)):DataPipeResult<R, T>;
     max():DataPipeResult<R, number>;
-    max(iteratee?:(x:T) => number) {
-        return this.edge('-Infinity', '>', iteratee);
+    max(iteratee?:string|((x:T) => number)) {
+        return this.edge(negativeInfinity, gt, iteratee);
     }
 
     groupBy(fn:string|((x:T)=>string|number)):ChildDataPipe<R,T,{[index:string]:T[]}> {
-        return this.reduceLike<{[index:string]:T[]}>(['{};'], ['var group=', ...access(fn), ';\nif(data[group]) {data[group].push(x);}\nelse {data[group]=[x];}'], false);
+        var group = named('group');
+        var text:CodeText = seq(
+            declare('group', access(fn)),
+            ternary(
+                prop(result, group),
+                call(prop(prop(result, group), 'push'), [current]),
+                assign(prop(result, group), array(current))
+            )
+        );
+
+        return this.reduceLike<{[index:string]:T[]}>(setResult(obj()), text, false);
     }
 
     indexBy(fn:string|((x:T)=>string|number)):ChildDataPipe<R,T,{[index:string]:T}> {
-        return this.reduceLike<{[index:string]:T}>(['{};'], ['data[', ...access(fn), ']=x;'], false); //todo dont care order?
+        return this.reduceLike<{[index:string]:T}>(setResult(obj()), assign(prop(result, access(fn)), current), false); //todo dont care order?
     }
 
     sortBy(fn:string|((x:T)=>number)):ChildDataPipe<R,T,T> {
         //todo advanced logic, when used after map-like processors
         if (!fn) {
-            return this.subPipe<T>(['data=data.sort();']);
+            return this.subPipe<T>(call(prop(result, 'sort')));
         } else {
-            return this.subPipe<T>(['data=data.sort(function(a,b){return ', ...access(fn, 'a'), '-', ...access(fn, 'b'), ';});']); //todo cache values??
+            return this.subPipe<T>(call(prop(result, 'sort'), [func(['a', 'b'],
+                ret(minus(
+                    access(fn, 'a'),
+                    access(fn, 'b')
+                ))
+            )])); //todo cache values??
         }
     }
 
-    private edge(opposite:string, operator:string, fn?:string|((x:T)=>number)):DataPipeResult<R,any> {
+    private edge(initial:CodeText, operator:(l:CodeText, r:CodeText)=>CodeText, fn?:string|((x:T)=>number)):DataPipeResult<R,any> {
+        var initialize = setResult(initial);
         if (!fn) {
-            return this.reduceLike([opposite], [`if(x${operator}data){data=x;}`], false) as any;
+            return this.reduceLike(initialize, conditional(
+                operator(current, result),
+                setResult(current)
+            ), false) as any;
         }
 
-        var text = ['var value=', ...access(fn), `;\nif(value${operator}edgeValue){edgeValue=value;data=x;}`];
-        return this.reduceLike([`${opposite};\nvar edgeValue=${opposite};`], text, false) as any;
+        var edge = named('edgeValue'); //todo named and not named?
+        var value = named('value');
+        var text = seq(
+            declare('value', access(fn)),
+            conditional(
+                operator(value, edge),
+                seq(
+                    assign(edge, value),
+                    setResult(current)
+                )
+            )
+        );
+        return this.reduceLike(seq(initialize, declare('edgeValue', initial)), text, false) as any;
     }
 
     private everyLike(predicate:(t:T)=>boolean, inverted?:boolean):DataPipeResult<R, boolean> {
-        var predicatePrefix = inverted ? '' : '!';
-        var initial = inverted ? 'false' : 'true';
-        var noMatch = inverted ? 'true' : 'false';
+        var condition = call(param(predicate), [current]);
+
+        if (!inverted) {
+            condition = not(condition);
+        }
+
+        var initial = inverted ? falseValue : trueValue;
+        var noMatch = inverted ? trueValue : falseValue;
         return this.subPipe({
             rename: true,
-            before: [`data = ${initial};`],
-            after: [],
-            text: ['if(', predicatePrefix, ...access(predicate), `) { data = ${noMatch}; break;}`],
+            before: setResult(initial),
+            after: empty,
+            text: conditional(
+                condition,
+                seq(
+                    setResult(noMatch),
+                    br
+                )
+            ),
             mergeStart: true,
             mergeEnd: false
         }) as DataPipeResult<R, any>;
@@ -210,21 +310,21 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     private reduceLikeWithProvider<M>(reducer:(memo:M, t:T) => M, memo:Provider<M>, reversed:boolean) {
-        var memoProvider = '';
+        var initial:CodeText = param(memo);
         if (!isPrimitive(memo)) {
             if (typeof memo !== 'function') {
                 throw new Error('The memo should be primitive, or a provider function, otherwise reusing the datapipe should produce unexpected results.');
             } else {
-                memoProvider = '()';
+                initial = call(initial);
             }
         }
-        return this.reduceLike([[memo], memoProvider + ';'], ['data = ', ...accessFunction([[reducer]], null, [['data'], ['x']])], reversed);
+        return this.reduceLike(setResult(initial), setResult(call(param(reducer), [result, current])), reversed);
     }
 
-    private reduceLike<X>(before:CodeText, text:CodeText, reversed:boolean):ChildDataPipe<R,T,X> {
+    private reduceLike<X>(initialize:CodeText, text:CodeText, reversed:boolean):ChildDataPipe<R,T,X> {
         return this.subPipe<X>({
             rename: true,
-            before: ['data = ', ...before],
+            before: initialize,
             after: [],
             text: text,
             mergeStart: !reversed,
@@ -336,41 +436,6 @@ function whereFilter(properties) {
     }
 
     return (new Function('properties', fn))(properties);
-}
-
-function access(fn:string|Function, variable?:string):CodeText {
-    variable = variable || 'x';
-    if (typeof fn === 'function') {
-        return accessFunction([[fn]], null, [[variable]]);
-    } else {
-        return [accessProperty(fn, variable)];
-    }
-}
-
-function accessProperty(property:string|number, variable?:string):string {
-    variable = variable || 'x';
-    return `${variable}[${JSON.stringify(property)}]`;
-}
-
-function accessFunction(fn:CodeText, context:CodeText, params:CodeText[]):CodeText {
-    var call:string;
-    if (context) {
-        call = '.call';
-        params = [context].concat(params);
-    } else {
-        call = '';
-    }
-
-    var result:CodeText = [...fn, call + '('];
-    for (var i = 0; i < params.length; i++) {
-        push.apply(result, params[i]);
-        if (i < params.length - 1) {
-            result.push(',');
-        }
-    }
-    result.push(')');
-
-    return result;
 }
 
 function asParams(params:any[]):CodeText[] {
