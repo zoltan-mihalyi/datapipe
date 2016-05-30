@@ -1,4 +1,3 @@
-//todo use result only when necessary
 //todo no context, no index, no list!
 //todo asm.js
 import Accumulator = require("./accumulator");
@@ -20,7 +19,7 @@ var push = Array.prototype.push;
 
 abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     map<O>(fn:(t:T)=>O):ChildDataPipe<R,T,O> { //todo is there a correlation between fields?
-        return this.mapLike<O>(['x = ', [fn], '(x);']);
+        return this.mapLike<O>(['x = ', ...access(fn), ';']);
     }
 
     filter(predicate:(t:T) => boolean):ChildDataPipe<R,T,T> {
@@ -29,7 +28,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             changesCount: true,
             before: filterMapBefore,
             after: filterMapAfter,
-            text: ['if(!', [predicate], '(x)) continue;'],
+            text: ['if(!', ...access(predicate), ') continue;'],
             mergeStart: true,
             mergeEnd: true
         });
@@ -37,7 +36,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     each(callback:(t:T)=>any):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
-            text: [[callback], '(x);'], //todo use access where possible
+            text: [...access(callback), ';'],
             mergeStart: true,
             mergeEnd: true
         });
@@ -60,7 +59,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             rename: true,
             before: ['data = void 0;'],
             after: [],
-            text: ['if(', [predicate], '(x)) {data = x; break;}'],
+            text: ['if(', ...access(predicate), ') {data = x; break;}'],
             mergeStart: true,
             mergeEnd: false
         }) as any;
@@ -133,26 +132,17 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     invoke(method:string|Function, ...methodArgs:any[]) {
         var text:CodeText;
         if (typeof method === 'string') {
-            let accessor = JSON.stringify(method);
-            text = [`x=x[${accessor}]==null?x[${accessor}]:x[${accessor}](`];
+            let access = accessProperty(method);
+            text = [`x=${access}==null?${access}:`, ...accessFunction([access], null, asParams(methodArgs))];
         } else {
-            text = ['x=', [method], '.call(x' + (methodArgs.length ? ',' : '')];
+            text = ['x=', ...accessFunction([[method]], ['x'], asParams(methodArgs)), ';'];
         }
-
-        for (var i = 1; i < arguments.length; i++) {
-            text.push([arguments[i]]);
-            if (i < arguments.length - 1) {
-                text.push(',');
-            }
-        }
-        text.push(');');
 
         return this.mapLike(text);
     }
 
     pluck(property:string|number):ChildDataPipe<R,T,any> {
-        var propAccessor = JSON.stringify(property);
-        return this.mapLike<any>([`x=x==null?void 0:x[${propAccessor}];`]);
+        return this.mapLike<any>([`x=x==null?void 0:${accessProperty(property)};`]);
     }
 
 
@@ -202,7 +192,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             rename: true,
             before: [`data = ${initial};`],
             after: [],
-            text: ['if(', predicatePrefix, [predicate], `(x)) { data = ${noMatch}; break;}`],
+            text: ['if(', predicatePrefix, ...access(predicate), `) { data = ${noMatch}; break;}`],
             mergeStart: true,
             mergeEnd: false
         }) as DataPipeResult<R, any>;
@@ -228,7 +218,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 memoProvider = '()';
             }
         }
-        return this.reduceLike([[memo], memoProvider + ';'], ['data = ', [reducer], '(data, x);'], reversed);
+        return this.reduceLike([[memo], memoProvider + ';'], ['data = ', ...accessFunction([[reducer]], null, [['data'], ['x']])], reversed);
     }
 
     private reduceLike<X>(before:CodeText, text:CodeText, reversed:boolean):ChildDataPipe<R,T,X> {
@@ -351,10 +341,44 @@ function whereFilter(properties) {
 function access(fn:string|Function, variable?:string):CodeText {
     variable = variable || 'x';
     if (typeof fn === 'function') {
-        return [[fn], `(${variable})`];
+        return accessFunction([[fn]], null, [[variable]]);
     } else {
-        return [`${variable}[${JSON.stringify(fn)}]`];
+        return [accessProperty(fn, variable)];
     }
+}
+
+function accessProperty(property:string|number, variable?:string):string {
+    variable = variable || 'x';
+    return `${variable}[${JSON.stringify(property)}]`;
+}
+
+function accessFunction(fn:CodeText, context:CodeText, params:CodeText[]):CodeText {
+    var call:string;
+    if (context) {
+        call = '.call';
+        params = [context].concat(params);
+    } else {
+        call = '';
+    }
+
+    var result:CodeText = [...fn, call + '('];
+    for (var i = 0; i < params.length; i++) {
+        push.apply(result, params[i]);
+        if (i < params.length - 1) {
+            result.push(',');
+        }
+    }
+    result.push(')');
+
+    return result;
+}
+
+function asParams(params:any[]):CodeText[] {
+    var result:CodeText[] = [];
+    for (var i = 0; i < params.length; i++) {
+        result.push([[params[i]]]);
+    }
+    return result;
 }
 
 export = <T>() => new RootDataPipe<T>();
