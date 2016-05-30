@@ -32,7 +32,12 @@ import {
     func,
     ret,
     minus,
-    obj, access
+    obj,
+    access,
+    params,
+    neq,
+    paramName,
+    codeTextToString
 } from "./code-helpers";
 
 var filterMapBefore = setResult(array());
@@ -101,10 +106,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             after: empty,
             text: conditional(
                 call(param(predicate), [current]),
-                seq(
+                seq([
                     setResult(current),
                     br
-                )
+                ])
             ),
             mergeStart: true,
             mergeEnd: false
@@ -180,16 +185,16 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     invoke<O>(method:(...args:any[]) => O, ...methodArgs:any[]):ChildDataPipe<R,T,O>;
     invoke(method:string|Function, ...methodArgs:any[]) {
         var newValue:CodeText;
-        var params = asParams(methodArgs);
+        var methodParams = params(methodArgs);
         if (typeof method === 'string') {
             let access = prop(current, method);
             newValue = ternary(
                 eql(access, nullValue),
                 access,
-                call(access, params)
+                call(access, methodParams)
             );
         } else {
-            newValue = call(param(method), params, current);
+            newValue = call(param(method), methodParams, current);
         }
 
         return this.mapLike(assign(current, newValue));
@@ -219,14 +224,14 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     groupBy(fn:string|((x:T)=>string|number)):ChildDataPipe<R,T,{[index:string]:T[]}> {
         var group = named('group');
-        var text:CodeText = seq(
+        var text:CodeText = seq([
             declare('group', access(fn)),
             ternary(
                 prop(result, group),
                 call(prop(prop(result, group), 'push'), [current]),
                 assign(prop(result, group), array(current))
             )
-        );
+        ]);
 
         return this.reduceLike<{[index:string]:T[]}>(setResult(obj()), text, false);
     }
@@ -260,17 +265,17 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
         var edge = named('edgeValue'); //todo named and not named?
         var value = named('value');
-        var text = seq(
+        var text = seq([
             declare('value', access(fn)),
             conditional(
                 operator(value, edge),
-                seq(
+                seq([
                     assign(edge, value),
                     setResult(current)
-                )
+                ])
             )
-        );
-        return this.reduceLike(seq(initialize, declare('edgeValue', initial)), text, false) as any;
+        ]);
+        return this.reduceLike(seq([initialize, declare('edgeValue', initial)]), text, false) as any;
     }
 
     private everyLike(predicate:(t:T)=>boolean, inverted?:boolean):DataPipeResult<R, boolean> {
@@ -288,10 +293,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             after: empty,
             text: conditional(
                 condition,
-                seq(
+                seq([
                     setResult(noMatch),
                     br
-                )
+                ])
             ),
             mergeStart: true,
             mergeEnd: false
@@ -387,7 +392,7 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
         var fnBody = `return function(data){\n${codeStr}\nreturn data;\n}`;
         var paramNames = [];
         for (let i = 0; i < params.length; i++) {
-            paramNames.push(Accumulator.paramName(i));
+            paramNames.push(paramName(i));
         }
         return (new Function(paramNames.join(','), fnBody)).apply(null, params);
     }
@@ -422,28 +427,23 @@ function isPrimitive(value:any) {
 }
 
 function whereFilter(properties) {
-    var fn = 'return function(x){\n';
+
+    var statements:CodeText[] = [];
     for (let i in properties) {
         if (properties.hasOwnProperty(i)) {
-            let propAccess = `[${escapeProperty(i)}]`;
-            fn += `if(x${propAccess}!==properties${propAccess}) {return false;}\n`;
+            statements.push(conditional(
+                neq(
+                    prop(current, i),
+                    prop(named('properties'), i)
+                ),
+                ret(falseValue)
+            ));
         }
     }
-    fn += 'return true;\n};';
+    statements.push(ret(trueValue));
 
-    function escapeProperty(property) {
-        return JSON.stringify(property); //todo
-    }
-
+    var fn:string = codeTextToString(ret(func(['x'], seq(statements))), null); //todo inline
     return (new Function('properties', fn))(properties);
-}
-
-function asParams(params:any[]):CodeText[] {
-    var result:CodeText[] = [];
-    for (var i = 0; i < params.length; i++) {
-        result.push([[params[i]]]);
-    }
-    return result;
 }
 
 export = <T>() => new RootDataPipe<T>();

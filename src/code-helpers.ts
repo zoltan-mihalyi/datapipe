@@ -2,6 +2,23 @@ var push = Array.prototype.push;
 
 //todo generic CodeText?
 
+export function paramName(index:number) {
+    return '_p' + index;
+}
+
+export function codeTextToString(text:CodeText, params:any[]):string {
+    var result = '';
+    for (var j = 0; j < text.length; j++) {
+        if (typeof text[j] === 'string') {
+            result += text[j];
+        } else {
+            result += paramName(params.length);
+            params.push(text[j][0]);
+        }
+    }
+    return result;
+}
+
 export function assign(lhs:CodeText, rhs:CodeText):CodeText {
     return [...lhs, '=', ...rhs];
 }
@@ -41,11 +58,22 @@ export function not(condition:CodeText) {
     return ['!', ...condition];
 }
 
-export function param(param:any):CodeText { //todo inline when possible
+export function param(param:any):CodeText {
+    if (typeof param === 'string' || typeof param === 'number') {
+        return [JSON.stringify(param)];
+    }
     return [[param]];
 }
 
-export function seq(...texts:CodeText[]):CodeText {
+export function params(params:any[]):CodeText[] {
+    var result:CodeText[] = [];
+    for (var i = 0; i < params.length; i++) {
+        result.push(param(params[i]));
+    }
+    return result;
+}
+
+export function seq(texts:CodeText[]):CodeText {
     var result:CodeText = [];
     for (var i = 0; i < texts.length; i++) {
         var text = texts[i];
@@ -55,14 +83,6 @@ export function seq(...texts:CodeText[]):CodeText {
         }
     }
     return result;
-}
-
-export function lt(left:CodeText, right:CodeText):CodeText {
-    return [...left, '<', ...right];
-}
-
-export function gt(left:CodeText, right:CodeText):CodeText {
-    return [...left, '>', ...right];
 }
 
 export function array(...values:CodeText[]):CodeText {
@@ -98,14 +118,6 @@ export function prop(object:CodeText, property:string|number|CodeText):CodeText 
 
 export function ternary(condition:CodeText, trueExpr:CodeText, falseExpr:CodeText):CodeText {
     return [...condition, '?', ...trueExpr, ':', ...falseExpr];
-}
-
-export function eql(a:CodeText, b:CodeText):CodeText {
-    return [...a, '==', ...b]
-}
-
-export function minus(a:CodeText, b:CodeText):CodeText {
-    return [...a, '-', ...b]
 }
 
 export function declare(variable:string, initial:CodeText) {
@@ -158,6 +170,18 @@ function accessFunction(fn:CodeText, context:CodeText, params:CodeText[]):CodeTe
 
     return result;
 }
+
+function operator(op:string) {
+    return function (a:CodeText, b:CodeText) {
+        return [...a, op, ...b]
+    };
+}
+
+export var eql = operator('==');
+export var neq = operator('!==');
+export var lt = operator('<');
+export var gt = operator('>');
+export var minus = operator('-');
 
 export var result = named('data');
 export var current = named('x');

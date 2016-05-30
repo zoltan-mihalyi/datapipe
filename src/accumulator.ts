@@ -1,4 +1,5 @@
 ///<reference path="interfaces.ts"/>
+import {codeTextToString} from "./code-helpers";
 interface AccumulatorStrategy {
     put(code:Code, params:any[]):void;
     canPut(code:Code):boolean;
@@ -9,7 +10,7 @@ class SimpleStrategy implements AccumulatorStrategy {
     private code:string = null;
 
     put(code:CodeText, params:any[]):void {
-        this.code = createCodeRow(code, params);
+        this.code = codeTextToString(code, params);
     }
 
     canPut(code:CodeText):boolean {
@@ -39,13 +40,13 @@ class LoopStrategy implements AccumulatorStrategy {
 
         text = this.handleCount(loop, text);
 
-        this.rows.push(createCodeRow(text, params));
+        this.rows.push(codeTextToString(text, params));
         if (loop.before) {
-            this.before = createCodeRow(loop.before, params) + '\n';
+            this.before = codeTextToString(loop.before, params) + '\n';
         }
         this.rename = this.rename || loop.rename;
         if (loop.after) {
-            this.after = '\n' + createCodeRow(loop.after, params);
+            this.after = '\n' + codeTextToString(loop.after, params);
         }
         if (this.reversed === null) {
             this.reversed = !!loop.reversed;
@@ -98,10 +99,6 @@ class LoopStrategy implements AccumulatorStrategy {
 class Accumulator {
     strategy:AccumulatorStrategy = null;
 
-    static paramName(index:number) {
-        return '_p' + index;
-    }
-
     put(code:Code, params:any[]):void {
         if (this.strategy === null) {
             this.strategy = new (strategyFactory(code))();
@@ -118,19 +115,6 @@ class Accumulator {
         this.strategy = null;
         return result;
     }
-}
-
-function createCodeRow(text:CodeText, params:any[]):string {
-    var result = '';
-    for (var j = 0; j < text.length; j++) {
-        if (typeof text[j] === 'string') {
-            result += text[j];
-        } else {
-            result += Accumulator.paramName(params.length);
-            params.push(text[j][0]);
-        }
-    }
-    return result;
 }
 
 function copyAndReplace(codeText:CodeText, search:RegExp, replacement):CodeText {
