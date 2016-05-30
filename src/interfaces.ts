@@ -1,6 +1,6 @@
 type CodeText = Array<string|{0:any}>;
 
-interface Code {
+interface Loop {
     before?:CodeText;
     after?:CodeText;
     text:CodeText;
@@ -11,3 +11,5 @@ interface Code {
     usesCount?:boolean;
     changesCount?:boolean;
 }
+
+type Code = Loop | CodeText;

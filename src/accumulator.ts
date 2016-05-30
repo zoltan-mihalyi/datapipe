@@ -1,6 +1,27 @@
 ///<reference path="interfaces.ts"/>
+interface AccumulatorStrategy {
+    put(code:Code, params:any[]):void;
+    canPut(code:Code):boolean;
+    toCode():string;
+}
 
-class Accumulator {
+class SimpleStrategy implements AccumulatorStrategy {
+    private code:string = null;
+
+    put(code:CodeText, params:any[]):void {
+        this.code = createCodeRow(code, params);
+    }
+
+    canPut(code:CodeText):boolean {
+        return this.code === null;
+    }
+
+    toCode():string {
+        return this.code;
+    }
+}
+
+class LoopStrategy implements AccumulatorStrategy {
     before = '';
     rows:string[] = [];
     after = '';
@@ -11,34 +32,31 @@ class Accumulator {
     lastCountId = 0;
     counts = [];
 
-    static paramName(index:number) {
-        return '_p' + index;
-    }
+    put(loop:Loop, params:any[]) {
 
-    put(code:Code, params:any[]) {
-        var text:CodeText = code.text;
-        this.lastMergeEnd = code.mergeEnd;
+        var text:CodeText = loop.text;
+        this.lastMergeEnd = loop.mergeEnd;
 
-        text = this.handleCount(code, text);
+        text = this.handleCount(loop, text);
 
         this.rows.push(createCodeRow(text, params));
-        if (code.before) {
-            this.before = createCodeRow(code.before, params) + '\n';
+        if (loop.before) {
+            this.before = createCodeRow(loop.before, params) + '\n';
         }
-        this.rename = this.rename || code.rename;
-        if (code.after) { //todo redundant
-            this.after = '\n' + createCodeRow(code.after, params);
+        this.rename = this.rename || loop.rename;
+        if (loop.after) { //todo redundant
+            this.after = '\n' + createCodeRow(loop.after, params);
         }
         if (this.reversed === null) {
-            this.reversed = !!code.reversed;
+            this.reversed = !!loop.reversed;
         }
     }
 
-    private handleCount(code:Code, text:CodeText) {
-        if (code.changesCount) {
+    private handleCount(loop:Loop, text:CodeText) {
+        if (loop.changesCount) {
             this.isCountDirty = true;
         }
-        if (code.usesCount) {
+        if (loop.usesCount) {
             let countName:string;
 
             if (this.isCountDirty) {
@@ -61,11 +79,11 @@ class Accumulator {
         return text;
     }
 
-    canPut(code:Code) {
+    canPut(code:Loop):boolean {
         return this.rows.length === 0 || this.lastMergeEnd && code.mergeStart;
     }
 
-    toCode() {
+    toCode():string {
         var dataName = this.rename ? 'dataOld' : 'data';
         var rename = this.rename ? `var ${dataName} = data;\n` : '';
         var indexModifier = this.reversed ? `${dataName}.length-1-` : '';
@@ -77,7 +95,32 @@ class Accumulator {
     }
 }
 
-function createCodeRow(text:CodeText, params:any[]) {
+class Accumulator {
+    strategy:AccumulatorStrategy = null;
+
+    static paramName(index:number) {
+        return '_p' + index;
+    }
+
+    put(code:Code, params:any[]):void {
+        if (this.strategy === null) {
+            this.strategy = new (strategyFactory(code))();
+        }
+        this.strategy.put(code, params);
+    }
+
+    canPut(code:Code):boolean {
+        return this.strategy === null || (this.strategy instanceof strategyFactory(code) && this.strategy.canPut(code));
+    }
+
+    flush():string {
+        var result = this.strategy.toCode();
+        this.strategy = null;
+        return result;
+    }
+}
+
+function createCodeRow(text:CodeText, params:any[]):string {
     var result = '';
     for (var j = 0; j < text.length; j++) {
         if (typeof text[j] === 'string') {
@@ -100,6 +143,17 @@ function copyAndReplace(codeText:CodeText, search:RegExp, replacement):CodeText 
         result.push(fragment);
     }
     return result;
+}
+
+function isLoop(code:Code):code is Loop {
+    return !!(code as Loop).text;
+}
+
+function strategyFactory(code:Code):{new():AccumulatorStrategy} {
+    if (isLoop(code)) {
+        return LoopStrategy;
+    }
+    return SimpleStrategy;
 }
 
 export = Accumulator;

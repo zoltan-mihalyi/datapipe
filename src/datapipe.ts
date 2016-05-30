@@ -37,7 +37,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     each(callback:(t:T)=>any):ChildDataPipe<R,T,T> {
         return this.subPipe<T>({
-            text: [[callback], '(x);'],
+            text: [[callback], '(x);'], //todo use access where possible
             mergeStart: true,
             mergeEnd: true
         });
@@ -176,6 +176,15 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.reduceLike<{[index:string]:T}>(['{};'], ['data[', ...access(fn), ']=x;'], false); //todo dont care order?
     }
 
+    sortBy(fn:string|((x:T)=>number)):ChildDataPipe<R,T,T> {
+        //todo advanced logic, when used after map-like processors
+        if (!fn) {
+            return this.subPipe<T>(['data=data.sort();']);
+        } else {
+            return this.subPipe<T>(['data=data.sort(function(a,b){return ', ...access(fn, 'a'), '-', ...access(fn, 'b'), ';});']); //todo cache values??
+        }
+    }
+
     private edge(opposite:string, operator:string, fn?:string|((x:T)=>number)):DataPipeResult<R,any> {
         if (!fn) {
             return this.reduceLike([opposite], [`if(x${operator}data){data=x;}`], false) as any;
@@ -279,12 +288,11 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
         for (var i = 0; i < codes.length; i++) {
             var code:Code = codes[i];
             if (!accumulator.canPut(code)) {
-                codeStr += accumulator.toCode();
-                accumulator = new Accumulator();
+                codeStr += accumulator.flush();
             }
             accumulator.put(code, params);
         }
-        codeStr += accumulator.toCode();
+        codeStr += accumulator.flush();
 
         var fnBody = `return function(data){\n${codeStr}\nreturn data;\n}`;
         var paramNames = [];
@@ -340,11 +348,12 @@ function whereFilter(properties) {
     return (new Function('properties', fn))(properties);
 }
 
-function access(fn:string|Function):CodeText {
+function access(fn:string|Function, variable?:string):CodeText {
+    variable = variable || 'x';
     if (typeof fn === 'function') {
-        return [[fn], '(x)'];
+        return [[fn], `(${variable})`];
     } else {
-        return [`x[${JSON.stringify(fn)}]`];
+        return [`${variable}[${JSON.stringify(fn)}]`];
     }
 }
 

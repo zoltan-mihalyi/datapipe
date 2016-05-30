@@ -395,6 +395,31 @@ describe('Test functions without chaining', function() {
             ).toEqual(afterInfex);
         });
     });
+
+    describe('sortBy tests', function() {
+        it('sortBy without parameters should return a simple sorted array.', function() {
+            expect(dp()
+                .sortBy()
+                .process([3, 6, 2, 4, 1, 5])
+            ).toEqual([1, 2, 3, 4, 5, 6]);
+        });
+
+        it('sortBy with rank provider.', function() {
+            expect(dp()
+                .sortBy(function(x) {
+                    return Math.sin(x);
+                })
+                .process([1, 2, 3, 4, 5, 6])
+            ).toEqual([5, 4, 6, 3, 1, 2]);
+        });
+
+        it('sortBy with property name.', function() {
+            expect(dp()
+                .sortBy('x')
+                .process([{x: 2}, {x: 1, y: 2}, {x: 3}, {y: 1}])
+            ).toEqual([{x: 1, y: 2}, {x: 2}, {x: 3}, {y: 1}]);
+        });
+    });
 });
 
 describe('Test functions with chaining', function() {
