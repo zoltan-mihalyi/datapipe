@@ -37,7 +37,10 @@ import {
     params,
     neq,
     paramName,
-    codeTextToString
+    codeTextToString,
+    increment,
+    literal,
+    cast
 } from "./code-helpers";
 
 var filterMapBefore = setResult(array());
@@ -252,6 +255,26 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ))
             )])); //todo cache values??
         }
+    }
+
+    countBy(property?:string|((x?:T)=>any)):ChildDataPipe<R,T,number> {
+        var group:CodeText<any>;
+        var firstStatement = empty;
+        if (!property) {
+            group = current;
+        } else {
+            group = named('group');
+            firstStatement = declare(group, access(property));
+        }
+        var count = prop<number>(result, group);
+        return this.reduceLike<number>(setResult(obj()), seq([
+            firstStatement,
+            ternary<any>(
+                cast<boolean>(count),
+                increment(count),
+                assign(count, literal(1))
+            )
+        ]), false);
     }
 
     private edge(initial:CodeText<number>, operator:(l:CodeText<number>, r:CodeText<number>)=>CodeText<boolean>, fn?:string|((x:T)=>number)):DataPipeResult<R,any> {

@@ -27,6 +27,10 @@ export function named<T>(name:string):CodeText<T> {
     return [name];
 }
 
+export function literal<T extends string|number>(value:T):CodeText<T> {
+    return [JSON.stringify(value)];
+}
+
 export function call<T>(fn:CodeText<()=>T>, params?:CodeText<any>[], context?:CodeText<any>):CodeText<T> {
     var call:string;
     if (context) {
@@ -54,10 +58,6 @@ export function conditional(condition:CodeText<boolean>, statement:CodeText<any>
     return ['if(', ...condition, '){', ...statement, '}'];
 }
 
-export function not(condition:CodeText<boolean>) {
-    return ['!', ...condition];
-}
-
 export function param<T>(param:T):CodeText<T> {
     if (typeof param === 'string' || typeof param === 'number') {
         return [JSON.stringify(param)];
@@ -78,8 +78,8 @@ export function seq<T>(texts:Array<CodeText<any>|CodeText<Ret<T>>>):CodeText<Ret
     for (var i = 0; i < texts.length; i++) {
         var text = texts[i];
         push.apply(result, text);
-        if (i < texts.length - 1) {
-            result.push(';\n');
+        if (i < texts.length - 1 && result[result.length - 1] !== ';') {
+            result.push(';');
         }
     }
     return result;
@@ -145,7 +145,11 @@ export function access(fn:string|Function, variable?:string):CodeText<any> {
     }
 }
 
-function accessFunction<T>(fn:CodeText<()=>T>, context:CodeText<any>, params:CodeText<any>[]):CodeText<T> {
+export function cast<T>(text:CodeText<any>):CodeText<T> {
+    return text;
+}
+
+function accessFunction<T>(fn:CodeText<()=>T>, context:CodeText<any>, params:CodeText<any>[]):CodeText<T> { //todo remove
     var call:string;
     if (context) {
         call = '.call';
@@ -168,8 +172,14 @@ function accessFunction<T>(fn:CodeText<()=>T>, context:CodeText<any>, params:Cod
 
 function operator<P,R>(op:string):(a:CodeText<P>, b:CodeText<P>)=>CodeText<R> {
     return function (a:CodeText<P>, b:CodeText<P>):CodeText<R> {
-        return [...a, op, ...b]
+        return [...a, op, ...b];
     };
+}
+
+function prefixOperator<I,O>(prefix) {
+    return function (text:CodeText<I>):CodeText<O> {
+        return [prefix, ...text];
+    }
 }
 
 export var eql = operator<any,boolean>('==');
@@ -177,6 +187,9 @@ export var neq = operator<any,boolean>('!==');
 export var lt = operator<number,boolean>('<');
 export var gt = operator<number, boolean>('>');
 export var minus = operator<number,number>('-');
+
+export var not = prefixOperator<boolean,boolean>('!');
+export var increment = prefixOperator<number,number>('++');
 
 export var result = named<any>('data');
 export var current = named<any>('x');
