@@ -1,5 +1,23 @@
 ///<reference path="interfaces.ts"/>
-import {codeTextToString} from "./code-helpers";
+import {CollectionType} from "./common";
+import {
+    codeTextToString,
+    named,
+    declare,
+    result,
+    empty,
+    seq,
+    code,
+    itar,
+    current,
+    index,
+    prop,
+    itin,
+    literal,
+    minus,
+    conditional,
+    and
+} from "./code-helpers";
 interface AccumulatorStrategy {
     put(code:Code, params:any[]):void;
     canPut(code:Code):boolean;
@@ -23,15 +41,16 @@ class SimpleStrategy implements AccumulatorStrategy {
 }
 
 class LoopStrategy implements AccumulatorStrategy {
-    before = '';
-    rows:string[] = [];
-    after = '';
-    lastMergeEnd = true;
-    reversed:boolean = null;
-    rename = false;
-    isCountDirty = false;
-    lastCountId = 0;
-    counts = [];
+    private before = '';
+    private rows:string[] = [];
+    private after = '';
+    private lastMergeEnd = true;
+    private reversed:boolean = null;
+    private rename = false;
+    private isCountDirty = false;
+    private lastCountId = 0;
+    private counts = [];
+    private type:CollectionType = CollectionType.UNKNOWN;
 
     put(loop:Loop, params:any[]) {
 
@@ -85,10 +104,45 @@ class LoopStrategy implements AccumulatorStrategy {
     }
 
     toCode():string {
-        var dataName = this.rename ? 'dataOld' : 'data';
-        var rename = this.rename ? `var ${dataName} = data;\n` : '';
-        var indexModifier = this.reversed ? `${dataName}.length-1-` : '';
-        return `${rename}${this.before}${this.counts.join('')}for(var i = 0; i < ${dataName}.length; i++){\nvar x = ${dataName}[${indexModifier}i];\n${this.rows.join('\n')}${this.after}}`;
+        var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
+        var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
+        var loops:CodeText<void>;
+
+        var createLoop = (array:boolean):CodeText<void> => {
+            let currentIndex:CodeText<number> = this.reversed ? minus(minus(prop<number>(input, 'length'), literal(1)), index) : index;
+            var block:CodeText<void> = seq([
+                declare(current, prop(input, currentIndex)),
+                code(this.rows.join('')),
+                code(this.after)
+            ]);
+            if (array) {
+                return itar(input, block);
+            } else {
+                return itin(input, block);
+            }
+        };
+
+        if (this.type === CollectionType.ARRAY) {
+            loops = createLoop(true);
+        } else if (this.type === CollectionType.MAP) {
+            loops = createLoop(false);
+
+        } else {
+            loops = seq([
+                conditional(
+                    and(input, prop<boolean>(input, 'length')),
+                    createLoop(true),
+                    createLoop(false)
+                ), //todo no itin when empty array
+            ]);
+        }
+
+        return codeTextToString(seq([
+            rename,
+            code(this.before),
+            code(this.counts.join('')),
+            loops
+        ]), null);
     }
 
     private getLastCountName() {

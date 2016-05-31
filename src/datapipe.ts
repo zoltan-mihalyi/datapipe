@@ -40,7 +40,8 @@ import {
     codeTextToString,
     increment,
     literal,
-    cast
+    cast,
+    retSeq
 } from "./code-helpers";
 
 var filterMapBefore = setResult(array());
@@ -119,7 +120,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }) as any;
     }
 
-    take(cnt:number):ChildDataPipe<R,T,T> {
+    take(cnt:number):ChildDataPipe<R,T,T> { //todo disable for objects
         return this.subPipe<T>({
             rename: true, //todo calculate from codeText?
             usesCount: true,
@@ -465,7 +466,7 @@ function whereFilter<T extends {[index:string]:any}>(properties:T) {
     }
     statements.push(ret(trueValue));
 
-    var fn:string = codeTextToString(ret(func(['x'], seq(statements))), null); //todo inline
+    var fn:string = codeTextToString(ret(func(['x'], retSeq(statements))), null); //todo inline
     return (new Function('properties', fn))(properties);
 }
 

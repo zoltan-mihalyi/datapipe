@@ -11,6 +11,17 @@ describe('Test general usage', function() {
             .process([[1, 2], [3, 4]])
         ).toEqual([[2, 3], [4, 5]]);
     });
+
+    it('iterate object', function() {
+        expect(dp()
+            .pluck('x')
+            .process({
+                a: {x: 1},
+                b: {x: 2},
+                c: {x: 3}
+            })
+        ).toEqual([1, 2, 3])
+    });
 });
 
 describe('Test functions without chaining', function() {

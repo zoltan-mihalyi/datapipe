@@ -27,6 +27,10 @@ export function named<T>(name:string):CodeText<T> {
     return [name];
 }
 
+export function code<T>(code:string):CodeText<T> {
+    return [code];
+}
+
 export function literal<T extends string|number>(value:T):CodeText<T> {
     return [JSON.stringify(value)];
 }
@@ -54,8 +58,9 @@ export function call<T>(fn:CodeText<()=>T>, params?:CodeText<any>[], context?:Co
     return result;
 }
 
-export function conditional(condition:CodeText<boolean>, statement:CodeText<any>):CodeText<void> {
-    return ['if(', ...condition, '){', ...statement, '}'];
+export function conditional(condition:CodeText<boolean>, statement:CodeText<any>, elseStatement?:CodeText<any>):CodeText<void> {
+    var elseBranch = elseStatement ? ['else{', ...elseStatement, '}'] : empty;
+    return ['if(', ...condition, '){', ...statement, '}', ...elseBranch];
 }
 
 export function param<T>(param:T):CodeText<T> {
@@ -73,16 +78,17 @@ export function params<T>(params:T[]):CodeText<T>[] {
     return result;
 }
 
-export function seq<T>(texts:Array<CodeText<any>|CodeText<Ret<T>>>):CodeText<Ret<T>> {
-    var result:CodeText<Ret<T>> = [];
+export function seq(texts:CodeText<any>[]):CodeText<void> {
+    var result:CodeText<void> = [];
     for (var i = 0; i < texts.length; i++) {
         var text = texts[i];
         push.apply(result, text);
-        if (i < texts.length - 1 && result[result.length - 1] !== ';') {
-            result.push(';');
-        }
     }
     return result;
+}
+
+export function retSeq<T>(texts:CodeText<any|Ret<T>>[]):CodeText<Ret<T>> {
+    return seq(texts) as CodeText<any>;
 }
 
 export function array<T>(...values:CodeText<T>[]):CodeText<Array<T>> {
@@ -121,7 +127,7 @@ export function ternary<T>(condition:CodeText<boolean>, trueExpr:CodeText<T>, fa
 }
 
 export function declare<T>(variable:CodeText<T>, initial:CodeText<T>):CodeText<void> {
-    return [`var ${variable[0]}=`, ...initial]
+    return [`var ${variable[0]}=`, ...initial, ';']
 }
 
 export function setResult(value:CodeText<any>):CodeText<void> {
@@ -147,6 +153,22 @@ export function access(fn:string|Function, variable?:string):CodeText<any> {
 
 export function cast<T>(text:CodeText<any>):CodeText<T> {
     return text;
+}
+
+export function itar(array:CodeText<any[]>, block:CodeText<any>):CodeText<void> {
+    return ['for(', ...seq([
+        declare(index, literal(0)),
+        statement(lt(index, prop<number>(array, 'length'))),
+        increment(index)
+    ]), '){\n', ...block, '\n}'];
+}
+
+export function itin(array:CodeText<{[index:string]:any}>, block:CodeText<any>):CodeText<void> {
+    return ['for(var ', ...index, ' in ', ...array, '){\n', ...block, '\n}'];
+}
+
+export function statement(text:CodeText<any>):CodeText<void> {
+    return [...text, ';'];
 }
 
 function accessFunction<T>(fn:CodeText<()=>T>, context:CodeText<any>, params:CodeText<any>[]):CodeText<T> { //todo remove
@@ -187,6 +209,7 @@ export var neq = operator<any,boolean>('!==');
 export var lt = operator<number,boolean>('<');
 export var gt = operator<number, boolean>('>');
 export var minus = operator<number,number>('-');
+export var and = operator<boolean,boolean>('&&');
 
 export var not = prefixOperator<boolean,boolean>('!');
 export var increment = prefixOperator<number,number>('++');
@@ -194,6 +217,7 @@ export var increment = prefixOperator<number,number>('++');
 export var result = named<any>('data');
 export var current = named<any>('x');
 export var count = named<number>('count');
+export var index = named<number>('i');
 export var cont:CodeText<void> = ['continue;'];
 export var br:CodeText<void> = ['break;'];
 export var undef:CodeText<void> = ['void 0'];
