@@ -167,8 +167,8 @@ export function itin(array:CodeText<{[index:string]:any}>, block:CodeText<any>):
     return ['for(var ', ...index, ' in ', ...array, '){\n', ...block, '\n}'];
 }
 
-export function statement(text:CodeText<any>):CodeText<void> {
-    return [...text, ';'];
+export function statement(text:CodeText<any>, br?:boolean):CodeText<void> {
+    return [...text, ';' + (br ? '\n' : '')];
 }
 
 function accessFunction<T>(fn:CodeText<()=>T>, context:CodeText<any>, params:CodeText<any>[]):CodeText<T> { //todo remove

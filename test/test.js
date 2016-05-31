@@ -22,6 +22,37 @@ describe('Test general usage', function() {
             })
         ).toEqual([1, 2, 3])
     });
+
+    describe('Data type hints', function() {
+        it('Giving hint of data type causes shorter functions to be generated, and the shorter function produces the same result.', function() {
+            var pluckXArray = dp('array')
+                .pluck('x')
+                .fn();
+
+            var pluckX = dp()
+                .pluck('x')
+                .fn();
+
+            expect(pluckXArray.toString().length)
+                .toBeLessThan(pluckX.toString().length);
+
+            expect(pluckXArray([{x: 1}, {x: 2}]))
+                .toEqual([1, 2]);
+        });
+
+
+        it('When the previous step creates an array, the next step should not contain the object iteration, but should work.', function() {
+            var sortAndPluck = dp()
+                .sortBy('x')
+                .pluck('y')
+                .fn();
+
+            expect(sortAndPluck.toString()).not.toContain(' in ');
+
+            expect(sortAndPluck([{x: 2, y: 3}, {x: 1, y: 4}]))
+                .toEqual([4, 3]);
+        });
+    });
 });
 
 describe('Test functions without chaining', function() {

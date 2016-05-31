@@ -50,7 +50,9 @@ class LoopStrategy implements AccumulatorStrategy {
     private isCountDirty = false;
     private lastCountId = 0;
     private counts = [];
-    private type:CollectionType = CollectionType.UNKNOWN;
+
+    constructor(private type:CollectionType){
+    }
 
     put(loop:Loop, params:any[]) {
 
@@ -153,9 +155,9 @@ class LoopStrategy implements AccumulatorStrategy {
 class Accumulator {
     strategy:AccumulatorStrategy = null;
 
-    put(code:Code, params:any[]):void {
+    put(parentType:CollectionType,code:Code, params:any[]):void {
         if (this.strategy === null) {
-            this.strategy = new (strategyFactory(code))();
+            this.strategy = new (strategyFactory(code))(parentType);
         }
         this.strategy.put(code, params);
     }
@@ -187,7 +189,7 @@ function isLoop(code:Code):code is Loop {
     return !!(code as Loop).text;
 }
 
-function strategyFactory(code:Code):{new():AccumulatorStrategy} {
+function strategyFactory(code:Code):{new(parentType?:CollectionType):AccumulatorStrategy} {
     if (isLoop(code)) {
         return LoopStrategy;
     }
