@@ -35,6 +35,11 @@ export function literal<T extends string|number>(value:T):CodeText<T> {
     return [JSON.stringify(value)];
 }
 
+export function callParam<T>(fn:()=>T, context:any, params?:CodeText<any>[]):CodeText<T> {
+    var contextCodeText:CodeText<any> = context == null ? null : param(context);
+    return call(param(fn), params ? params : [current], contextCodeText);
+}
+
 export function call<T>(fn:CodeText<()=>T>, params?:CodeText<any>[], context?:CodeText<any>):CodeText<T> {
     var call:string;
     if (context) {
@@ -142,12 +147,12 @@ export function ret<T>(code:CodeText<T>):CodeText<Ret<T>> {
     return ['return ', ...code, ';'];
 }
 
-export function access(fn:string|Function, variable?:string):CodeText<any> {
-    variable = variable || 'x';
+export function access(fn:string|(()=>any), context?:any, variable?:CodeText<any>):CodeText<any> {
+    variable = variable || current;
     if (typeof fn === 'function') {
-        return accessFunction([[fn]], null, [[variable]]);
+        return callParam(fn, context, [variable]);
     } else {
-        return prop(named<{[idx:string]:any}>(variable), fn);
+        return prop(variable, fn);
     }
 }
 
@@ -169,27 +174,6 @@ export function itin(array:CodeText<{[index:string]:any}>, block:CodeText<any>):
 
 export function statement(text:CodeText<any>, br?:boolean):CodeText<void> {
     return [...text, ';' + (br ? '\n' : '')];
-}
-
-function accessFunction<T>(fn:CodeText<()=>T>, context:CodeText<any>, params:CodeText<any>[]):CodeText<T> { //todo remove
-    var call:string;
-    if (context) {
-        call = '.call';
-        params = [context].concat(params);
-    } else {
-        call = '';
-    }
-
-    var result:CodeText<T> = [...fn, call + '('];
-    for (var i = 0; i < params.length; i++) {
-        push.apply(result, params[i]);
-        if (i < params.length - 1) {
-            result.push(',');
-        }
-    }
-    result.push(')');
-
-    return result;
 }
 
 function operator<P,R>(op:string):(a:CodeText<P>, b:CodeText<P>)=>CodeText<R> {

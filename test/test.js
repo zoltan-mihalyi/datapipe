@@ -53,65 +53,131 @@ describe('Test general usage', function() {
                 .toEqual([4, 3]);
         });
     });
+
+    it('Calling functions with context should use .call, but without context should not.', function() {
+        expect(dp()
+            .map(function() {
+            }, {})
+            .fn()
+            .toString()
+        ).toContain('.call');
+
+        expect(dp()
+            .map(function() {
+            })
+            .fn()
+            .toString()
+        ).not.toContain('.call');
+    });
 });
 
 describe('Test functions without chaining', function() {
-    it('Mapping an array should return an array with items mapped with the function.', function() {
-        expect(dp().map(function(x) {
-            return x + 1;
-        }).process([-1, 0, 1])).toEqual([0, 1, 2]);
-    });
-
-    it('Filtering an array should return an array of the items matching the predicate.', function() {
-        expect(dp().filter(function(x) {
-            return x % 2 === 0;
-        }).process([0, 1, 2, 3, 4])).toEqual([0, 2, 4]);
-    });
-
-    it('Iterating over an array with "each" causes the function to be called with the items of the array as parameter.', function() {
-        var res = [];
-        dp().each(function(x) {
-            res.push(x);
-        }).process([0, 1, 2]);
-        expect(res).toEqual([0, 1, 2]);
-    });
-
-    it('Calling reduce should work as expected.', function() {
-        expect(dp().reduce(function(memo, x) {
-            return memo + x;
-        }, '').process(['1', '2', '3', '4', '5'])).toBe('12345');
-    });
-
-    it('Calling reduce with a non-primitive non-function object should fail', function() {
-        expect(function() {
-            dp().reduce(function() {
-            }, []);
-        }).toThrow();
-    });
-
-    it('Calling reduce with a provider function should ', function() {
-        var collect = dp().reduce(function(memo, x) {
-            memo.push(x);
-            return memo;
-        }, function() {
-            return [];
+    describe('map tests', function() {
+        it('Mapping an array should return an array with items mapped with the function.', function() {
+            expect(dp().map(function(x) {
+                return x + 1;
+            }).process([-1, 0, 1])).toEqual([0, 1, 2]);
         });
 
-        expect(collect.process([1, 2, 3])).toEqual([1, 2, 3]);
-        expect(collect.process([4, 5, 6])).toEqual([4, 5, 6]);
+        it('map with context', function() {
+            expect(dp().map(function(x) {
+                return x + this.value;
+            }, {value: 1}).process([-1, 0, 1])).toEqual([0, 1, 2]);
+        });
     });
 
-    it('Calling reduceRight should work as expected.', function() {
-        expect(dp().reduceRight(function(memo, x) {
-            return memo + x;
-        }, '').process(['a', 'b', 'c', 'd', 'e'])).toBe('edcba');
+    describe('filter tests', function() {
+        it('Filtering an array should return an array of the items matching the predicate.', function() {
+            expect(dp().filter(function(x) {
+                return x % 2 === 0;
+            }).process([0, 1, 2, 3, 4])).toEqual([0, 2, 4]);
+        });
+
+        it('filter with context', function() {
+            expect(dp().filter(function(x) {
+                return x % 2 === this.value;
+            }, {value: 0}).process([0, 1, 2, 3, 4])).toEqual([0, 2, 4]);
+        });
     });
+
+    describe('each tests', function() {
+        it('Iterating over an array with "each" causes the function to be called with the items of the array as parameter.', function() {
+            var res = [];
+            dp().each(function(x) {
+                res.push(x);
+            }).process([0, 1, 2]);
+            expect(res).toEqual([0, 1, 2]);
+        });
+
+        it('each with context', function() {
+            var res = [];
+            dp().each(function(x) {
+                this.push(x);
+            }, res).process([0, 1, 2]);
+            expect(res).toEqual([0, 1, 2]);
+        });
+    });
+
+    describe('reduce tests', function() {
+        it('Calling reduce should work as expected.', function() {
+            expect(dp().reduce(function(memo, x) {
+                return memo + x;
+            }, '').process(['1', '2', '3', '4', '5'])).toBe('12345');
+        });
+
+        it('reduce with context', function() {
+            expect(dp().reduce(function(memo, x) {
+                return memo + x + this.value;
+            }, '', {value: '-'}).process(['1', '2', '3', '4', '5'])).toBe('1-2-3-4-5-');
+        });
+
+        it('Calling reduce with a non-primitive non-function object should fail', function() {
+            expect(function() {
+                dp().reduce(function() {
+                }, []);
+            }).toThrow();
+        });
+
+        it('Calling reduce with a provider function', function() {
+            var collect = dp().reduce(function(memo, x) {
+                memo.push(x);
+                return memo;
+            }, function() {
+                return [];
+            });
+
+            expect(collect.process([1, 2, 3])).toEqual([1, 2, 3]);
+            expect(collect.process([4, 5, 6])).toEqual([4, 5, 6]);
+        });
+    });
+
+
+    describe('reduceRight tests', function() {
+        it('Calling reduceRight should work as expected.', function() {
+            expect(dp().reduceRight(function(memo, x) {
+                return memo + x;
+            }, '').process(['a', 'b', 'c', 'd', 'e'])).toBe('edcba');
+        });
+
+        it('reduceRight with context', function() {
+            expect(dp().reduceRight(function(memo, x) {
+                return memo + x + this.value;
+            }, '', {value: '-'}).process(['a', 'b', 'c', 'd', 'e'])).toBe('e-d-c-b-a-');
+        });
+    });
+
 
     describe('Test "find"', function() {
         it('Calling find should return the first item in the array matching the predicate.', function() {
             expect(dp().find(function(x) {
                 return x % 3 === 0;
             }).process([1, 2, 3, 4, 5, 6])).toBe(3);
+        });
+
+        it('find with context', function() {
+            expect(dp().find(function(x) {
+                return x % this.value === 0;
+            }, {value: 3}).process([1, 2, 3, 4, 5, 6])).toBe(3);
         });
 
         it('Calling find should return undefined when no items in the array are matching the predicate.', function() {
@@ -143,10 +209,18 @@ describe('Test functions without chaining', function() {
         expect(dp().findWhere({x: 1}).process([{x: 2}, {x: 2, y: 3}])).toBeUndefined();
     });
 
-    it('Rejecting an array should return an array of the items NOT matching the predicate.', function() {
-        expect(dp().reject(function(x) {
-            return x % 2 === 0;
-        }).process([0, 1, 2, 3, 4, 5])).toEqual([1, 3, 5]);
+    describe('reject tests', function() {
+        it('Rejecting an array should return an array of the items NOT matching the predicate.', function() {
+            expect(dp().reject(function(x) {
+                return x % 2 === 0;
+            }).process([0, 1, 2, 3, 4, 5])).toEqual([1, 3, 5]);
+        });
+
+        it('reject with context', function() {
+            expect(dp().reject(function(x) {
+                return x % 2 === this.value;
+            }, {value: 0}).process([0, 1, 2, 3, 4, 5])).toEqual([1, 3, 5]);
+        });
     });
 
     describe('every tests', function() {
@@ -155,6 +229,15 @@ describe('Test functions without chaining', function() {
                 .every(function(x) {
                     return x % 2 === 0;
                 })
+                .process([2, 4, 6, 8])
+            ).toBe(true);
+        });
+
+        it('every with context', function() {
+            expect(dp()
+                .every(function(x) {
+                    return x % this.value === 0;
+                }, {value: 2})
                 .process([2, 4, 6, 8])
             ).toBe(true);
         });
@@ -185,6 +268,15 @@ describe('Test functions without chaining', function() {
                 .some(function(x) {
                     return x % 2 === 0;
                 })
+                .process([1, 3, 5, 7])
+            ).toBe(false);
+        });
+
+        it('some with context', function() {
+            expect(dp()
+                .some(function(x) {
+                    return x % this.value === 0;
+                }, {value: 2})
                 .process([1, 3, 5, 7])
             ).toBe(false);
         });
@@ -327,6 +419,19 @@ describe('Test functions without chaining', function() {
             ).toEqual({x: 1});
         });
 
+        it('min with context', function() {
+            console.log(dp()
+                    .min(function(x) {
+                        return x[this];
+                    }, 'x').fn() + '');
+            expect(dp()
+                .min(function(x) {
+                    return x[this];
+                }, 'x')
+                .process([{x: 3}, {x: 2}, {x: 1}, {x: 4}])
+            ).toEqual({x: 1});
+        });
+
         it('min with property', function() {
             expect(dp()
                 .min('x')
@@ -362,6 +467,15 @@ describe('Test functions without chaining', function() {
                 .max(function(x) {
                     return x.x;
                 })
+                .process([{x: 3}, {x: 2}, {x: 4}, {x: 1}])
+            ).toEqual({x: 4});
+        });
+
+        it('max with context', function() {
+            expect(dp()
+                .max(function(x) {
+                    return x[this];
+                }, 'x')
                 .process([{x: 3}, {x: 2}, {x: 4}, {x: 1}])
             ).toEqual({x: 4});
         });
@@ -411,6 +525,15 @@ describe('Test functions without chaining', function() {
                 .process(data)
             ).toEqual(afterGroup);
         });
+
+        it('groupBy with context', function() {
+            expect(dp()
+                .groupBy(function(x) {
+                    return x[this];
+                }, 'x')
+                .process(data)
+            ).toEqual(afterGroup);
+        });
     });
 
     describe('indexBy tests', function() {
@@ -436,6 +559,15 @@ describe('Test functions without chaining', function() {
                 .process(data)
             ).toEqual(afterInfex);
         });
+
+        it('indexBy with context', function() {
+            expect(dp()
+                .indexBy(function(x) {
+                    return x[this];
+                }, 'x')
+                .process(data)
+            ).toEqual(afterInfex);
+        });
     });
 
     describe('sortBy tests', function() {
@@ -451,6 +583,15 @@ describe('Test functions without chaining', function() {
                 .sortBy(function(x) {
                     return Math.sin(x);
                 })
+                .process([1, 2, 3, 4, 5, 6])
+            ).toEqual([5, 4, 6, 3, 1, 2]);
+        });
+
+        it('sortBy with context', function() {
+            expect(dp()
+                .sortBy(function(x) {
+                    return this.sin(x);
+                }, Math)
                 .process([1, 2, 3, 4, 5, 6])
             ).toEqual([5, 4, 6, 3, 1, 2]);
         });
@@ -491,6 +632,18 @@ describe('Test functions without chaining', function() {
                 .countBy(function(x) {
                     return x % 2 === 0 ? 'even' : 'odd';
                 })
+                .process([1, 2, 3, 4, 5])
+            ).toEqual({
+                even: 2,
+                odd: 3
+            });
+        });
+
+        it('countBy with context', function() {
+            expect(dp()
+                .countBy(function(x) {
+                    return x % this.value === 0 ? 'even' : 'odd';
+                }, {value: 2})
                 .process([1, 2, 3, 4, 5])
             ).toEqual({
                 even: 2,
