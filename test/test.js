@@ -431,10 +431,6 @@ describe('Test functions without chaining', function() {
         });
 
         it('min with context', function() {
-            console.log(dp()
-                    .min(function(x) {
-                        return x[this];
-                    }, 'x').fn() + '');
             expect(dp()
                 .min(function(x) {
                     return x[this];
