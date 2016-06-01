@@ -13,6 +13,8 @@
     "grunt": "^1.0.1",
     "grunt-contrib-clean": "^1.0.0",
     "grunt-jasmine-nodejs": "^1.5.3",
-    "grunt-ts": "^5.5.1"
+    "grunt-ts": "^5.5.1",
+    "grunt-tslint": "^3.1.0",
+    "tslint": "^3.10.2"
   }
 }

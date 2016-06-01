@@ -1,6 +1,43 @@
 var push = Array.prototype.push;
 
-//todo generic CodeText?
+export type Operator<P,R> = (a:CodeText<P>, b:CodeText<P>) => CodeText<R>;
+
+function operator<P,R>(op:string):Operator<P,R> {
+    return function (a:CodeText<P>, b:CodeText<P>):CodeText<R> {
+        return [...a, op, ...b];
+    };
+}
+
+function prefixOperator<I,O>(prefix) {
+    return function (text:CodeText<I>):CodeText<O> {
+        return [prefix, ...text];
+    };
+}
+
+export var eql = operator<any,boolean>('==');
+export var neq = operator<any,boolean>('!==');
+export var lt = operator<number,boolean>('<');
+export var gt = operator<number, boolean>('>');
+export var minus = operator<number,number>('-');
+export var and = operator<boolean,boolean>('&&');
+
+export var not = prefixOperator<boolean,boolean>('!');
+export var increment = prefixOperator<number,number>('++');
+
+
+export var result = named<any>('data');
+export var current = named<any>('x');
+export var count = named<number>('count');
+export var index = named<number>('i');
+export var cont:CodeText<void> = ['continue;'];
+export var br:CodeText<void> = ['break;'];
+export var undef:CodeText<void> = ['void 0'];
+export var nullValue:CodeText<void> = ['null'];
+export var infinity:CodeText<number> = ['Infinity'];
+export var negativeInfinity:CodeText<number> = ['-Infinity'];
+export var trueValue:CodeText<boolean> = ['true'];
+export var falseValue:CodeText<boolean> = ['false'];
+export var empty:CodeText<void> = [];
 
 export function paramName(index:number) {
     return '_p' + index;
@@ -116,7 +153,9 @@ export function obj():CodeText<{}> {
     return ['{}'];
 }
 
-export function prop<T>(object:CodeText<{[index:string]:T}|{[index:number]:T}>, property:string|number|CodeText<string|number>):CodeText<T> {
+type Indexable<T> = {[index:string]:T}|{[index:number]:T};
+
+export function prop<T>(object:CodeText<Indexable<T>>, property:string|number|CodeText<string|number>):CodeText<T> {
     if (typeof property === 'object') {
         return [...object, '[', ...property, ']'];
     }
@@ -132,7 +171,7 @@ export function ternary<T>(condition:CodeText<boolean>, trueExpr:CodeText<T>, fa
 }
 
 export function declare<T>(variable:CodeText<T>, initial:CodeText<T>):CodeText<void> {
-    return [`var ${variable[0]}=`, ...initial, ';']
+    return [`var ${variable[0]}=`, ...initial, ';'];
 }
 
 export function setResult(value:CodeText<any>):CodeText<void> {
@@ -175,39 +214,3 @@ export function itin(array:CodeText<{[index:string]:any}>, block:CodeText<any>):
 export function statement(text:CodeText<any>, br?:boolean):CodeText<void> {
     return [...text, ';' + (br ? '\n' : '')];
 }
-
-function operator<P,R>(op:string):(a:CodeText<P>, b:CodeText<P>)=>CodeText<R> {
-    return function (a:CodeText<P>, b:CodeText<P>):CodeText<R> {
-        return [...a, op, ...b];
-    };
-}
-
-function prefixOperator<I,O>(prefix) {
-    return function (text:CodeText<I>):CodeText<O> {
-        return [prefix, ...text];
-    }
-}
-
-export var eql = operator<any,boolean>('==');
-export var neq = operator<any,boolean>('!==');
-export var lt = operator<number,boolean>('<');
-export var gt = operator<number, boolean>('>');
-export var minus = operator<number,number>('-');
-export var and = operator<boolean,boolean>('&&');
-
-export var not = prefixOperator<boolean,boolean>('!');
-export var increment = prefixOperator<number,number>('++');
-
-export var result = named<any>('data');
-export var current = named<any>('x');
-export var count = named<number>('count');
-export var index = named<number>('i');
-export var cont:CodeText<void> = ['continue;'];
-export var br:CodeText<void> = ['break;'];
-export var undef:CodeText<void> = ['void 0'];
-export var nullValue:CodeText<void> = ['null'];
-export var infinity:CodeText<number> = ['Infinity'];
-export var negativeInfinity:CodeText<number> = ['-Infinity'];
-export var trueValue:CodeText<boolean> = ['true'];
-export var falseValue:CodeText<boolean> = ['false'];
-export var empty:CodeText<void> = [];

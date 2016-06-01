@@ -1,3 +1,3 @@
-export enum CollectionType{
+export enum CollectionType {
     ARRAY, MAP, UNKNOWN
 }

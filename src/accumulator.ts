@@ -51,7 +51,7 @@ class LoopStrategy implements AccumulatorStrategy {
     private lastCountId = 0;
     private counts = [];
 
-    constructor(private type:CollectionType){
+    constructor(private type:CollectionType) {
     }
 
     put(loop:Loop, params:any[]) {
@@ -72,33 +72,6 @@ class LoopStrategy implements AccumulatorStrategy {
         if (this.reversed === null) {
             this.reversed = !!loop.reversed;
         }
-    }
-
-    private handleCount(loop:Loop, text:CodeText<any>) {
-        if (loop.changesCount) {
-            this.isCountDirty = true;
-        }
-        if (loop.usesCount) {
-            let countName:string;
-
-            if (this.isCountDirty) {
-                this.lastCountId++;
-            }
-
-            if (!this.isCountDirty && this.counts.length === 0) {
-                countName = '(i+1)';
-            } else {
-                countName = this.getLastCountName();
-            }
-
-            if (this.isCountDirty) {
-                this.counts.push(`var ${countName} = 0;\n`);
-                this.rows.push(`${countName}++;`);
-                this.isCountDirty = false;
-            }
-            text = copyAndReplace(text, /count/g, countName);
-        }
-        return text;
     }
 
     canPut(code:Loop):boolean {
@@ -147,6 +120,33 @@ class LoopStrategy implements AccumulatorStrategy {
         ]), null);
     }
 
+    private handleCount(loop:Loop, text:CodeText<any>) {
+        if (loop.changesCount) {
+            this.isCountDirty = true;
+        }
+        if (loop.usesCount) {
+            let countName:string;
+
+            if (this.isCountDirty) {
+                this.lastCountId++;
+            }
+
+            if (!this.isCountDirty && this.counts.length === 0) {
+                countName = '(i+1)';
+            } else {
+                countName = this.getLastCountName();
+            }
+
+            if (this.isCountDirty) {
+                this.counts.push(`var ${countName} = 0;\n`);
+                this.rows.push(`${countName}++;`);
+                this.isCountDirty = false;
+            }
+            text = copyAndReplace(text, /count/g, countName);
+        }
+        return text;
+    }
+
     private getLastCountName() {
         return `i_${this.lastCountId}`;
     }
@@ -155,7 +155,7 @@ class LoopStrategy implements AccumulatorStrategy {
 class Accumulator {
     strategy:AccumulatorStrategy = null;
 
-    put(parentType:CollectionType,code:Code, params:any[]):void {
+    put(parentType:CollectionType, code:Code, params:any[]):void {
         if (this.strategy === null) {
             this.strategy = new (strategyFactory(code))(parentType);
         }

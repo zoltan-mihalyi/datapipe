@@ -43,7 +43,8 @@ import {
     cast,
     retSeq,
     statement,
-    callParam
+    callParam,
+    Operator
 } from "./code-helpers";
 import {CollectionType} from "./common";
 
@@ -238,7 +239,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     indexBy(fn:string|((x?:T)=>string|number), context?:any):ChildDataPipe<R,T,T> {
-        return this.reduceLike<T>(CollectionType.MAP, setResult(obj()), assign(prop(result, access(fn, context)), current), false); //todo dont care order?
+        var assignment = assign(prop(result, access(fn, context)), current);
+        return this.reduceLike<T>(CollectionType.MAP, setResult(obj()), assignment, false); //todo dont care order?
     }
 
     sortBy(fn:string|((x?:T)=>number), context?:any):ChildDataPipe<R,T,T> {
@@ -275,6 +277,14 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         ]), false);
     }
 
+    abstract process(data:R[]):T[];
+
+    abstract getSteps():Step[];
+
+    abstract compile():DataPipe<R,P,T>;
+
+    abstract fn():Mapper<R, T>;
+
     private filterLike(predicate:(t?:T) => boolean, context:any, inverted?:boolean):ChildDataPipe<R,T,T> {
         var condition:CodeText<boolean> = callParam(predicate, context);
         if (!inverted) {
@@ -294,7 +304,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         });
     }
 
-    private edge(initial:CodeText<number>, operator:(l:CodeText<number>, r:CodeText<number>)=>CodeText<boolean>, fn?:string|((x?:T)=>number), context?:any):DataPipeResult<R,any> {
+    private edge(initial:CodeText<number>, operator:Operator<number,boolean>,
+                 fn?:string|((x?:T)=>number), context?:any):DataPipeResult<R,any> {
         var initialize = setResult(initial);
         if (!fn) {
             return this.reduceLike(CollectionType.UNKNOWN, initialize, conditional(
@@ -358,12 +369,13 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         var initial:CodeText<M|Provider<M>> = param(memo);
         if (!isPrimitive(memo)) {
             if (typeof memo !== 'function') {
-                throw new Error('The memo should be primitive, or a provider function, otherwise reusing the datapipe should produce unexpected results.');
+                throw new Error('The memo should be primitive, or a provider function.');
             } else {
                 initial = call(initial as CodeText<()=>M>);
             }
         }
-        return this.reduceLike(CollectionType.UNKNOWN, setResult(initial), setResult(callParam(reducer, context, [result, current])), reversed);
+        var text:CodeText<void> = setResult(callParam(reducer, context, [result, current]));
+        return this.reduceLike(CollectionType.UNKNOWN, setResult(initial), text, reversed);
     }
 
     private reduceLike<X>(type:CollectionType, initialize:CodeText<any>, text:CodeText<any>, reversed:boolean):ChildDataPipe<R,T,X> {
@@ -375,16 +387,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeStart: !reversed,
             mergeEnd: false,
             reversed: reversed
-        })
+        });
     }
-
-    abstract process(data:R[]):T[];
-
-    abstract getSteps():Step[];
-
-    abstract compile():DataPipe<R,P,T>;
-
-    abstract fn():Mapper<R,T>;
 
     private subPipe<X>(type:CollectionType, code:Code):ChildDataPipe<R,T,X> {
         return new ChildDataPipe<R,T,X>(type, this, code);
@@ -414,6 +418,15 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
         return this.compile().processor;
     }
 
+    getSteps():Step[] {
+        var codes = this.parent.getSteps();
+        codes.push({
+            code: this.code,
+            parentType: this.parent.type
+        });
+        return codes;
+    }
+
     private createProcessor():Mapper<R,T> {
         var steps:Step[] = this.getSteps();
 
@@ -435,15 +448,6 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
             paramNames.push(paramName(i));
         }
         return (new Function(paramNames.join(','), fnBody)).apply(null, params);
-    }
-
-    getSteps():Step[] {
-        var codes = this.parent.getSteps();
-        codes.push({
-            code: this.code,
-            parentType: this.parent.type
-        });
-        return codes;
     }
 }
 
@@ -499,4 +503,4 @@ export = <T>(typeName?:string) => {
         type = CollectionType.UNKNOWN;
     }
     return new RootDataPipe<any>(type);
-}
+};

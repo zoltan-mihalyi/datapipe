@@ -18,12 +18,21 @@ module.exports = function(grunt) {
             compile: {
                 tsconfig: '.'
             }
+        },
+        tslint: {
+            options: {
+                configuration: 'tslint.json'
+            },
+            check: {
+                src: ['src/**/*.ts']
+            }
         }
     });
 
     grunt.loadNpmTasks('grunt-jasmine-nodejs');
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-ts');
+    grunt.loadNpmTasks('grunt-tslint');
 
     grunt.registerTask('test', ['jasmine_nodejs']);
     grunt.registerTask('build', ['clean', 'ts']);
