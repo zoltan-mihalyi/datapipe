@@ -23,6 +23,17 @@ describe('Test general usage', function() {
         ).toEqual([1, 2, 3])
     });
 
+    it('iterate as object when length property is not number', function() {
+        expect(dp()
+            .pluck('x')
+            .process({
+                a: {x: 1},
+                b: {x: 2},
+                length: {x: 3}
+            })
+        ).toEqual([1, 2, 3])
+    });
+
     describe('Data type hints', function() {
         it('Giving hint of data type causes shorter functions to be generated, and the shorter function produces the same result.', function() {
             var pluckXArray = dp('array')

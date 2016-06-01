@@ -18,6 +18,7 @@ import {
     conditional,
     and
 } from "./code-helpers";
+import {type} from "./code-helpers";
 interface AccumulatorStrategy {
     put(code:Code, params:any[]):void;
     canPut(code:Code):boolean;
@@ -105,10 +106,10 @@ class LoopStrategy implements AccumulatorStrategy {
         } else {
             loops = seq([
                 conditional(
-                    and(input, prop<boolean>(input, 'length')),
+                    and(input, type(prop<boolean>(input, 'length'), 'number')),
                     createLoop(true),
                     createLoop(false)
-                ), //todo no itin when empty array
+                ),
             ]);
         }
 

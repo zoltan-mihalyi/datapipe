@@ -15,6 +15,7 @@ function prefixOperator<I,O>(prefix) {
 }
 
 export var eql = operator<any,boolean>('==');
+export var eq = operator<any,boolean>('===');
 export var neq = operator<any,boolean>('!==');
 export var lt = operator<number,boolean>('<');
 export var gt = operator<number, boolean>('>');
@@ -197,6 +198,10 @@ export function access(fn:string|(()=>any), context?:any, variable?:CodeText<any
 
 export function cast<T>(text:CodeText<any>):CodeText<T> {
     return text;
+}
+
+export function type(text:CodeText<any>, type:string):CodeText<boolean> {
+    return ['typeof ', ...eq(text, literal(type))];
 }
 
 export function itar(array:CodeText<any[]>, block:CodeText<any>):CodeText<void> {
