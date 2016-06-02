@@ -16,9 +16,11 @@ import {
     literal,
     minus,
     conditional,
-    and
+    and,
+    type,
+    increment
 } from "./code-helpers";
-import {type} from "./code-helpers";
+import {statement} from "./code-helpers";
 interface AccumulatorStrategy {
     put(code:Code, params:any[]):void;
     canPut(code:Code):boolean;
@@ -48,9 +50,8 @@ class LoopStrategy implements AccumulatorStrategy {
     private lastMergeEnd = true;
     private reversed:boolean = null;
     private rename = false;
-    private isCountDirty = false;
-    private lastCountId = 0;
-    private counts = [];
+    private isIndexDirty = false;
+    private indexDeclarations:CodeText<any>[] = [];
 
     constructor(private type:CollectionType) {
     }
@@ -60,7 +61,12 @@ class LoopStrategy implements AccumulatorStrategy {
         var text:CodeText<any> = loop.text;
         this.lastMergeEnd = loop.mergeEnd;
 
-        text = this.handleCount(loop, text);
+        if (loop.changesCount) {
+            this.isIndexDirty = true;
+        }
+        if (loop.usesIndex) {
+            text = this.replaceIndex(text);
+        }
 
         this.rows.push(codeTextToString(text, params));
         if (loop.before) {
@@ -116,40 +122,33 @@ class LoopStrategy implements AccumulatorStrategy {
         return codeTextToString(seq([
             rename,
             code(this.before),
-            code(this.counts.join('')),
+            seq(this.indexDeclarations),
             loops
         ]), null);
     }
 
-    private handleCount(loop:Loop, text:CodeText<any>) {
-        if (loop.changesCount) {
-            this.isCountDirty = true;
+    private replaceIndex(text:CodeText<any>):CodeText<any> { //todo take with object
+        var indexName:string;
+        if (this.isIndexDirty) {
+            indexName = this.getNextIndexName();
+            let indexVariable = named<number>(indexName);
+            this.indexDeclarations.push(declare(indexVariable, literal(-1)));
+            this.rows.push(codeTextToString(statement(increment(indexVariable)), null)); //todo
+            this.isIndexDirty = false;
+        } else if (this.indexDeclarations.length > 0) {
+            indexName = this.getIndexName();
+        } else {
+            return text;
         }
-        if (loop.usesCount) {
-            let countName:string;
-
-            if (this.isCountDirty) {
-                this.lastCountId++;
-            }
-
-            if (!this.isCountDirty && this.counts.length === 0) {
-                countName = '(i+1)';
-            } else {
-                countName = this.getLastCountName();
-            }
-
-            if (this.isCountDirty) {
-                this.counts.push(`var ${countName} = 0;\n`);
-                this.rows.push(`${countName}++;`);
-                this.isCountDirty = false;
-            }
-            text = copyAndReplace(text, /count/g, countName);
-        }
-        return text;
+        return copyAndReplaceIndexNames(text, indexName);
     }
 
-    private getLastCountName() {
-        return `i_${this.lastCountId}`;
+    private getNextIndexName() {
+        return this.getIndexName(true);
+    }
+
+    private getIndexName(next?:boolean) {
+        return `i_${this.indexDeclarations.length + (next ? 1 : 0)}`;
     }
 }
 
@@ -174,12 +173,13 @@ class Accumulator {
     }
 }
 
-function copyAndReplace(codeText:CodeText<any>, search:RegExp, replacement):CodeText<any> { //todo change
+function copyAndReplaceIndexNames(codeText:CodeText<any>, newIndexName:string):CodeText<any> {
     var result = [];
+    var originalIndexName = index[0];
     for (var i = 0; i < codeText.length; i++) {
         let fragment = codeText[i];
-        if (typeof fragment === 'string') {
-            fragment = (fragment as string).replace(search, replacement);
+        if (fragment === originalIndexName) {
+            fragment = newIndexName;
         }
         result.push(fragment);
     }

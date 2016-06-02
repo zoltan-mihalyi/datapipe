@@ -8,7 +8,7 @@ function operator<P,R>(op:string):Operator<P,R> {
     };
 }
 
-function prefixOperator<I,O>(prefix) {
+function prefixOperator<I,O>(prefix):(text:CodeText<I>)=>CodeText<O> {
     return function (text:CodeText<I>):CodeText<O> {
         return [prefix, ...text];
     };
@@ -19,6 +19,7 @@ export var eq = operator<any,boolean>('===');
 export var neq = operator<any,boolean>('!==');
 export var lt = operator<number,boolean>('<');
 export var gt = operator<number, boolean>('>');
+export var gte = operator<number, boolean>('>=');
 export var minus = operator<number,number>('-');
 export var and = operator<boolean,boolean>('&&');
 
@@ -28,7 +29,6 @@ export var increment = prefixOperator<number,number>('++');
 
 export var result = named<any>('data');
 export var current = named<any>('x');
-export var count = named<number>('count');
 export var index = named<number>('i');
 export var cont:CodeText<void> = ['continue;'];
 export var br:CodeText<void> = ['break;'];

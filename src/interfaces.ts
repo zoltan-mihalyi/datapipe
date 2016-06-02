@@ -12,7 +12,7 @@ interface Loop {
     mergeEnd:boolean;
     reversed?:boolean;
     rename?:boolean;
-    usesCount?:boolean;
+    usesIndex?:boolean;
     changesCount?:boolean;
 }
 

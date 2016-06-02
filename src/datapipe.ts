@@ -14,7 +14,8 @@ import {
     empty,
     seq,
     br,
-    count,
+    index,
+    gte,
     lt,
     array,
     prop,
@@ -121,11 +122,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     take(cnt:number):ChildDataPipe<R,T,T> { //todo disable for objects
         return this.subPipe<T>(CollectionType.ARRAY, {
             rename: true, //todo calculate from codeText?
-            usesCount: true,
+            usesIndex: true,
             before: filterMapBefore,
             after: filterMapAfter,
             text: conditional(
-                gt(count, param(cnt)),
+                gte(index, param(cnt)),
                 br
             ),
             mergeStart: true,
