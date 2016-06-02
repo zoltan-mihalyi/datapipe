@@ -15,7 +15,7 @@
     "grunt-jasmine-node-coverage": "^0.5.0",
     "grunt-ts": "^5.5.1",
     "grunt-tslint": "^3.1.0",
-    "remap-istanbul": "^0.6.4",
+    "remap-istanbul": "zoltan-mihalyi/remap-istanbul",
     "tslint": "^3.10.2"
   }
 }
