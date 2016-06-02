@@ -12,7 +12,6 @@ interface Loop {
     mergeEnd:boolean;
     reversed?:boolean;
     rename?:boolean;
-    usesIndex?:boolean;
     changesIndex?:boolean;
 }
 

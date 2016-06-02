@@ -1,5 +1,6 @@
 //todo no index, no list!
 //todo asm.js
+//todo inline no closure functions or functions as string
 import Accumulator = require("./accumulator");
 import {
     assign,
@@ -45,7 +46,8 @@ import {
     retSeq,
     statement,
     callParam,
-    Operator
+    Operator,
+    arrayIndex
 } from "./code-helpers";
 import {CollectionType} from "./common";
 
@@ -122,11 +124,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     take(cnt:number):ChildDataPipe<R,T,T> {
         return this.subPipe<T>(CollectionType.ARRAY, {
             rename: true, //todo calculate from codeText?
-            usesIndex: true,
             before: filterMapBefore,
             after: filterMapAfter,
             text: conditional(
-                gte(index, param(cnt)),
+                gte(arrayIndex, param(cnt)),
                 br
             ),
             mergeStart: true,
@@ -375,7 +376,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 initial = call(initial as CodeText<()=>M>);
             }
         }
-        var text:CodeText<void> = setResult(callParam(reducer, context, [result, current]));
+        var text:CodeText<void> = setResult(callParam(reducer, context, [result, current, index]));
         return this.reduceLike(CollectionType.UNKNOWN, setResult(initial), text, reversed);
     }
 

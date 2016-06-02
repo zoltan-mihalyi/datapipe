@@ -18,8 +18,13 @@ import {
     and,
     type,
     increment,
-    statement
+    statement,
+    arrayIndex
 } from "./code-helpers";
+
+var arrayIndexName:string = arrayIndex[0] as string;
+var indexName:string = index[0] as string;
+
 interface AccumulatorStrategy {
     put(code:Code):void;
     canPut(code:Code):boolean;
@@ -60,11 +65,12 @@ class LoopStrategy implements AccumulatorStrategy {
         var text:CodeText<any> = loop.text;
         this.lastMergeEnd = loop.mergeEnd;
 
+        if (containsIndex(text, true)) {
+            text = this.replaceIndex(text);
+        }
+
         if (loop.changesIndex) {
             this.isIndexDirty = true;
-        }
-        if (loop.usesIndex) {
-            text = this.replaceIndex(text);
         }
 
         this.rows.push(text);
@@ -107,7 +113,6 @@ class LoopStrategy implements AccumulatorStrategy {
             loops = createLoop(true);
         } else if (this.type === CollectionType.MAP) {
             loops = createLoop(false);
-
         } else {
             loops = seq([
                 conditional(
@@ -127,19 +132,24 @@ class LoopStrategy implements AccumulatorStrategy {
     }
 
     private replaceIndex(text:CodeText<any>):CodeText<any> {
-        var indexName:string;
-        if (this.isIndexDirty || this.type !== CollectionType.ARRAY) {
-            indexName = this.getNextIndexName();
-            let indexVariable = named<number>(indexName);
+        var newIndexName:string;
+        var containsArrayIndex = containsIndex(text, false);
+        var replaceNormalIndexes = this.isIndexDirty;
+        if (replaceNormalIndexes || (this.type !== CollectionType.ARRAY && containsArrayIndex)) {//todo we should defer this until adding to loop in order to use loop type.
+            newIndexName = this.getNextIndexName();
+            let indexVariable = named<number>(newIndexName);
             this.indexDeclarations.push(declare(indexVariable, literal(-1)));
             this.rows.push(statement(increment(indexVariable)));
             this.isIndexDirty = false;
         } else if (this.indexDeclarations.length > 0) {
-            indexName = this.getIndexName();
+            newIndexName = this.getIndexName();
         } else {
+            if (containsArrayIndex) {
+                return copyAndReplaceIndexNames(text, indexName, false);
+            }
             return text;
         }
-        return copyAndReplaceIndexNames(text, indexName);
+        return copyAndReplaceIndexNames(text, newIndexName, replaceNormalIndexes);
     }
 
     private getNextIndexName() {
@@ -172,12 +182,11 @@ class Accumulator {
     }
 }
 
-function copyAndReplaceIndexNames(codeText:CodeText<any>, newIndexName:string):CodeText<any> {
+function copyAndReplaceIndexNames(codeText:CodeText<any>, newIndexName:string, replaceNormalIndexes:boolean):CodeText<any> {
     var result = [];
-    var originalIndexName = index[0];
     for (var i = 0; i < codeText.length; i++) {
         let fragment = codeText[i];
-        if (fragment === originalIndexName) {
+        if (fragment === arrayIndexName || (replaceNormalIndexes && fragment === indexName)) {
             fragment = newIndexName;
         }
         result.push(fragment);
@@ -194,6 +203,16 @@ function strategyFactory(code:Code):{new(parentType?:CollectionType):Accumulator
         return LoopStrategy;
     }
     return SimpleStrategy;
+}
+
+function containsIndex(text:CodeText<any>, considerNormalIndexes:boolean) {
+    for (var i = 0; i < text.length; i++) {
+        var fragment = text[i];
+        if (fragment === arrayIndexName || (considerNormalIndexes && fragment === indexName)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export = Accumulator;

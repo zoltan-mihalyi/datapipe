@@ -30,6 +30,7 @@ export var increment = prefixOperator<number,number>('++');
 export var result = named<any>('data');
 export var current = named<any>('x');
 export var index = named<number>('i');
+export var arrayIndex = named<number>('arrayIndex');
 export var cont:CodeText<void> = ['continue;'];
 export var br:CodeText<void> = ['break;'];
 export var undef:CodeText<void> = ['void 0'];
@@ -77,7 +78,10 @@ export function literal<T extends string|number>(value:T):CodeText<T> {
 
 export function callParam<T>(fn:()=>T, context:any, params?:CodeText<any>[]):CodeText<T> {
     var contextCodeText:CodeText<any> = context == null ? null : param(context);
-    return call(param(fn), params ? params : [current], contextCodeText);
+
+    var usedParams:CodeText<any>[] = getUsedParams(fn, params ? params : [current, index]);
+
+    return call(param(fn), usedParams, contextCodeText);
 }
 
 export function call<T>(fn:CodeText<()=>T>, params?:CodeText<any>[], context?:CodeText<any>):CodeText<T> {
@@ -101,6 +105,13 @@ export function call<T>(fn:CodeText<()=>T>, params?:CodeText<any>[], context?:Co
     result.push(')');
 
     return result;
+}
+
+function getUsedParams(fn:Function, params:CodeText<any>[]):CodeText<any>[] {
+    if (fn.length < params.length && Function.prototype.toString.call(fn).indexOf('arguments') === -1) {
+        return params.slice(0, fn.length);
+    }
+    return params;
 }
 
 export function conditional(condition:CodeText<boolean>, statement:CodeText<any>, elseStatement?:CodeText<any>):CodeText<void> {
@@ -190,9 +201,10 @@ export function ret<T>(code:CodeText<T>):CodeText<Ret<T>> {
 }
 
 export function access(fn:string|(()=>any), context?:any, variable?:CodeText<any>):CodeText<any> {
+    var customVariable:boolean = !!variable;
     variable = variable || current;
     if (typeof fn === 'function') {
-        return callParam(fn, context, [variable]);
+        return callParam(fn, context, customVariable ? [variable] : [variable, index]);
     } else {
         return prop(variable, fn);
     }
