@@ -17,9 +17,9 @@ import {
     conditional,
     and,
     type,
-    increment
+    increment,
+    statement
 } from "./code-helpers";
-import {statement} from "./code-helpers";
 interface AccumulatorStrategy {
     put(code:Code):void;
     canPut(code:Code):boolean;
@@ -60,7 +60,7 @@ class LoopStrategy implements AccumulatorStrategy {
         var text:CodeText<any> = loop.text;
         this.lastMergeEnd = loop.mergeEnd;
 
-        if (loop.changesCount) {
+        if (loop.changesIndex) {
             this.isIndexDirty = true;
         }
         if (loop.usesIndex) {
@@ -108,7 +108,7 @@ class LoopStrategy implements AccumulatorStrategy {
         } else if (this.type === CollectionType.MAP) {
             loops = createLoop(false);
 
-        } else {
+        } else { //todo reuse parameters!!!
             loops = seq([
                 conditional(
                     and(input, type(prop<boolean>(input, 'length'), 'number')),
@@ -126,9 +126,9 @@ class LoopStrategy implements AccumulatorStrategy {
         ]), params);
     }
 
-    private replaceIndex(text:CodeText<any>):CodeText<any> { //todo take with object
+    private replaceIndex(text:CodeText<any>):CodeText<any> {
         var indexName:string;
-        if (this.isIndexDirty) {
+        if (this.isIndexDirty || this.type !== CollectionType.ARRAY) {
             indexName = this.getNextIndexName();
             let indexVariable = named<number>(indexName);
             this.indexDeclarations.push(declare(indexVariable, literal(-1)));

@@ -1,4 +1,4 @@
-//todo no context, no index, no list!
+//todo no index, no list!
 //todo asm.js
 import Accumulator = require("./accumulator");
 import {
@@ -119,7 +119,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }) as any;
     }
 
-    take(cnt:number):ChildDataPipe<R,T,T> { //todo disable for objects
+    take(cnt:number):ChildDataPipe<R,T,T> {
         return this.subPipe<T>(CollectionType.ARRAY, {
             rename: true, //todo calculate from codeText?
             usesIndex: true,
@@ -293,7 +293,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }
         return this.subPipe<T>(CollectionType.ARRAY, {
             rename: true,
-            changesCount: true,
+            changesIndex: true,
             before: filterMapBefore,
             after: filterMapAfter,
             text: conditional(

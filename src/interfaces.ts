@@ -13,7 +13,7 @@ interface Loop {
     reversed?:boolean;
     rename?:boolean;
     usesIndex?:boolean;
-    changesCount?:boolean;
+    changesIndex?:boolean;
 }
 
 interface Ret<T> {
