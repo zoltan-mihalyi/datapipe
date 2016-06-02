@@ -1,4 +1,5 @@
 var dp = require('../dist/datapipe');
+var codeHelpers = require('../dist/code-helpers');
 
 describe('Test general usage', function() {
     it('fn method', function() {
@@ -79,6 +80,29 @@ describe('Test general usage', function() {
             .fn()
             .toString()
         ).not.toContain('.call');
+    });
+
+    describe('Reuse parameters', function() {
+        function identity(x) {
+            return x;
+        }
+
+        it('Reuse parameters for the two loops', function() {
+            expect(dp()
+                .map(identity)
+                .fn()
+                .toString()
+            ).not.toContain(codeHelpers.paramName(1));
+        });
+
+        it('Reuse parameters across steps and loops', function() {
+            expect(dp('array')
+                .map(identity)
+                .map(identity)
+                .fn()
+                .toString()
+            ).not.toContain(codeHelpers.paramName(1));
+        });
     });
 });
 

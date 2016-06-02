@@ -47,11 +47,17 @@ export function paramName(index:number) {
 export function codeTextToString(text:CodeText<any>, params:any[]):string {
     var result = '';
     for (var j = 0; j < text.length; j++) {
-        if (typeof text[j] === 'string') {
-            result += text[j];
+        var fragment = text[j];
+        if (typeof fragment === 'string') {
+            result += fragment;
         } else {
-            result += paramName(params.length);
-            params.push(text[j][0]);
+            var param = fragment[0];
+            var paramIndex = params.indexOf(param);
+            var newParamIndex = paramIndex === -1 ? params.length : paramIndex;
+            result += paramName(newParamIndex);
+            if (paramIndex === -1) {
+                params.push(param);
+            }
         }
     }
     return result;

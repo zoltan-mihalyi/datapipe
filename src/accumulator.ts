@@ -108,7 +108,7 @@ class LoopStrategy implements AccumulatorStrategy {
         } else if (this.type === CollectionType.MAP) {
             loops = createLoop(false);
 
-        } else { //todo reuse parameters!!!
+        } else {
             loops = seq([
                 conditional(
                     and(input, type(prop<boolean>(input, 'length'), 'number')),
