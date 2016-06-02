@@ -7,7 +7,6 @@ import {
     result,
     empty,
     seq,
-    code,
     itar,
     current,
     index,
@@ -22,31 +21,31 @@ import {
 } from "./code-helpers";
 import {statement} from "./code-helpers";
 interface AccumulatorStrategy {
-    put(code:Code, params:any[]):void;
+    put(code:Code):void;
     canPut(code:Code):boolean;
-    toCode():string;
+    toCode(params:any[]):string;
 }
 
 class SimpleStrategy implements AccumulatorStrategy {
-    private code:string = null;
+    private code:CodeText<any> = null;
 
-    put(code:CodeText<any>, params:any[]):void {
-        this.code = codeTextToString(code, params);
+    put(code:CodeText<any>):void {
+        this.code = code;
     }
 
     canPut(code:CodeText<any>):boolean {
         return this.code === null;
     }
 
-    toCode():string {
-        return this.code;
+    toCode(params:any[]):string {
+        return codeTextToString(this.code, params);
     }
 }
 
 class LoopStrategy implements AccumulatorStrategy {
-    private before = '';
-    private rows:string[] = [];
-    private after = '';
+    private before:CodeText<any> = empty;
+    private rows:CodeText<any>[] = [];
+    private after:CodeText<any> = empty;
     private lastMergeEnd = true;
     private reversed:boolean = null;
     private rename = false;
@@ -56,7 +55,7 @@ class LoopStrategy implements AccumulatorStrategy {
     constructor(private type:CollectionType) {
     }
 
-    put(loop:Loop, params:any[]) {
+    put(loop:Loop) {
 
         var text:CodeText<any> = loop.text;
         this.lastMergeEnd = loop.mergeEnd;
@@ -68,13 +67,13 @@ class LoopStrategy implements AccumulatorStrategy {
             text = this.replaceIndex(text);
         }
 
-        this.rows.push(codeTextToString(text, params));
+        this.rows.push(text);
         if (loop.before) {
-            this.before = codeTextToString(loop.before, params) + '\n';
+            this.before = loop.before;
         }
         this.rename = this.rename || loop.rename;
         if (loop.after) {
-            this.after = '\n' + codeTextToString(loop.after, params);
+            this.after = loop.after;
         }
         if (this.reversed === null) {
             this.reversed = !!loop.reversed;
@@ -85,7 +84,7 @@ class LoopStrategy implements AccumulatorStrategy {
         return this.rows.length === 0 || this.lastMergeEnd && code.mergeStart;
     }
 
-    toCode():string {
+    toCode(params:any[]):string {
         var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
         var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
         var loops:CodeText<void>;
@@ -94,8 +93,8 @@ class LoopStrategy implements AccumulatorStrategy {
             let currentIndex:CodeText<number> = this.reversed ? minus(minus(prop<number>(input, 'length'), literal(1)), index) : index;
             var block:CodeText<void> = seq([
                 declare(current, prop(input, currentIndex)),
-                code(this.rows.join('')),
-                code(this.after)
+                seq(this.rows),
+                this.after
             ]);
             if (array) {
                 return itar(input, block);
@@ -121,10 +120,10 @@ class LoopStrategy implements AccumulatorStrategy {
 
         return codeTextToString(seq([
             rename,
-            code(this.before),
+            this.before,
             seq(this.indexDeclarations),
             loops
-        ]), null);
+        ]), params);
     }
 
     private replaceIndex(text:CodeText<any>):CodeText<any> { //todo take with object
@@ -133,7 +132,7 @@ class LoopStrategy implements AccumulatorStrategy {
             indexName = this.getNextIndexName();
             let indexVariable = named<number>(indexName);
             this.indexDeclarations.push(declare(indexVariable, literal(-1)));
-            this.rows.push(codeTextToString(statement(increment(indexVariable)), null)); //todo
+            this.rows.push(statement(increment(indexVariable)));
             this.isIndexDirty = false;
         } else if (this.indexDeclarations.length > 0) {
             indexName = this.getIndexName();
@@ -155,19 +154,19 @@ class LoopStrategy implements AccumulatorStrategy {
 class Accumulator {
     strategy:AccumulatorStrategy = null;
 
-    put(parentType:CollectionType, code:Code, params:any[]):void {
+    put(parentType:CollectionType, code:Code):void {
         if (this.strategy === null) {
             this.strategy = new (strategyFactory(code))(parentType);
         }
-        this.strategy.put(code, params);
+        this.strategy.put(code);
     }
 
     canPut(code:Code):boolean {
         return this.strategy === null || (this.strategy instanceof strategyFactory(code) && this.strategy.canPut(code));
     }
 
-    flush():string {
-        var result = this.strategy.toCode();
+    flush(params:any[]):string {
+        var result = this.strategy.toCode(params);
         this.strategy = null;
         return result;
     }

@@ -84,7 +84,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     each(callback:(t?:T)=>any, context?:any):ChildDataPipe<R,T,T> {
         return this.subPipe<T>(this.type, {
-            text: callParam(callback, context),
+            text: statement(callParam(callback, context)),
             mergeStart: true,
             mergeEnd: true
         });
@@ -437,11 +437,11 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
         for (var i = 0; i < steps.length; i++) {
             let step:Step = steps[i];
             if (!accumulator.canPut(step.code)) {
-                codeStr += accumulator.flush();
+                codeStr += accumulator.flush(params);
             }
-            accumulator.put(step.parentType, step.code, params);
+            accumulator.put(step.parentType, step.code);
         }
-        codeStr += accumulator.flush();
+        codeStr += accumulator.flush(params);
 
         var fnBody = `return function(data){\n${codeStr}\nreturn data;\n}`;
         var paramNames = [];

@@ -65,10 +65,6 @@ export function named<T>(name:string):CodeText<T> {
     return [name];
 }
 
-export function code<T>(code:string):CodeText<T> {
-    return [code];
-}
-
 export function literal<T extends string|number>(value:T):CodeText<T> {
     return [JSON.stringify(value)];
 }
