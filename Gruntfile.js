@@ -36,7 +36,7 @@ module.exports = function(grunt) {
                 options: {
                     reports: {
                         'html': 'coverage/html-report',
-                        'json': 'coverage/coverage-ts.json'
+                        'json': 'coverage/coverage.json'
                     }
                 }
             }
