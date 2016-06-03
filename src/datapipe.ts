@@ -1,6 +1,3 @@
-//todo no index, no list!
-//todo asm.js
-//todo inline no closure functions or functions as string
 import Accumulator = require("./accumulator");
 import {
     assign,

@@ -147,7 +147,7 @@ export function retSeq<T>(texts:CodeText<any|Ret<T>>[]):CodeText<Ret<T>> {
     return seq(texts) as CodeText<any>;
 }
 
-export function array<T>(value:CodeText<T>):CodeText<Array<T>> {
+export function array<T>(value?:CodeText<T>):CodeText<Array<T>> {
     if (arguments.length === 0) {
         return ['[]'];
     }
