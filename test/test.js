@@ -13,6 +13,21 @@ describe('Test general usage', function() {
         ).toEqual([[2, 3], [4, 5]]);
     });
 
+    it('root process', function() {
+        expect(dp()
+            .process([1, 2, 3])
+        ).toEqual([1, 2, 3]);
+
+        expect(dp()
+            .compile()
+            .process([1, 2, 3])
+        ).toEqual([1, 2, 3]);
+
+        expect(dp()
+            .fn()([1, 2, 3])
+        ).toEqual([1, 2, 3]);
+    });
+
     it('iterate object', function() {
         expect(dp()
             .pluck('x')
@@ -36,22 +51,44 @@ describe('Test general usage', function() {
     });
 
     describe('Data type hints', function() {
-        it('Giving hint of data type causes shorter functions to be generated, and the shorter function produces the same result.', function() {
-            var pluckXArray = dp('array')
-                .pluck('x')
-                .fn();
-
+        describe('Giving hint of data type causes shorter functions to be generated, and the shorter function produces the same result.', function() {
             var pluckX = dp()
                 .pluck('x')
                 .fn();
 
-            expect(pluckXArray.toString().length)
-                .toBeLessThan(pluckX.toString().length);
+            it('array hint', function() {
+                var pluckXArray = dp('array')
+                    .pluck('x')
+                    .fn();
+                expect(pluckXArray.toString().length)
+                    .toBeLessThan(pluckX.toString().length);
 
-            expect(pluckXArray([{x: 1}, {x: 2}]))
-                .toEqual([1, 2]);
+                expect(pluckXArray([{x: 1}, {x: 2}]))
+                    .toEqual([1, 2]);
+            });
+
+            it('object hint', function() {
+                var pluckXObject = dp('object')
+                    .pluck('x')
+                    .fn();
+
+                expect(pluckXObject.toString().length)
+                    .toBeLessThan(pluckX.toString().length);
+
+                expect(pluckXObject({
+                    a: {x: 1},
+                    b: {x: 2}
+                })).toEqual([1, 2]);
+            });
         });
 
+        it('array hint when using arrayIndex', function() {
+            expect(dp('array')
+                .take(2)
+                .pluck('x')
+                .process([{x: 1}, {x: 3}, {x: 2}])
+            ).toEqual([1, 3]);
+        });
 
         it('When the previous step creates an array, the next step should not contain the object iteration, but should work.', function() {
             var sortAndPluck = dp()
@@ -157,6 +194,23 @@ describe('Test general usage', function() {
 
             expect(process([0, 1, 2, 3, 4, 5])).toEqual([0, 1, 2]);
             expect(process.toString()).toContain('var i_');
+
+        });
+
+        it('after a changing index, creating one index variable for multiple steps', function() {
+            var process = dp()
+                .filter(function(x) {
+                    return x % 2 === 0;
+                })
+                .map(function(x, i) {
+                    return i;
+                })
+                .map(function(x, i) {
+                    return i;
+                }).fn();
+
+            expect(process([0, 1, 2, 3, 4, 5])).toEqual([0, 1, 2]);
+            expect(process.toString()).not.toContain('var i_1');
 
         });
 
@@ -335,6 +389,20 @@ describe('Test functions without chaining', function() {
             var properties = {'\'\n\r\\': 1};
             expect(dp().where(properties).process([{'\'\n\r\\': 1}]).length).toEqual(1);
             expect(dp().where(properties).process([{'\'\n\r\\': 2}]).length).toEqual(0);
+        });
+
+        it('where filter should not consider prototype properties', function() {
+            function Props() {
+            }
+
+            Props.prototype.x = 1;
+
+            var properties = new Props();
+            properties.y = 2;
+            expect(dp()
+                .where(properties)
+                .process([{x: 1, y: 2}, {x: 2, y: 2}, {x: 1, y: 1}, {x: 2, y: 1}])
+            ).toEqual([{x: 1, y: 2}, {x: 2, y: 2}]);
         });
     });
 
@@ -865,6 +933,15 @@ describe('Test functions with chaining', function() {
                 .take(2)
                 .process([1, 2, 3, 4, 5, 6, 7, 8, 9])).toEqual([2, 4]);
         });
+    });
+
+    it('sortBy twice', function() {
+        expect(dp()
+            .sortBy('y')
+            .sortBy('x')
+            .pluck('y')
+            .process([{x: 2, y: 3}, {x: 1, y: 2}, {x: 3, y: 1}])
+        ).toEqual([2, 3, 1])
     });
 });
 

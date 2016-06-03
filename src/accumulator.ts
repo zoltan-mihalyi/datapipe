@@ -142,6 +142,7 @@ class LoopStrategy implements AccumulatorStrategy {
             this.rows.push(statement(increment(indexVariable)));
             this.isIndexDirty = false;
         } else if (this.indexDeclarations.length > 0) {
+            replaceNormalIndexes = true;
             newIndexName = this.getIndexName();
         } else {
             if (containsArrayIndex) {
@@ -157,7 +158,7 @@ class LoopStrategy implements AccumulatorStrategy {
     }
 
     private getIndexName(next?:boolean) {
-        return `i_${this.indexDeclarations.length + (next ? 1 : 0)}`;
+        return `i_${this.indexDeclarations.length - (next ? 0 : 1)}`;
     }
 }
 
