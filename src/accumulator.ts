@@ -19,11 +19,12 @@ import {
     type,
     increment,
     statement,
-    arrayIndex
+    arrayIndex,
+    cont
 } from "./code-helpers";
 
 var arrayIndexName:string = arrayIndex[0] as string;
-var indexName:string = index[0] as string;
+var keyIndexName:string = index[0] as string;
 
 interface AccumulatorStrategy {
     put(code:Code):void;
@@ -54,10 +55,17 @@ class LoopStrategy implements AccumulatorStrategy {
     private lastMergeEnd = true;
     private reversed:boolean = null;
     private rename = false;
-    private isIndexDirty = false;
     private indexDeclarations:CodeText<any>[] = [];
 
+    private arrayIndex:string = null;
+    private keyIndex:string = keyIndexName;
+
+    private createdArray:boolean = false;
+
     constructor(private type:CollectionType) {
+        if (type === CollectionType.ARRAY) {
+            this.arrayIndex = this.keyIndex;
+        }
     }
 
     put(loop:Loop) {
@@ -65,12 +73,17 @@ class LoopStrategy implements AccumulatorStrategy {
         var text:CodeText<any> = loop.text;
         this.lastMergeEnd = loop.mergeEnd;
 
-        if (containsIndex(text, true)) {
-            text = this.replaceIndex(text);
+        text = this.replaceIndexes(text);
+
+        var creatingArray = loop.before && loop.before.indexOf('[]') !== -1; //todo
+
+        if (!this.createdArray && creatingArray) {
+            this.keyIndex = null;
         }
 
-        if (loop.changesIndex) {
-            this.isIndexDirty = true;
+        if (changesIndex(text)) {
+            this.arrayIndex = null;
+            this.keyIndex = null; //todo only when creating array
         }
 
         this.rows.push(text);
@@ -84,6 +97,8 @@ class LoopStrategy implements AccumulatorStrategy {
         if (this.reversed === null) {
             this.reversed = !!loop.reversed;
         }
+
+        this.createdArray = creatingArray;
     }
 
     canPut(code:Loop):boolean {
@@ -131,34 +146,47 @@ class LoopStrategy implements AccumulatorStrategy {
         ]), params);
     }
 
-    private replaceIndex(text:CodeText<any>):CodeText<any> {
-        var newIndexName:string;
-        var containsArrayIndex = containsIndex(text, false);
-        var replaceNormalIndexes = this.isIndexDirty;
-        if (replaceNormalIndexes || (this.type !== CollectionType.ARRAY && containsArrayIndex)) {//todo we should defer this until adding to loop in order to use loop type.
-            newIndexName = this.getNextIndexName();
-            let indexVariable = named<number>(newIndexName);
-            this.indexDeclarations.push(declare(indexVariable, literal(-1)));
-            this.rows.push(statement(increment(indexVariable)));
-            this.isIndexDirty = false;
-        } else if (this.indexDeclarations.length > 0) {
-            replaceNormalIndexes = true;
-            newIndexName = this.getIndexName();
-        } else {
-            if (containsArrayIndex) {
-                return copyAndReplaceIndexNames(text, indexName, false);
+    private replaceIndexes(text:CodeText<any>):CodeText<any> {
+        var result = [];
+        for (var i = 0; i < text.length; i++) {
+            var fragment = text[i];
+            if (fragment === arrayIndexName) {
+                this.ensureIndex(true);
+                fragment = this.arrayIndex;
+            } else if (fragment === keyIndexName) {
+                this.ensureIndex(false);
+                fragment = this.keyIndex;
             }
-            return text;
+            result.push(fragment);
         }
-        return copyAndReplaceIndexNames(text, newIndexName, replaceNormalIndexes);
+        return result;
+    }
+
+    private ensureIndex(array:boolean) {
+        if (array) {
+            if (!this.arrayIndex) {
+                this.arrayIndex = this.createIndex();
+                if (!this.keyIndex) {
+                    this.keyIndex = this.arrayIndex;
+                }
+            }
+        } else {
+            if (!this.keyIndex) {
+                this.keyIndex = this.arrayIndex = this.createIndex();
+            }
+        }
+    }
+
+    private createIndex():string {
+        var newIndexName = this.getNextIndexName();
+        let indexVariable = named<number>(newIndexName);
+        this.indexDeclarations.push(declare(indexVariable, literal(-1)));
+        this.rows.push(statement(increment(indexVariable)));
+        return newIndexName;
     }
 
     private getNextIndexName() {
-        return this.getIndexName(true);
-    }
-
-    private getIndexName(next?:boolean) {
-        return `i_${this.indexDeclarations.length - (next ? 0 : 1)}`;
+        return `i_${this.indexDeclarations.length}`;
     }
 }
 
@@ -183,18 +211,6 @@ class Accumulator {
     }
 }
 
-function copyAndReplaceIndexNames(codeText:CodeText<any>, newIndexName:string, replaceNormalIndexes:boolean):CodeText<any> {
-    var result = [];
-    for (var i = 0; i < codeText.length; i++) {
-        let fragment = codeText[i];
-        if (fragment === arrayIndexName || (replaceNormalIndexes && fragment === indexName)) {
-            fragment = newIndexName;
-        }
-        result.push(fragment);
-    }
-    return result;
-}
-
 function isLoop(code:Code):code is Loop {
     return !!(code as Loop).text;
 }
@@ -206,10 +222,11 @@ function strategyFactory(code:Code):{new(parentType?:CollectionType):Accumulator
     return SimpleStrategy;
 }
 
-function containsIndex(text:CodeText<any>, considerNormalIndexes:boolean) {
+function changesIndex(text:CodeText<any>):boolean {
     for (var i = 0; i < text.length; i++) {
         var fragment = text[i];
-        if (fragment === arrayIndexName || (considerNormalIndexes && fragment === indexName)) {
+        var continueName = cont[0];
+        if (fragment === continueName) {
             return true;
         }
     }

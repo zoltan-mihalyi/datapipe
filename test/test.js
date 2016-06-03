@@ -183,6 +183,22 @@ describe('Test general usage', function() {
             ).toEqual(['a', 'b', 'c']);
         });
 
+        it('object to array transformation should change index', function() {
+            expect(dp()
+                .map(function(a) {
+                    return a;
+                })
+                .map(function(x, i) {
+                    return i;
+                })
+                .process({
+                    a: 1,
+                    b: 2,
+                    c: 3
+                })
+            ).toEqual([0, 1, 2]);
+        });
+
         it('should work with changing index, creating additional index variable', function() {
             var process = dp()
                 .filter(function(x) {
