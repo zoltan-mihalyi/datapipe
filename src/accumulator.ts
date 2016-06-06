@@ -1,5 +1,5 @@
 ///<reference path="interfaces.ts"/>
-import {CollectionType} from "./common";
+import {CollectionType, filterMapBefore, filterMapAfter} from "./common";
 import {
     codeTextToString,
     named,
@@ -20,7 +20,9 @@ import {
     increment,
     statement,
     arrayIndex,
-    cont
+    cont,
+    setResult,
+    call
 } from "./code-helpers";
 
 var arrayIndexName:string = arrayIndex[0] as string;
@@ -49,9 +51,9 @@ class SimpleStrategy implements AccumulatorStrategy {
 }
 
 abstract class GeneralLoop {
-    private before:CodeText<any> = empty;
-    private rows:CodeText<any>[] = [];
-    private after:CodeText<any> = empty;
+    protected before:CodeText<any> = empty;
+    protected rows:CodeText<any>[] = [];
+    protected after:CodeText<any> = empty;
     private indexDeclarations:CodeText<any>[] = [];
     protected arrayIndex:string = null;
     protected keyIndex:string = keyIndexName;
@@ -163,12 +165,28 @@ class ArrayLoop extends GeneralLoop {
         }
     }
 
+    createLoop(inputCollection:CodeText<any>):CodeText<void> {
+        if (!this.reversed && this.everyRowIsEmpty() && this.before === filterMapBefore && this.after === filterMapAfter) {
+            return setResult(call(prop<()=>any>(result, 'slice')));
+        }
+        return super.createLoop(inputCollection);
+    }
+
     protected wrapLoop(input:CodeText<any>, block:CodeText<any>):CodeText<void> {
         return itar(input, block);
     }
 
     protected createIndexExpression(input:CodeText<any>):CodeText<number> {
         return this.reversed ? subtract(subtract(prop<number>(input, 'length'), literal(1)), index) : index;
+    }
+
+    private everyRowIsEmpty():boolean {
+        for (var i = 0; i < this.rows.length; i++) {
+            if (this.rows[i].length !== 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 
@@ -212,7 +230,7 @@ class LoopStrategy implements AccumulatorStrategy {
     }
 
     toCode(params:any[]):string {
-        var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
+        var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data'); //todo deeper
         var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
         var loops:CodeText<void>;
 

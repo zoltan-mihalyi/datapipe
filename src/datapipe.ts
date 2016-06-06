@@ -49,10 +49,7 @@ import {
     add,
     par
 } from "./code-helpers";
-import {CollectionType} from "./common";
-
-var filterMapBefore = setResult(array());
-var filterMapAfter = call(prop<()=>any>(result, 'push'), [current]);
+import {CollectionType, filterMapBefore, filterMapAfter} from "./common";
 
 interface DataPipeResult<R,T> {
     process(data:R[]):T;
@@ -256,7 +253,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 before = empty;
             }
         } else {
-            return this.mapLike<T>(empty).sortBy(fn, context);
+            return this.toArray().sortBy(fn, context);
         }
         if (!fn) {
             text = statement(call(prop<()=>any>(result, 'sort')), true);
@@ -296,7 +293,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     shuffle():ChildDataPipe<R,T,T> {
         if (this.type !== CollectionType.ARRAY) {
-            return this.mapLike<T>(empty).shuffle();
+            return this.toArray().shuffle();
         }
         var rand:CodeText<number> = named<number>('random');
         var math:CodeText<{[index:string]:()=>number}> = named<any>('Math');
@@ -312,6 +309,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeStart: true,
             mergeEnd: false
         }, true);
+    }
+
+    toArray():ChildDataPipe<R,T,T> {
+        return this.mapLike<T>(empty);
     }
 
     abstract process(data:R[]):T[];

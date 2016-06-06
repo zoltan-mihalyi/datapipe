@@ -51,4 +51,15 @@ describe('Data type hints', function() {
         expect(sortAndPluck([{x: 2, y: 3}, {x: 1, y: 4}]))
             .toEqual([4, 3]);
     });
+
+    it('Empty map should be replaced by slice().', function() {
+        var sorter = dp()
+            .sortBy()
+            .fn()
+            .toString();
+        expect(sorter).not.toContain('++i');
+        expect(sorter).toContain('slice');
+    });
+
+    //todo slice,sort,etc. with array-like objects!!!
 });
