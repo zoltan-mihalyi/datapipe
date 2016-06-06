@@ -20,7 +20,9 @@ export var neq = operator<any,boolean>('!==');
 export var lt = operator<number,boolean>('<');
 export var gt = operator<number, boolean>('>');
 export var gte = operator<number, boolean>('>=');
-export var minus = operator<number,number>('-');
+export var subtract = operator<number,number>('-');
+export var add = operator<number,number>('+');
+export var multiply = operator<number,number>('*');
 export var and = operator<boolean,boolean>('&&');
 
 export var not = prefixOperator<boolean,boolean>('!');
@@ -226,4 +228,8 @@ export function itin(array:CodeText<{[index:string]:any}>, block:CodeText<any>):
 
 export function statement(text:CodeText<any>, br?:boolean):CodeText<void> {
     return [...text, ';' + (br ? '\n' : '')];
+}
+
+export function par<T>(text:CodeText<T>):CodeText<T> {
+    return ['(', ...text, ')'];
 }

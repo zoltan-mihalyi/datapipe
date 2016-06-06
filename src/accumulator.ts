@@ -13,7 +13,7 @@ import {
     prop,
     itin,
     literal,
-    minus,
+    subtract,
     conditional,
     and,
     type,
@@ -56,7 +56,7 @@ abstract class GeneralLoop {
     protected arrayIndex:string = null;
     protected keyIndex:string = keyIndexName;
 
-    private createdArray:boolean = false;
+    protected createdArray:boolean = false;
 
     put(loop:Loop) {
         var text:CodeText<any> = this.replaceIndexes(loop.text);
@@ -151,6 +151,7 @@ class ArrayLoop extends GeneralLoop {
 
     constructor() {
         super();
+        this.createdArray = true;
         this.arrayIndex = this.keyIndex;
     }
 
@@ -167,7 +168,7 @@ class ArrayLoop extends GeneralLoop {
     }
 
     protected createIndexExpression(input:CodeText<any>):CodeText<number> {
-        return this.reversed ? minus(minus(prop<number>(input, 'length'), literal(1)), index) : index;
+        return this.reversed ? subtract(subtract(prop<number>(input, 'length'), literal(1)), index) : index;
     }
 }
 
@@ -238,7 +239,7 @@ class LoopStrategy implements AccumulatorStrategy {
 
 class Accumulator {
     strategy:AccumulatorStrategy = null;
-    
+
     static isLoop(code:Code):code is Loop {
         return !!(code as Loop).text;
     }

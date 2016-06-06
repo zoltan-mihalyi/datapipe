@@ -30,7 +30,7 @@ import {
     trueValue,
     func,
     ret,
-    minus,
+    subtract,
     obj,
     access,
     params,
@@ -44,7 +44,10 @@ import {
     statement,
     callParam,
     Operator,
-    arrayIndex
+    arrayIndex,
+    multiply,
+    add,
+    par
 } from "./code-helpers";
 import {CollectionType} from "./common";
 
@@ -259,7 +262,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             text = statement(call(prop<()=>any>(result, 'sort')), true);
         } else {
             text = statement(call(prop<()=>any>(result, 'sort'), [func(['a', 'b'],
-                ret(minus(
+                ret(subtract(
                     access(fn, context, named('a')),
                     access(fn, context, named('b'))
                 ))
@@ -289,6 +292,26 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 assign(count, literal(1))
             )
         ]), false);
+    }
+
+    shuffle():ChildDataPipe<R,T,T> {
+        if (this.type !== CollectionType.ARRAY) {
+            return this.mapLike<T>(empty).shuffle();
+        }
+        var rand:CodeText<number> = named<number>('random');
+        var math:CodeText<{[index:string]:()=>number}> = named<any>('Math');
+        var random:CodeText<number> = multiply(call(prop(math, 'random')), par(add(index, literal(1))));
+        var flooredRandom:CodeText<number> = call(prop(math, 'floor'), [random]);
+        return this.subPipe<T>(CollectionType.ARRAY, {
+            before: filterMapBefore,
+            text: seq([
+                declare(rand, flooredRandom),
+                conditional(neq(rand, index), assign(prop(result, index), prop(result, rand)))
+            ]),
+            after: assign(prop(result, rand), current),
+            mergeStart: true,
+            mergeEnd: false
+        }, true);
     }
 
     abstract process(data:R[]):T[];
