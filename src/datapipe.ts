@@ -86,7 +86,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             text: statement(callParam(callback, context)),
             mergeStart: true,
             mergeEnd: true
-        });
+        }, false);
     }
 
     reduce<M>(reducer:(memo:M[], t:T)=>M[], memo:Provider<M[]>):ChildDataPipe<R,T,M>;
@@ -115,7 +115,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             ),
             mergeStart: true,
             mergeEnd: false
-        }) as any;
+        }, true) as any;
     }
 
     take(cnt:number):ChildDataPipe<R,T,T> {
@@ -129,7 +129,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             ),
             mergeStart: true,
             mergeEnd: true
-        });
+        }, true);
     }
 
     where(properties):ChildDataPipe<R,T,T> {
@@ -244,16 +244,31 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     sortBy(fn:string|((x?:T)=>number), context?:any):ChildDataPipe<R,T,T> {
         //todo advanced logic, when used after map-like processors
-        if (!fn) {
-            return this.subPipe<T>(CollectionType.ARRAY, statement(call(prop<()=>any>(result, 'sort')), true));
+        var before:CodeText<any>;
+        var text:CodeText<any>;
+        if (this.type === CollectionType.ARRAY) {
+            if (!this.hasNewResult()) {
+                before = statement(assign(result, call(prop<()=>any>(result, 'slice'))), true);
+            } else {
+                before = empty;
+            }
         } else {
-            return this.subPipe<T>(CollectionType.ARRAY, statement(call(prop<()=>any>(result, 'sort'), [func(['a', 'b'],
+            return this.mapLike<T>(empty).sortBy(fn, context);
+        }
+        if (!fn) {
+            text = statement(call(prop<()=>any>(result, 'sort')), true);
+        } else {
+            text = statement(call(prop<()=>any>(result, 'sort'), [func(['a', 'b'],
                 ret(minus(
                     access(fn, context, named('a')),
                     access(fn, context, named('b'))
                 ))
-            )]), true)); //todo cache values??
+            )]), true); //todo cache values??
         }
+        return this.subPipe<T>(CollectionType.ARRAY, seq([
+            before,
+            text
+        ]), true);
     }
 
     countBy(property?:string|((x?:T)=>any), context?:any):ChildDataPipe<R,T,number> {
@@ -284,6 +299,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     abstract fn():Mapper<R, T>;
 
+    abstract hasNewResult():boolean;
+
     private filterLike(predicate:(t?:T) => boolean, context:any, inverted?:boolean):ChildDataPipe<R,T,T> {
         var condition:CodeText<boolean> = callParam(predicate, context);
         if (!inverted) {
@@ -300,7 +317,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             ),
             mergeStart: true,
             mergeEnd: true
-        });
+        }, true);
     }
 
     private edge(initial:CodeText<number>, operator:Operator<number,boolean>,
@@ -350,7 +367,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             ),
             mergeStart: true,
             mergeEnd: false
-        }) as DataPipeResult<R, any>;
+        }, true) as DataPipeResult<R, any>;
     }
 
     private mapLike<O>(text:CodeText<any>):ChildDataPipe<R,T,O> {
@@ -361,7 +378,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             text: text,
             mergeStart: true,
             mergeEnd: true
-        });
+        }, true);
     }
 
     private reduceLikeWithProvider<M>(reducer:(memo?:M, t?:T) => M, memo:Provider<M>, context:any, reversed:boolean) {
@@ -386,19 +403,21 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeStart: !reversed,
             mergeEnd: false,
             reversed: reversed
-        });
+        }, true);
     }
 
-    private subPipe<X>(type:CollectionType, code:Code):ChildDataPipe<R,T,X> {
-        return new ChildDataPipe<R,T,X>(type, this, code);
+    private subPipe<X>(type:CollectionType, code:Code, newResult:boolean):ChildDataPipe<R,T,X> {
+        return new ChildDataPipe<R,T,X>(type, this, code, newResult);
     }
 }
 
-class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
+class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
     private processor:Mapper<R,T> = null;
+    private newResult:boolean;
 
-    constructor(type:CollectionType, private parent:DataPipe<R,any,P>, private code:Code) {
+    constructor(type:CollectionType, private parent:DataPipe<R,any,P>, private code:Code, newResult:boolean) {
         super(type);
+        this.newResult = newResult || this.parent.hasNewResult();
     }
 
     process(data:R[]):T[] {
@@ -424,6 +443,10 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> {
             parentType: this.parent.type
         });
         return codes;
+    }
+
+    hasNewResult():boolean {
+        return this.newResult;
     }
 
     private createProcessor():Mapper<R,T> {
@@ -465,6 +488,10 @@ class RootDataPipe<T> extends DataPipe<T,T,T> {
 
     getSteps():Step[] {
         return [];
+    }
+
+    hasNewResult():boolean {
+        return false;
     }
 }
 

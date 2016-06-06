@@ -48,32 +48,18 @@ class SimpleStrategy implements AccumulatorStrategy {
     }
 }
 
-class LoopStrategy implements AccumulatorStrategy {
+abstract class GeneralLoop {
     private before:CodeText<any> = empty;
     private rows:CodeText<any>[] = [];
     private after:CodeText<any> = empty;
-    private lastMergeEnd = true;
-    private reversed:boolean = null;
-    private rename = false;
     private indexDeclarations:CodeText<any>[] = [];
-
-    private arrayIndex:string = null;
-    private keyIndex:string = keyIndexName;
+    protected arrayIndex:string = null;
+    protected keyIndex:string = keyIndexName;
 
     private createdArray:boolean = false;
 
-    constructor(private type:CollectionType) {
-        if (type === CollectionType.ARRAY) {
-            this.arrayIndex = this.keyIndex;
-        }
-    }
-
     put(loop:Loop) {
-
-        var text:CodeText<any> = loop.text;
-        this.lastMergeEnd = loop.mergeEnd;
-
-        text = this.replaceIndexes(text);
+        var text:CodeText<any> = this.replaceIndexes(loop.text);
 
         var creatingArray = loop.before && loop.before.indexOf('[]') !== -1; //todo
 
@@ -90,61 +76,31 @@ class LoopStrategy implements AccumulatorStrategy {
         if (loop.before) {
             this.before = loop.before;
         }
-        this.rename = this.rename || loop.rename;
         if (loop.after) {
             this.after = loop.after;
-        }
-        if (this.reversed === null) {
-            this.reversed = !!loop.reversed;
         }
 
         this.createdArray = creatingArray;
     }
 
-    canPut(code:Loop):boolean {
-        return this.rows.length === 0 || this.lastMergeEnd && code.mergeStart;
-    }
-
-    toCode(params:any[]):string {
-        var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
-        var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
-        var loops:CodeText<void>;
-
-        var createLoop = (array:boolean):CodeText<void> => {
-            let currentIndex:CodeText<number> = this.reversed ? minus(minus(prop<number>(input, 'length'), literal(1)), index) : index;
-            var block:CodeText<void> = seq([
-                declare(current, prop(input, currentIndex)),
-                seq(this.rows),
-                this.after
-            ]);
-            if (array) {
-                return itar(input, block);
-            } else {
-                return itin(input, block);
-            }
-        };
-
-        if (this.type === CollectionType.ARRAY) {
-            loops = createLoop(true);
-        } else if (this.type === CollectionType.MAP) {
-            loops = createLoop(false);
-        } else {
-            loops = seq([
-                conditional(
-                    and(input, type(prop<boolean>(input, 'length'), 'number')),
-                    createLoop(true),
-                    createLoop(false)
-                ),
-            ]);
-        }
-
-        return codeTextToString(seq([
-            rename,
+    createLoop(inputCollection:CodeText<any>):CodeText<void> {
+        var block:CodeText<void> = seq([
+            declare(current, prop(inputCollection, this.createIndexExpression(inputCollection))),
+            seq(this.rows),
+            this.after
+        ]);
+        return seq([
             this.before,
             seq(this.indexDeclarations),
-            loops
-        ]), params);
+            this.wrapLoop(inputCollection, block)
+        ]);
     }
+
+    protected createIndexExpression(input:CodeText<any>):CodeText<number> {
+        return index;
+    }
+
+    protected abstract wrapLoop(inputCollection:CodeText<any>, block:CodeText<any>):CodeText<void>;
 
     private replaceIndexes(text:CodeText<any>):CodeText<any> {
         var result = [];
@@ -166,7 +122,7 @@ class LoopStrategy implements AccumulatorStrategy {
         if (array) {
             if (!this.arrayIndex) {
                 this.arrayIndex = this.createIndex();
-                if (!this.keyIndex) {
+                if (!this.keyIndex) { //todo because take creates an array.
                     this.keyIndex = this.arrayIndex;
                 }
             }
@@ -190,8 +146,102 @@ class LoopStrategy implements AccumulatorStrategy {
     }
 }
 
+class ArrayLoop extends GeneralLoop {
+    private reversed:boolean = null;
+
+    constructor() {
+        super();
+        this.arrayIndex = this.keyIndex;
+    }
+
+    put(loop:Loop) {
+        super.put(loop);
+
+        if (this.reversed === null) {
+            this.reversed = !!loop.reversed;
+        }
+    }
+
+    protected wrapLoop(input:CodeText<any>, block:CodeText<any>):CodeText<void> {
+        return itar(input, block);
+    }
+
+    protected createIndexExpression(input:CodeText<any>):CodeText<number> {
+        return this.reversed ? minus(minus(prop<number>(input, 'length'), literal(1)), index) : index;
+    }
+}
+
+class MapLoop extends GeneralLoop { //todo reversed?
+    protected wrapLoop(input:CodeText<any>, block:CodeText<any>):CodeText<void> {
+        return itin(input, block);
+    }
+}
+
+class LoopStrategy implements AccumulatorStrategy {
+    private lastMergeEnd = true;
+    private rename = false;
+    private arrayLoop:ArrayLoop = null;
+    private mapLoop:MapLoop = null;
+    private empty:boolean = true;
+
+    constructor(private type:CollectionType) {
+        if (type === CollectionType.ARRAY || type === CollectionType.UNKNOWN) {
+            this.arrayLoop = new ArrayLoop();
+        }
+        if (type === CollectionType.MAP || type === CollectionType.UNKNOWN) {
+            this.mapLoop = new MapLoop();
+        }
+    }
+
+    put(loop:Loop) {
+        this.rename = this.rename || loop.rename;
+        this.lastMergeEnd = loop.mergeEnd;
+
+        if (this.arrayLoop !== null) {
+            this.arrayLoop.put(loop);
+        }
+        if (this.mapLoop !== null) {
+            this.mapLoop.put(loop);
+        }
+        this.empty = false;
+    }
+
+    canPut(code:Loop):boolean {
+        return this.empty || this.lastMergeEnd && code.mergeStart;
+    }
+
+    toCode(params:any[]):string {
+        var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
+        var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
+        var loops:CodeText<void>;
+
+        if (this.type === CollectionType.ARRAY) {
+            loops = this.arrayLoop.createLoop(input);
+        } else if (this.type === CollectionType.MAP) {
+            loops = this.mapLoop.createLoop(input);
+        } else {
+            loops = seq([
+                conditional(
+                    and(input, type(prop<boolean>(input, 'length'), 'number')),
+                    this.arrayLoop.createLoop(input),
+                    this.mapLoop.createLoop(input)
+                ),
+            ]);
+        }
+
+        return codeTextToString(seq([
+            rename,
+            loops
+        ]), params);
+    }
+}
+
 class Accumulator {
     strategy:AccumulatorStrategy = null;
+    
+    static isLoop(code:Code):code is Loop {
+        return !!(code as Loop).text;
+    }
 
     put(parentType:CollectionType, code:Code):void {
         if (this.strategy === null) {
@@ -211,12 +261,8 @@ class Accumulator {
     }
 }
 
-function isLoop(code:Code):code is Loop {
-    return !!(code as Loop).text;
-}
-
 function strategyFactory(code:Code):{new(parentType?:CollectionType):AccumulatorStrategy} {
-    if (isLoop(code)) {
+    if (Accumulator.isLoop(code)) {
         return LoopStrategy;
     }
     return SimpleStrategy;

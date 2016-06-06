@@ -91,7 +91,7 @@ describe('Test general usage', function() {
         });
 
         it('When the previous step creates an array, the next step should not contain the object iteration, but should work.', function() {
-            var sortAndPluck = dp()
+            var sortAndPluck = dp('array')
                 .sortBy('x')
                 .pluck('y')
                 .fn();
@@ -314,6 +314,15 @@ describe('Test functions without chaining', function() {
                 this.push(x);
             }, res).process([0, 1, 2]);
             expect(res).toEqual([0, 1, 2]);
+        });
+
+        it('each should not create a new array', function() {
+            var arr = [1, 2, 3];
+            expect(dp()
+                .each(function() {
+                })
+                .process(arr)
+            ).toBe(arr);
         });
     });
 
@@ -816,6 +825,35 @@ describe('Test functions without chaining', function() {
                 .sortBy('x')
                 .process([{x: 2}, {x: 1, y: 2}, {x: 3}, {y: 1}])
             ).toEqual([{x: 1, y: 2}, {x: 2}, {x: 3}, {y: 1}]);
+        });
+
+        it('sortBy does not modify the original array', function() {
+            var array = [3, 1, 2];
+            dp()
+                .sortBy()
+                .process(array);
+            dp()
+                .each(function() {
+                })
+                .sortBy()
+                .process(array);
+            expect(array).toEqual([3, 1, 2])
+        });
+
+        it('sortBy does not copy the array when the array is created by a previous step.', function() {
+            expect(dp()
+                .take(2)
+                .sortBy()
+                .fn()
+                .toString()
+            ).not.toContain('slice');
+        });
+
+        it('shortBy should work on objects', function() {
+            expect(dp()
+                .sortBy()
+                .process({a: 2, b: 1, c: 3})
+            ).toEqual([1, 2, 3]);
         });
     });
 
