@@ -118,7 +118,22 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }, true) as any;
     }
 
-    take(cnt:number):ChildDataPipe<R,T,T> {
+    take(cnt?:number):ChildDataPipe<R,T,T> {
+        //todo slice if array
+        if (cnt == null) {
+            return this.subPipe<T>(CollectionType.UNKNOWN, {
+                rename: true,
+                before: setResult(undef),
+                after: empty,
+                text: seq([
+                    setResult(current),
+                    br
+                ]),
+                mergeStart: true,
+                mergeEnd: false
+            }, false);
+        }
+
         return this.subPipe<T>(CollectionType.ARRAY, {
             rename: true, //todo calculate from codeText?
             before: filterMapBefore,
@@ -338,6 +353,14 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeStart: true,
             mergeEnd: false
         }, false).subPipe(CollectionType.ARRAY, setResult(array(part1, part2)), true);
+    }
+
+    first(cnt?:number):ChildDataPipe<R,T,T> {
+        return this.take(cnt);
+    }
+
+    head(cnt?:number):ChildDataPipe<R,T,T> {
+        return this.take(cnt);
     }
 
     abstract process(data:R[]):T[];
