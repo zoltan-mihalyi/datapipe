@@ -13,7 +13,6 @@ import {
     prop,
     itin,
     literal,
-    subtract,
     conditional,
     and,
     type,
@@ -87,7 +86,7 @@ abstract class GeneralLoop {
 
     createLoop(inputCollection:CodeText<any>):CodeText<void> {
         var block:CodeText<void> = seq([
-            declare(current, prop(inputCollection, this.createIndexExpression(inputCollection))),
+            declare(current, prop(inputCollection, index)),
             seq(this.rows),
             this.after
         ]);
@@ -96,10 +95,6 @@ abstract class GeneralLoop {
             seq(this.indexDeclarations),
             this.wrapLoop(inputCollection, block)
         ]);
-    }
-
-    protected createIndexExpression(input:CodeText<any>):CodeText<number> {
-        return index;
     }
 
     protected abstract wrapLoop(inputCollection:CodeText<any>, block:CodeText<any>):CodeText<void>;
@@ -173,11 +168,7 @@ class ArrayLoop extends GeneralLoop {
     }
 
     protected wrapLoop(input:CodeText<any>, block:CodeText<any>):CodeText<void> {
-        return itar(input, block);
-    }
-
-    protected createIndexExpression(input:CodeText<any>):CodeText<number> {
-        return this.reversed ? subtract(subtract(prop<number>(input, 'length'), literal(1)), index) : index;
+        return itar(input, block, this.reversed);
     }
 
     private everyRowIsEmpty():boolean {

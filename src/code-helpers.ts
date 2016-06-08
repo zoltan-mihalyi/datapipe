@@ -27,7 +27,7 @@ export var and = operator<boolean,boolean>('&&');
 
 export var not = prefixOperator<boolean,boolean>('!');
 export var increment = prefixOperator<number,number>('++');
-
+export var decrement = prefixOperator<number,number>('--');
 
 export var result = named<any>('data');
 export var current = named<any>('x');
@@ -214,11 +214,24 @@ export function type(text:CodeText<any>, type:string):CodeText<boolean> {
     return ['typeof ', ...eq(text, literal(type))];
 }
 
-export function itar(array:CodeText<any[]>, block:CodeText<any>):CodeText<void> {
+export function itar(array:CodeText<any[]>, block:CodeText<any>, reversed:boolean):CodeText<void> {
+    var lengthProp:CodeText<number> = prop<number>(array, 'length');
+    var initial:CodeText<number>;
+    var condition:CodeText<boolean>;
+    var afterthought:CodeText<any>;
+    if (reversed) {
+        initial = subtract(lengthProp, literal(1));
+        condition = gte(index, literal(0));
+        afterthought = decrement(index);
+    } else {
+        initial = literal(0);
+        condition = lt(index, lengthProp);
+        afterthought = increment(index);
+    }
     return ['for(', ...seq([
-        declare(index, literal(0)),
-        statement(lt(index, prop<number>(array, 'length'))),
-        increment(index)
+        declare(index, initial),
+        statement(condition),
+        afterthought
     ]), '){\n', ...block, '\n}'];
 }
 
