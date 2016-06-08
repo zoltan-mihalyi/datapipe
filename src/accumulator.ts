@@ -53,11 +53,10 @@ abstract class GeneralLoop {
     protected before:CodeText<any> = empty;
     protected rows:CodeText<any>[] = [];
     protected after:CodeText<any> = empty;
-    private indexDeclarations:CodeText<any>[] = [];
     protected arrayIndex:string = null;
     protected keyIndex:string = keyIndexName;
-
     protected createdArray:boolean = false;
+    private indexDeclarations:CodeText<any>[] = [];
 
     put(loop:Loop) {
         var text:CodeText<any> = this.replaceIndexes(loop.text);
