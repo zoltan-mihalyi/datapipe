@@ -149,12 +149,18 @@ export function retSeq<T>(texts:CodeText<any|Ret<T>>[]):CodeText<Ret<T>> {
     return seq(texts) as CodeText<any>;
 }
 
-export function array<T>(value?:CodeText<T>):CodeText<Array<T>> {
+export function array<T>(...values:CodeText<T>[]):CodeText<Array<T>> {
     if (arguments.length === 0) {
         return ['[]'];
     }
     var result:CodeText<Array<T>> = ['['];
-    push.apply(result, value);
+    for (var i = 0; i < values.length; i++) {
+        var value = values[i];
+        push.apply(result, value);
+        if (i < values.length - 1) {
+            result.push(',');
+        }
+    }
     result.push(']');
     return result;
 }

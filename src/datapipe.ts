@@ -312,7 +312,32 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     toArray():ChildDataPipe<R,T,T> {
-        return this.mapLike<T>(empty);
+        return this.mapLike<T>(empty); //todo optimize here, not in the accumulator
+    }
+
+    size():ChildDataPipe<R,T,T> {
+        if (this.type !== CollectionType.ARRAY) {
+            return this.toArray().size(); //todo only toArray in the map type branch
+        }
+        return this.subPipe<T>(CollectionType.UNKNOWN, setResult(prop<number>(result, 'length')), true);
+    }
+
+    partition(predicate:(t?:T) => boolean, context?:any) { //todo predicate type with index and list
+        var part1 = named('part1');
+        var part2 = named('part2');
+        return this.subPipe(CollectionType.UNKNOWN, {
+            before: seq([
+                declare(part1, array()),
+                declare(part2, array())
+            ]),
+            text: statement(ternary(
+                callParam(predicate, context),
+                call(prop<any>(part1, 'push'), [current]),
+                call(prop<any>(part2, 'push'), [current])
+            )),
+            mergeStart: true,
+            mergeEnd: false
+        }, false).subPipe(CollectionType.ARRAY, setResult(array(part1, part2)), true);
     }
 
     abstract process(data:R[]):T[];
@@ -422,7 +447,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.subPipe<X>(type, {
             rename: true,
             before: initialize,
-            after: [],
+            after: empty,
             text: text,
             mergeStart: !reversed,
             mergeEnd: false,
@@ -476,7 +501,7 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
     private createProcessor():Mapper<R,T> {
         var steps:Step[] = this.getSteps();
 
-        var params = [];
+        var params = []; //todo params and codeStr to accumulator
         var codeStr = '';
         var accumulator:Accumulator = new Accumulator();
         for (var i = 0; i < steps.length; i++) {
