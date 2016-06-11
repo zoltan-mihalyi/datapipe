@@ -1,3 +1,6 @@
+var Benchmark = require('benchmark');
+Benchmark.options.maxTime = 1;
+
 module.exports = function(grunt) {
 
     grunt.initConfig({
@@ -57,6 +60,18 @@ module.exports = function(grunt) {
             check: {
                 src: ['src/**/*.ts']
             }
+        },
+        benchmark: {
+            all: {
+                src: ['benchmarks/tests/*.js'],
+                dest: 'bench.csv',
+                options: {
+                    verifyFastest: {
+                        fastest: 'undersorcery',
+                        exclude: 'native'
+                    }
+                }
+            }
         }
     });
 
@@ -65,6 +80,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-tslint');
     grunt.loadNpmTasks('grunt-jasmine-node-coverage');
     grunt.loadNpmTasks('remap-istanbul');
+    grunt.loadNpmTasks('grunt-benchmark');
 
     grunt.registerTask('test-fast', ['jasmine_node:testFast']);
     grunt.registerTask('test', ['clean:coverage', 'jasmine_node:test', 'remapIstanbul']);
