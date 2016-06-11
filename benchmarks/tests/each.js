@@ -8,7 +8,7 @@ function each(x) {
 
 var context = {};
 var wrapper1 = {
-    fn: dp().each(each).fn(),
+    fn: dp('array').each(each).fn(),
     nativeFn: function(array) {
         for (var i = 0; i < array.length; i++) {
             each(array[i]);
@@ -17,7 +17,7 @@ var wrapper1 = {
     }
 };
 var wrapper2 = {
-    fn: dp().each(each, context).fn(),
+    fn: dp('array').each(each, context).fn(),
     nativeFn: function(array) {
         for (var i = 0; i < array.length; i++) {
             each.call(context, array[i]);
