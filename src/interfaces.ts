@@ -22,7 +22,7 @@ interface Context {
     loop?:{
         lengthDirty:boolean;
         array:boolean;
-    }
+    };
 }
 
 type Code = Loop | CodeText<any>;

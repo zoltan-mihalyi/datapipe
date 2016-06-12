@@ -19,8 +19,6 @@ var wrapper = {
     }
 };
 
-console.log(wrapper.fn + '');
-
 module.exports = {
     name: 'map',
     tests: {

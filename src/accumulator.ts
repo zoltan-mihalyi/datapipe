@@ -34,7 +34,7 @@ interface AccumulatorStrategy {
 }
 
 interface StrategyFactory {
-    new(parentType?:CollectionType):AccumulatorStrategy
+    new(parentType?:CollectionType):AccumulatorStrategy;
 }
 
 class SimpleStrategy implements AccumulatorStrategy {
@@ -94,7 +94,7 @@ abstract class GeneralLoop {
     }
 
     canPut(loop:Loop):boolean {
-        return this.lastMergeEnd && loop.mergeStart
+        return this.lastMergeEnd && loop.mergeStart;
     }
 
     createLoop():CodeText<void> {
