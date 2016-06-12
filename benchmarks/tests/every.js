@@ -7,13 +7,13 @@ var _every = _.every;
 var __every = __.every;
 
 function predicate(x) {
-    return x.x > 0;
+    return x.x >= 0;
 }
 var fn1 = dp('array').every(predicate).fn();
 var nativeFn1 = function(array) {
     var length = array.length;
     for (var i = 0; i < length; ++i) {
-        if (!(array[i].x > 0)) {
+        if (!(array[i].x >= 0)) {
             return false;
         }
     }
