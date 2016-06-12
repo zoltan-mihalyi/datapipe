@@ -3,67 +3,66 @@ var _ = require('underscore');
 var __ = require('lodash');
 var dp = require('../../dist/datapipe');
 
+var _indexBy = _.indexBy;
+var __keyBy = __.keyBy;
+
 function index(x) {
     return x.x;
 }
 
-var wrapper1 = {
-    fn: dp('array').indexBy(index).fn(),
-    nativeFn: function(array) {
-        var result = {};
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            var obj = array[i];
-            result[index(obj)] = obj;
-        }
-        return result;
+var fn1 = dp('array').indexBy(index).fn();
+var nativeFn1 = function(array) {
+    var result = {};
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        var obj = array[i];
+        result[index(obj)] = obj;
     }
+    return result;
 };
-
 var indexName = 'x';
-var wrapper2 = {
-    fn: dp('array').indexBy(indexName).fn(),
-    nativeFn: function(array) {
-        var result = {};
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            var obj = array[i];
-            result[obj.x] = obj;
-        }
-        return result;
+
+var fn2 = dp('array').indexBy(indexName).fn();
+var nativeFn2 = function(array) {
+    var result = {};
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        var obj = array[i];
+        result[obj.x] = obj;
     }
+    return result;
 };
 
 module.exports = [{
     name: 'indexBy function',
     tests: {
         native: function() {
-            return wrapper1.nativeFn(array);
+            return nativeFn1(array);
         },
         undersorcery: function() {
-            return wrapper1.fn(array);
+            return fn1(array);
         },
         underscore: function() {
-            return _.indexBy(array, index);
+            return _indexBy(array, index);
         },
         lodash: function() {
-            return __.keyBy(array, index);
+            return __keyBy(array, index);
         }
     }
 }, {
     name: 'indexBy property name',
     tests: {
         native: function() {
-            return wrapper2.nativeFn(array);
+            return nativeFn2(array);
         },
         undersorcery: function() {
-            return wrapper2.fn(array);
+            return fn2(array);
         },
         underscore: function() {
-            return _.indexBy(array, indexName);
+            return _indexBy(array, indexName);
         },
         lodash: function() {
-            return __.keyBy(array, indexName);
+            return __keyBy(array, indexName);
         }
     }
 }];

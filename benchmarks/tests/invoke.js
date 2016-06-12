@@ -3,32 +3,33 @@ var _ = require('underscore');
 var __ = require('lodash');
 var dp = require('../../dist/datapipe');
 
-var wrapper = {
-    fn: dp('array').invoke('toString').fn(),
-    nativeFn: function(array) {
-        var length = array.length;
-        var result = new Array(length);
-        for (var i = 0; i < length; i++) {
-            result[i] = array[i].toString();
-        }
-        return result;
+var _invoke = _.invoke;
+var __invoke = __.invoke;
+
+var fn = dp('array').invoke('toString').fn();
+var nativeFn = function(array) {
+    var length = array.length;
+    var result = new Array(length);
+    for (var i = 0; i < length; i++) {
+        result[i] = array[i].toString();
     }
+    return result;
 };
 
 module.exports = {
     name: 'invoke',
     tests: {
         native: function() {
-            return wrapper.nativeFn(array)
+            return nativeFn(array)
         },
         undersorcery: function() {
-            return wrapper.fn(array);
+            return fn(array);
         },
         underscore: function() {
-            return _.invoke(array, 'toString');
+            return _invoke(array, 'toString');
         },
         lodash: function() {
-            return __.invoke(array, 'toString');
+            return __invoke(array, 'toString');
         }
     }
 };

@@ -3,39 +3,39 @@ var _ = require('underscore');
 var __ = require('lodash');
 var dp = require('../../dist/datapipe');
 
+var _filter = _.filter;
+var __filter = __.filter;
+
 function filter(x) {
     return x.x === 1;
 }
-var wrapper1 = {
-    fn: dp('array').filter(filter).fn(),
-    nativeFn: function(array) {
-        var result = [];
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            var obj = array[i];
-            if (obj.x === 1) {
-                result.push(obj);
-            }
+
+var fn1 = dp('array').filter(filter).fn();
+var nativeFn1 = function(array) {
+    var result = [];
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        var obj = array[i];
+        if (obj.x === 1) {
+            result.push(obj);
         }
-        return result;
     }
+    return result;
 };
 
 function filter2(x, i) {
     return i % 2 === 0;
 }
-var wrapper2 = {
-    fn: dp('array').filter(filter2).fn(),
-    nativeFn: function(array) {
-        var result = [];
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            if (i % 2 === 0) {
-                result.push(array[i]);
-            }
+var fn2 = dp('array').filter(filter2).fn();
+var nativeFn2 = function(array) {
+    var result = [];
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        if (i % 2 === 0) {
+            result.push(array[i]);
         }
-        return result;
     }
+    return result;
 };
 
 var context = {
@@ -45,64 +45,62 @@ var context = {
 function filter3(x, i) {
     return i % 2 === this.modulo;
 }
-var wrapper3 = {
-    fn: dp('array').filter(filter3, context).fn(),
-    nativeFn: function(array) {
-        var result = [];
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            var obj = array[i];
-            if (filter3.call(context, obj, i)) {
-                result.push(obj);
-            }
+var fn3 = dp('array').filter(filter3, context).fn();
+var nativeFn3 = function(array) {
+    var result = [];
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        var obj = array[i];
+        if (filter3.call(context, obj, i)) {
+            result.push(obj);
         }
-        return result;
     }
+    return result;
 };
 
 module.exports = [{
     name: 'filter without index',
     tests: {
         native: function() {
-            return wrapper1.nativeFn(array);
+            return nativeFn1(array);
         },
         undersorcery: function() {
-            return wrapper1.fn(array);
+            return fn1(array);
         },
         underscore: function() {
-            return _.filter(array, filter);
+            return _filter(array, filter);
         },
         lodash: function() {
-            return __.filter(array, filter);
+            return __filter(array, filter);
         }
     }
 }, {
     name: 'filter with index',
     tests: {
         native: function() {
-            return wrapper2.nativeFn(array);
+            return nativeFn2(array);
         },
         undersorcery: function() {
-            return wrapper2.fn(array);
+            return fn2(array);
         },
         underscore: function() {
-            return _.filter(array, filter2);
+            return _filter(array, filter2);
         },
         lodash: function() {
-            return __.filter(array, filter2);
+            return __filter(array, filter2);
         }
     }
 }, {
     name: 'filter with context',
     tests: {
         native: function() {
-            return wrapper3.nativeFn(array);
+            return nativeFn3(array);
         },
         undersorcery: function() {
-            return wrapper3.fn(array);
+            return fn3(array);
         },
         underscore: function() {
-            return _.filter(array, filter3, context);
+            return _filter(array, filter3, context);
         }
     }
 }];

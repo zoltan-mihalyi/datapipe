@@ -3,70 +3,69 @@ var _ = require('underscore');
 var __ = require('lodash');
 var dp = require('../../dist/datapipe');
 
+var _every = _.every;
+var __every = __.every;
+
 function predicate(x) {
     return x.x > 0;
 }
+var fn1 = dp('array').every(predicate).fn();
+var nativeFn1 = function(array) {
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        if (!(array[i].x > 0)) {
+            return false;
+        }
+    }
+    return true;
+};
 
 function predicate2(x, i) {
     return i !== 3;
 }
 
-var wrapper1 = {
-    fn: dp('array').every(predicate).fn(),
-    nativeFn: function(array) {
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            if (!(array[i].x > 0)) {
-                return false;
-            }
-        }
-        return true;
-    }
-};
 
-var wrapper2 = {
-    fn: dp('array').every(predicate2).fn(),
-    nativeFn: function(array) {
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            if (i === 3) {
-                return false;
-            }
+var fn2 = dp('array').every(predicate2).fn();
+var nativeFn2 = function(array) {
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        if (i === 3) {
+            return false;
         }
-        return true;
     }
+    return true;
 };
 
 module.exports = [{
     name: 'every until end',
     tests: {
         native: function() {
-            return wrapper1.nativeFn(array);
+            return nativeFn1(array);
         },
         undersorcery: function() {
-            return wrapper1.fn(array);
+            return fn1(array);
         },
         underscore: function() {
-            return _.every(array, predicate);
+            return _every(array, predicate);
         },
         lodash: function() {
-            return __.every(array, predicate);
+            return __every(array, predicate);
         }
     }
 }, {
     name: 'every to half',
     tests: {
         native: function() {
-            return wrapper2.nativeFn(array);
+            return nativeFn2(array);
         },
         undersorcery: function() {
-            return wrapper2.fn(array);
+            return fn2(array);
         },
         underscore: function() {
-            return _.every(array, predicate2);
+            return _every(array, predicate2);
         },
         lodash: function() {
-            return __.every(array, predicate2);
+            return __every(array, predicate2);
         }
     }
 }];

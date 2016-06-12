@@ -3,29 +3,30 @@ var _ = require('underscore');
 var __ = require('lodash');
 var dp = require('../../dist/datapipe');
 
+var _each = _.each;
+var __each = __.each;
+
 function each(x) {
 }
 
 var context = {};
-var wrapper1 = {
-    fn: dp('array').each(each).fn(),
-    nativeFn: function(array) {
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            each(array[i]);
-        }
-        return array;
+
+var fn1 = dp('array').each(each).fn();
+var nativeFn1 = function(array) {
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        each(array[i]);
     }
+    return array;
 };
-var wrapper2 = {
-    fn: dp('array').each(each, context).fn(),
-    nativeFn: function(array) {
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            each.call(context, array[i]);
-        }
-        return array;
+
+var fn2 = dp('array').each(each, context).fn();
+var nativeFn2 = function(array) {
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        each.call(context, array[i]);
     }
+    return array;
 };
 
 
@@ -34,16 +35,16 @@ module.exports = [{
     maxTime: 1,
     tests: {
         native: function() {
-            return wrapper1.nativeFn(array);
+            return nativeFn1(array);
         },
         undersorcery: function() {
-            return wrapper1.fn(array);
+            return fn1(array);
         },
         underscore: function() {
-            return _.each(array, each);
+            return _each(array, each);
         },
         lodash: function() {
-            return __.each(array, each);
+            return __each(array, each);
         }
     }
 }, {
@@ -51,13 +52,13 @@ module.exports = [{
     maxTime: 1,
     tests: {
         native: function() {
-            return wrapper2.nativeFn(array);
+            return nativeFn2(array);
         },
         undersorcery: function() {
-            return wrapper2.fn(array);
+            return fn2(array);
         },
         underscore: function() {
-            return _.each(array, each, context);
+            return _each(array, each, context);
         }
     }
 }];
