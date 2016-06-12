@@ -52,14 +52,5 @@ describe('Data type hints', function() {
             .toEqual([4, 3]);
     });
 
-    it('Empty map should be replaced by slice().', function() {
-        var sorter = dp()
-            .sortBy()
-            .fn()
-            .toString();
-        expect(sorter).not.toContain('++i');
-        expect(sorter).toContain('slice');
-    });
-
     //todo slice,sort,etc. with array-like objects!!!
 });

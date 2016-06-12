@@ -121,7 +121,6 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     take(cnt?:number):ChildDataPipe<R,T,T> {
-        //todo slice if array
         //todo pick first item if available
         //todo if length >= data.length, do nothing
         if (cnt == null) {
@@ -278,15 +277,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     sortBy(fn:string|((x?:T)=>number), context?:any):ChildDataPipe<R,T,T> {
         //todo advanced logic, when used after map-like processors
-        var before:CodeText<any>;
         var text:CodeText<any>;
-        if (this.type === CollectionType.ARRAY) {
-            if (!this.hasNewResult()) {
-                before = statement(assign(result, call(prop<()=>any>(result, 'slice'))), true);
-            } else {
-                before = empty;
-            }
-        } else {
+        if (!this.hasNewResult()) {
             return this.toArray().sortBy(fn, context);
         }
         if (!fn) {
@@ -299,10 +291,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ))
             )]), true); //todo cache values??
         }
-        return this.subPipe<T>(CollectionType.ARRAY, seq([
-            before,
-            text
-        ]), true);
+        return this.subPipe<T>(CollectionType.ARRAY, text, true);
     }
 
     countBy(property?:string|((x?:T)=>any), context?:any):ChildDataPipe<R,T,number> {

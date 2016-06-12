@@ -1,5 +1,5 @@
 ///<reference path="interfaces.ts"/>
-import {CollectionType, mapBefore, mapAfter} from "./common";
+import {CollectionType} from "./common";
 import {
     codeTextToString,
     named,
@@ -19,9 +19,7 @@ import {
     increment,
     statement,
     arrayIndex,
-    cont,
-    setResult,
-    call
+    cont
 } from "./code-helpers";
 
 var arrayIndexName:string = arrayIndex[0] as string;
@@ -193,9 +191,6 @@ class ArrayLoop extends GeneralLoop {
     }
 
     createLoop():CodeText<void> {
-        if (this.until === null && !this.reversed && this.everyRowIsEmpty() && this.before === mapBefore && this.after === mapAfter) {
-            return setResult(call(prop<()=>any>(result, 'slice')));
-        }
         return super.createLoop();
     }
 
@@ -205,15 +200,6 @@ class ArrayLoop extends GeneralLoop {
 
     protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
         return itar(init, input, block, this.reversed, this.until);
-    }
-
-    private everyRowIsEmpty():boolean {
-        for (var i = 0; i < this.rows.length; i++) {
-            if (this.rows[i].length !== 0) {
-                return false;
-            }
-        }
-        return true;
     }
 }
 
