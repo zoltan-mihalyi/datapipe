@@ -49,7 +49,7 @@ import {
     add,
     par
 } from "./code-helpers";
-import {CollectionType, filterMapBefore, filterMapAfter} from "./common";
+import {CollectionType, filterMapBefore, filterMapAfter, mapBefore, mapAfter} from "./common";
 
 interface DataPipeResult<R,T> {
     process(data:R[]):T;
@@ -57,7 +57,7 @@ interface DataPipeResult<R,T> {
 }
 
 interface Step {
-    code:Code;
+    code:DynamicCode;
     parentType:CollectionType;
 }
 
@@ -77,7 +77,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.mapLike<O>(assign(current, callParam(fn, context)));
     }
 
-    filter(predicate:(t?:T) => boolean, context?:any):ChildDataPipe<R,T,T> {
+    filter(predicate:(t?:T) => boolean, context?:any):ChildDataPipe<R,T,T> { //todo filter with properties and regexp
         return this.filterLike(predicate, context);
     }
 
@@ -85,7 +85,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.subPipe<T>(this.type, {
             text: statement(callParam(callback, context)),
             mergeStart: true,
-            mergeEnd: true
+            mergeEnd: true,
+            changesLength: false
         }, false);
     }
 
@@ -114,12 +115,14 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ])
             ),
             mergeStart: true,
-            mergeEnd: false
+            mergeEnd: false,
+            changesLength: true //todo create mergeEnd enum!
         }, true) as any;
     }
 
     take(cnt?:number):ChildDataPipe<R,T,T> {
         //todo slice if array
+        //todo pick first item if available
         if (cnt == null) {
             return this.subPipe<T>(CollectionType.UNKNOWN, {
                 rename: true,
@@ -130,7 +133,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     br
                 ]),
                 mergeStart: true,
-                mergeEnd: false
+                mergeEnd: false,
+                changesLength: true
             }, false);
         }
 
@@ -143,7 +147,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 br
             ),
             mergeStart: true,
-            mergeEnd: true
+            mergeEnd: true,
+            changesLength: true
         }, true);
     }
 
@@ -322,7 +327,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             ]),
             after: assign(prop(result, rand), current),
             mergeStart: true,
-            mergeEnd: false
+            mergeEnd: false,
+            changesLength: true
         }, true);
     }
 
@@ -351,7 +357,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 call(prop<any>(part2, 'push'), [current])
             )),
             mergeStart: true,
-            mergeEnd: false
+            mergeEnd: false,
+            changesLength: true
         }, false).subPipe(CollectionType.ARRAY, setResult(array(part1, part2)), true);
     }
 
@@ -388,7 +395,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 cont
             ),
             mergeStart: true,
-            mergeEnd: true
+            mergeEnd: true,
+            changesLength: true
         }, true);
     }
 
@@ -438,18 +446,31 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ])
             ),
             mergeStart: true,
-            mergeEnd: false
+            mergeEnd: false,
+            changesLength: true
         }, true) as DataPipeResult<R, any>;
     }
 
     private mapLike<O>(text:CodeText<any>):ChildDataPipe<R,T,O> {
         return this.subPipe<O>(CollectionType.ARRAY, {
-            rename: true,
-            before: filterMapBefore,
-            after: filterMapAfter,
-            text: text,
-            mergeStart: true,
-            mergeEnd: true
+            createCode: (ctx:Context)=> {
+                var result:Loop = {
+                    rename: true,
+                    before: filterMapBefore,
+                    after: filterMapAfter,
+                    text: text,
+                    mergeStart: true,
+                    mergeEnd: true,
+                    changesLength: false
+                };
+
+                if (!ctx.loop || (!ctx.loop.lengthDirty && ctx.loop.array)) {
+                    result.before = mapBefore;
+                    result.after = mapAfter;
+                }
+
+                return result;
+            }
         }, true);
     }
 
@@ -474,11 +495,12 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             text: text,
             mergeStart: !reversed,
             mergeEnd: false,
+            changesLength: true,
             reversed: reversed
         }, true);
     }
 
-    private subPipe<X>(type:CollectionType, code:Code, newResult:boolean):ChildDataPipe<R,T,X> {
+    private subPipe<X>(type:CollectionType, code:DynamicCode, newResult:boolean):ChildDataPipe<R,T,X> {
         return new ChildDataPipe<R,T,X>(type, this, code, newResult);
     }
 }
@@ -487,7 +509,7 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
     private processor:Mapper<R,T> = null;
     private newResult:boolean;
 
-    constructor(type:CollectionType, private parent:DataPipe<R,any,P>, private code:Code, newResult:boolean) {
+    constructor(type:CollectionType, private parent:DataPipe<R,any,P>, private code:DynamicCode, newResult:boolean) {
         super(type);
         this.newResult = newResult || this.parent.hasNewResult();
     }
@@ -524,17 +546,13 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
     private createProcessor():Mapper<R,T> {
         var steps:Step[] = this.getSteps();
 
-        var params = []; //todo params and codeStr to accumulator
-        var codeStr = '';
         var accumulator:Accumulator = new Accumulator();
         for (var i = 0; i < steps.length; i++) {
             let step:Step = steps[i];
-            if (!accumulator.canPut(step.code)) {
-                codeStr += accumulator.flush(params);
-            }
             accumulator.put(step.parentType, step.code);
         }
-        codeStr += accumulator.flush(params);
+        var codeStr:string = accumulator.toCode();
+        var params:any[] = accumulator.getParams();
 
         var fnBody = `return function(data){\n${codeStr}\nreturn data;\n}`;
         var paramNames = [];

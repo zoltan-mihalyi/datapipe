@@ -1,5 +1,5 @@
 ///<reference path="interfaces.ts"/>
-import {CollectionType, filterMapBefore, filterMapAfter} from "./common";
+import {CollectionType, mapBefore, mapAfter} from "./common";
 import {
     codeTextToString,
     named,
@@ -28,9 +28,13 @@ var arrayIndexName:string = arrayIndex[0] as string;
 var keyIndexName:string = index[0] as string;
 
 interface AccumulatorStrategy {
-    put(code:Code):void;
-    canPut(code:Code):boolean;
+    put(code:DynamicCode):void;
+    canPut(code:DynamicCode):boolean;
     toCode(params:any[]):string;
+}
+
+interface StrategyFactory {
+    new(parentType?:CollectionType):AccumulatorStrategy
 }
 
 class SimpleStrategy implements AccumulatorStrategy {
@@ -40,7 +44,7 @@ class SimpleStrategy implements AccumulatorStrategy {
         this.code = code;
     }
 
-    canPut(code:CodeText<any>):boolean {
+    canPut():boolean {
         return this.code === null;
     }
 
@@ -56,9 +60,15 @@ abstract class GeneralLoop {
     protected arrayIndex:string = null;
     protected keyIndex:string = keyIndexName;
     protected createdArray:boolean = false;
+    protected lengthDirty:boolean = false;
     private indexDeclarations:CodeText<any>[] = [];
+    private lastMergeEnd = true;
+    private rename = false;
 
     put(loop:Loop) {
+        this.rename = this.rename || loop.rename;
+        this.lastMergeEnd = loop.mergeEnd;
+        this.lengthDirty = this.lengthDirty || loop.changesLength;
         var text:CodeText<any> = this.replaceIndexes(loop.text);
 
         var creatingArray = loop.before && loop.before.indexOf('[]') !== -1; //todo
@@ -83,18 +93,36 @@ abstract class GeneralLoop {
         this.createdArray = creatingArray;
     }
 
-    createLoop(inputCollection:CodeText<any>):CodeText<void> {
+    canPut(loop:Loop):boolean {
+        return this.lastMergeEnd && loop.mergeStart
+    }
+
+    createLoop():CodeText<void> {
+        var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
+        var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
         var block:CodeText<void> = seq([
-            declare(current, prop(inputCollection, index)),
+            declare(current, prop(input, index)),
             seq(this.rows),
             this.after
         ]);
         return seq([
+            rename,
             this.before,
             seq(this.indexDeclarations),
-            this.wrapLoop(inputCollection, block)
+            this.wrapLoop(input, block)
         ]);
     }
+
+    getContext():Context {
+        return {
+            loop: {
+                array: this.isArray(),
+                lengthDirty: this.lengthDirty
+            }
+        };
+    }
+
+    protected abstract isArray():boolean;
 
     protected abstract wrapLoop(inputCollection:CodeText<any>, block:CodeText<any>):CodeText<void>;
 
@@ -159,11 +187,15 @@ class ArrayLoop extends GeneralLoop {
         }
     }
 
-    createLoop(inputCollection:CodeText<any>):CodeText<void> {
-        if (!this.reversed && this.everyRowIsEmpty() && this.before === filterMapBefore && this.after === filterMapAfter) {
+    createLoop():CodeText<void> {
+        if (!this.reversed && this.everyRowIsEmpty() && this.before === mapBefore && this.after === mapAfter) {
             return setResult(call(prop<()=>any>(result, 'slice')));
         }
-        return super.createLoop(inputCollection);
+        return super.createLoop();
+    }
+
+    protected isArray():boolean {
+        return true;
     }
 
     protected wrapLoop(input:CodeText<any>, block:CodeText<any>):CodeText<void> {
@@ -184,11 +216,13 @@ class MapLoop extends GeneralLoop { //todo reversed?
     protected wrapLoop(input:CodeText<any>, block:CodeText<any>):CodeText<void> {
         return itin(input, block);
     }
+
+    protected isArray():boolean {
+        return false;
+    }
 }
 
 class LoopStrategy implements AccumulatorStrategy {
-    private lastMergeEnd = true;
-    private rename = false;
     private arrayLoop:ArrayLoop = null;
     private mapLoop:MapLoop = null;
     private empty:boolean = true;
@@ -202,75 +236,85 @@ class LoopStrategy implements AccumulatorStrategy {
         }
     }
 
-    put(loop:Loop) {
-        this.rename = this.rename || loop.rename;
-        this.lastMergeEnd = loop.mergeEnd;
-
-        if (this.arrayLoop !== null) {
-            this.arrayLoop.put(loop);
-        }
-        if (this.mapLoop !== null) {
-            this.mapLoop.put(loop);
-        }
+    put(dynamicCode:DynamicCode) {
+        putTo(this.arrayLoop, dynamicCode);
+        putTo(this.mapLoop, dynamicCode);
         this.empty = false;
     }
 
-    canPut(code:Loop):boolean {
-        return this.empty || this.lastMergeEnd && code.mergeStart;
+    canPut(dynamicCode:DynamicCode):boolean {
+        return canPutTo(this.mapLoop, dynamicCode) && canPutTo(this.arrayLoop, dynamicCode);
     }
 
     toCode(params:any[]):string {
-        var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data'); //todo deeper
-        var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
         var loops:CodeText<void>;
 
         if (this.type === CollectionType.ARRAY) {
-            loops = this.arrayLoop.createLoop(input);
+            loops = this.arrayLoop.createLoop();
         } else if (this.type === CollectionType.MAP) {
-            loops = this.mapLoop.createLoop(input);
+            loops = this.mapLoop.createLoop();
         } else {
             loops = seq([
                 conditional(
-                    and(input, type(prop<boolean>(input, 'length'), 'number')),
-                    this.arrayLoop.createLoop(input),
-                    this.mapLoop.createLoop(input)
+                    and(result, type(prop<boolean>(result, 'length'), 'number')),
+                    this.arrayLoop.createLoop(),
+                    this.mapLoop.createLoop()
                 ),
             ]);
         }
 
-        return codeTextToString(seq([
-            rename,
-            loops
-        ]), params);
+        return codeTextToString(loops, params);
     }
 }
 
 class Accumulator {
-    strategy:AccumulatorStrategy = null;
+    private strategy:AccumulatorStrategy = null;
+    private text:string[] = [];
+    private params:any[] = [];
 
     static isLoop(code:Code):code is Loop {
         return !!(code as Loop).text;
     }
 
-    put(parentType:CollectionType, code:Code):void {
-        if (this.strategy === null) {
-            this.strategy = new (strategyFactory(code))(parentType);
+    put(parentType:CollectionType, dynamicCode:DynamicCode):void {
+        if (!this.canPut(dynamicCode)) {
+            this.flush();
         }
-        this.strategy.put(code);
+
+        if (this.strategy === null) {
+            if (isProvider(dynamicCode)) {
+                this.strategy = new LoopStrategy(parentType); //todo provider can define default type
+            } else {
+                this.strategy = new (strategyFactory(dynamicCode))(parentType);
+            }
+        }
+        this.strategy.put(dynamicCode);
     }
 
-    canPut(code:Code):boolean {
-        return this.strategy === null || (this.strategy instanceof strategyFactory(code) && this.strategy.canPut(code));
+    toCode():string {
+        this.flush();
+        return this.text.join('');
     }
 
-    flush(params:any[]):string {
-        var result = this.strategy.toCode(params);
+    getParams():any[] {
+        return this.params;
+    }
+
+    private canPut(code:DynamicCode):boolean {
+        if (isProvider(code)) {
+            return this.strategy === null || this.strategy.canPut(code);
+        } else {
+            return this.strategy === null || (this.strategy instanceof strategyFactory(code) && this.strategy.canPut(code));
+        }
+    }
+
+    private flush() {
+        this.text.push(this.strategy.toCode(this.params));
         this.strategy = null;
-        return result;
     }
 }
 
-function strategyFactory(code:Code):{new(parentType?:CollectionType):AccumulatorStrategy} {
+function strategyFactory(code:Code):StrategyFactory {
     if (Accumulator.isLoop(code)) {
         return LoopStrategy;
     }
@@ -286,6 +330,38 @@ function changesIndex(text:CodeText<any>):boolean {
         }
     }
     return false;
+}
+
+function isProvider(code:DynamicCode):code is CodeProvider {
+    return typeof (code as CodeProvider).createCode === 'function';
+}
+
+function putTo(generalLoop:GeneralLoop, dynamicCode:DynamicCode) {
+    if (generalLoop === null) {
+        return;
+    }
+    var loop:Loop;
+    if (isProvider(dynamicCode)) {
+        loop = dynamicCode.createCode(generalLoop.getContext()) as Loop;
+    } else {
+        loop = dynamicCode as Loop;
+    }
+    generalLoop.put(loop);
+}
+
+function canPutTo(loop:GeneralLoop, dynamicCode:DynamicCode):boolean {
+    var code:Code;
+    if (isProvider(dynamicCode)) {
+        if (!loop) {
+            return true;
+        }
+        code = dynamicCode.createCode(loop.getContext());
+    } else {
+        code = dynamicCode;
+    }
+
+    return loop === null || loop.canPut(code as Loop);
+
 }
 
 export = Accumulator;

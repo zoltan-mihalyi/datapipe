@@ -10,6 +10,7 @@ interface Loop {
     text:CodeText<any>;
     mergeStart:boolean;
     mergeEnd:boolean;
+    changesLength:boolean;
     reversed?:boolean;
     rename?:boolean;
 }
@@ -17,4 +18,17 @@ interface Loop {
 interface Ret<T> {
 }
 
+interface Context {
+    loop?:{
+        lengthDirty:boolean;
+        array:boolean;
+    }
+}
+
 type Code = Loop | CodeText<any>;
+
+type CodeProvider = {
+    createCode:(ctx:Context)=>Code;
+};
+
+type DynamicCode = Code|CodeProvider;

@@ -165,6 +165,10 @@ export function array<T>(...values:CodeText<T>[]):CodeText<Array<T>> {
     return result;
 }
 
+export function newArray(length:CodeText<number>) {
+    return ['new Array(', ...length, ')'];
+}
+
 export function obj():CodeText<{}> {
     return ['{}'];
 }
