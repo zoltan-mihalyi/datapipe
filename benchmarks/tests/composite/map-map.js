@@ -6,6 +6,9 @@ var dp = require('../../../dist/datapipe');
 var _map = _.map;
 var __map = __.map;
 
+var _chain = _.chain;
+var __chain = __.chain;
+
 function map1(x, i) {
     return x.x + i;
 }
@@ -37,6 +40,12 @@ module.exports = {
         },
         lodash: function() {
             return __map(__map(array, map1), map2);
+        },
+        'underscore chaining': function() {
+            return _chain(array).map(map1).map(map2).value();
+        },
+        'lodash chaining': function() {
+            return __chain(array).map(map1).map(map2).value();
         }
     }
 };

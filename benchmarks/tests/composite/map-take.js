@@ -9,6 +9,9 @@ var __map = __.map;
 var _take = _.map;
 var __take = __.map;
 
+var _chain = _.chain;
+var __chain = __.chain;
+
 function map(x, i) {
     return x.x + i;
 }
@@ -40,6 +43,12 @@ module.exports = {
         },
         lodash: function() {
             return __take(__map(array, map), 3);
+        },
+        'underscore chaining': function() {
+            return _chain(array).map(map).take(3).value();
+        },
+        'lodash chaining': function() {
+            return __chain(array).map(map).take(3).value();
         }
     }
 };

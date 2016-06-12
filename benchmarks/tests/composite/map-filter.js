@@ -9,6 +9,9 @@ var __map = __.map;
 var _filter = _.filter;
 var __filter = __.filter;
 
+var _chain = _.chain;
+var __chain = __.chain;
+
 function map(x, i) {
     return x.x + i;
 }
@@ -44,6 +47,12 @@ module.exports = {
         },
         lodash: function() {
             return __filter(__map(array, map), filter);
+        },
+        'underscore chaining': function() {
+            return _chain(array).map(map).filter(filter).value();
+        },
+        'lodash chaining': function() {
+            return __chain(array).map(map).filter(filter).value();
         }
     }
 };
