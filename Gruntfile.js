@@ -60,8 +60,7 @@ module.exports = function(grunt) {
         },
         benchmark: {
             all: {
-                src: ['benchmarks/tests/*.js'],
-                dest: 'bench.csv',
+                src: ['benchmarks/tests/**/*.js'],
                 options: {
                     verifyFastest: {
                         fastest: 'undersorcery',
