@@ -225,7 +225,7 @@ export function type(text:CodeText<any>, type:string):CodeText<boolean> {
 }
 
 export function itar(array:CodeText<any[]>, block:CodeText<any>, reversed:boolean):CodeText<void> {
-    var lengthProp:CodeText<number> = prop<number>(array, 'length');
+    var lengthProp:CodeText<number> = named<number>('length');
     var initial:CodeText<number>;
     var condition:CodeText<boolean>;
     var afterthought:CodeText<any>;
@@ -238,11 +238,16 @@ export function itar(array:CodeText<any[]>, block:CodeText<any>, reversed:boolea
         condition = lt(index, lengthProp);
         afterthought = increment(index);
     }
-    return ['for(', ...seq([
+    var loop = ['for(', ...seq([
         declare(index, initial),
         statement(condition),
         afterthought
     ]), '){\n', ...block, '\n}'];
+
+    return seq([
+        declare(lengthProp, prop<number>(array, 'length')),
+        loop
+    ]);
 }
 
 export function itin(array:CodeText<{[index:string]:any}>, block:CodeText<any>):CodeText<void> {
