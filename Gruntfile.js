@@ -1,6 +1,3 @@
-var Benchmark = require('benchmark');
-Benchmark.options.maxTime = 1;
-
 module.exports = function(grunt) {
 
     grunt.initConfig({
@@ -69,6 +66,9 @@ module.exports = function(grunt) {
                     verifyFastest: {
                         fastest: 'undersorcery',
                         exclude: 'native'
+                    },
+                    benchmarkOptions: {
+                        maxTime: 1
                     }
                 }
             }
