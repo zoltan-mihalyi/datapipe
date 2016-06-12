@@ -1,5 +1,4 @@
 var array = require('../array');
-var run = require('./../asd/run');
 var _ = require('underscore');
 var __ = require('lodash');
 var dp = require('../../dist/datapipe');
