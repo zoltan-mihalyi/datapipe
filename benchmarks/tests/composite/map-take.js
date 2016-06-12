@@ -6,8 +6,8 @@ var dp = require('../../../dist/datapipe');
 var _map = _.map;
 var __map = __.map;
 
-var _take = _.map;
-var __take = __.map;
+var _take = _.take;
+var __take = __.take;
 
 var _chain = _.chain;
 var __chain = __.chain;

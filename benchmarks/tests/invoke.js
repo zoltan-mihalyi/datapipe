@@ -4,7 +4,7 @@ var __ = require('lodash');
 var dp = require('../../dist/datapipe');
 
 var _invoke = _.invoke;
-var __invoke = __.invoke;
+var __invoke = __.invokeMap;
 
 var fn = dp('array').invoke('toString').fn();
 var nativeFn = function(array) {

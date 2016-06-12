@@ -28,6 +28,17 @@ module.exports = function(grunt) {
                     }
                 },
                 src: ['**/*.js']
+            },
+            validateBenchmarks: {
+                options: {
+                    match: '',
+                    specFolders: ['benchmarks'],
+                    specNameMatcher: 'validate',
+                    coverage: {
+                        excludes: ['**']
+                    }
+                },
+                src: ['**/*.js']
             }
         },
         remapIstanbul: {
@@ -84,4 +95,5 @@ module.exports = function(grunt) {
     grunt.registerTask('test-fast', ['jasmine_node:testFast']);
     grunt.registerTask('test', ['clean:coverage', 'jasmine_node:test', 'remapIstanbul']);
     grunt.registerTask('build', ['clean', 'ts']);
+    grunt.registerTask('benchmarks', ['jasmine_node:validateBenchmarks', 'benchmark']);
 };
