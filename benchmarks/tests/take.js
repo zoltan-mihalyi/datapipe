@@ -13,7 +13,7 @@ var nativeFn = function(array) {
         length = 5;
     }
     var result = new Array(length);
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         result[i] = array[i];
     }
     return result;

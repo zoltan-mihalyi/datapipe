@@ -12,7 +12,7 @@ function predicate(x) {
 var fn1 = dp('array').every(predicate).fn();
 var nativeFn1 = function(array) {
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         if (!(array[i].x > 0)) {
             return false;
         }
@@ -28,7 +28,7 @@ function predicate2(x, i) {
 var fn2 = dp('array').every(predicate2).fn();
 var nativeFn2 = function(array) {
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         if (i === 3) {
             return false;
         }

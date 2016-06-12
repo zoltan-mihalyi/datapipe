@@ -14,7 +14,7 @@ var fn1 = dp('array').filter(filter).fn();
 var nativeFn1 = function(array) {
     var result = [];
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         var obj = array[i];
         if (obj.x === 1) {
             result.push(obj);
@@ -30,7 +30,7 @@ var fn2 = dp('array').filter(filter2).fn();
 var nativeFn2 = function(array) {
     var result = [];
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         if (i % 2 === 0) {
             result.push(array[i]);
         }
@@ -49,7 +49,7 @@ var fn3 = dp('array').filter(filter3, context).fn();
 var nativeFn3 = function(array) {
     var result = [];
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         var obj = array[i];
         if (filter3.call(context, obj, i)) {
             result.push(obj);

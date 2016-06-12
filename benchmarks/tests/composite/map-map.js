@@ -15,7 +15,7 @@ function map1(x, i) {
 function map2(x) {
     return x + 1;
 }
-var fn = dp().map(map1).map(map2).fn();
+var fn = dp('array').map(map1).map(map2).fn();
 var nativeFn = function(array) {
     var result = new Array(array.length);
     var length = array.length;

@@ -13,7 +13,7 @@ function predicate(x) {
 var fn = dp('array').find(predicate).fn();
 var nativeFn = function(array) {
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         var obj = array[i];
         if (predicate(obj)) {
             return obj;

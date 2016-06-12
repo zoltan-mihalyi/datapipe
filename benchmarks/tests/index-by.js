@@ -14,7 +14,7 @@ var fn1 = dp('array').indexBy(index).fn();
 var nativeFn1 = function(array) {
     var result = {};
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         var obj = array[i];
         result[index(obj)] = obj;
     }
@@ -26,7 +26,7 @@ var fn2 = dp('array').indexBy(indexName).fn();
 var nativeFn2 = function(array) {
     var result = {};
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         var obj = array[i];
         result[obj.x] = obj;
     }

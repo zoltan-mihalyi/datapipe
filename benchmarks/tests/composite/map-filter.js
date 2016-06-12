@@ -24,7 +24,7 @@ var fn = dp('array').map(map).filter(filter).fn();
 var nativeFn = function(array) {
     var result = [];
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         var obj = map(array[i], i);
         if (filter(obj, i)) {
             result.push(obj);

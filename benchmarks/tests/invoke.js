@@ -10,7 +10,7 @@ var fn = dp('array').invoke('toString').fn();
 var nativeFn = function(array) {
     var length = array.length;
     var result = new Array(length);
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         result[i] = array[i].toString();
     }
     return result;

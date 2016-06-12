@@ -19,7 +19,7 @@ var fn = dp('array').reduce(reducer, 0).fn();
 var nativeFn = function(array) {
     var memo = 0;
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         memo = reducer(memo, array[i]);
     }
     return memo;

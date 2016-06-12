@@ -14,7 +14,7 @@ var context = {};
 var fn1 = dp('array').each(each).fn();
 var nativeFn1 = function(array) {
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         each(array[i]);
     }
     return array;
@@ -23,7 +23,7 @@ var nativeFn1 = function(array) {
 var fn2 = dp('array').each(each, context).fn();
 var nativeFn2 = function(array) {
     var length = array.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; ++i) {
         each.call(context, array[i]);
     }
     return array;
