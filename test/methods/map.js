@@ -12,4 +12,13 @@ describe('map tests', function() {
             return x + this.value;
         }, {value: 1}).process([-1, 0, 1])).toEqual([0, 1, 2]);
     });
+
+    it('mapping an array should use fixed length array', function() {
+        expect(dp()
+            .map(function(x) {
+            })
+            .fn()
+            .toString()
+        ).toContain('new Array');
+    });
 });

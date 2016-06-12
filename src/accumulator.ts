@@ -60,7 +60,7 @@ abstract class GeneralLoop {
     protected arrayIndex:string = null;
     protected keyIndex:string = keyIndexName;
     protected createdArray:boolean = false;
-    protected lengthDirty:boolean = false;
+    protected lengthDirty:boolean = false; //todo same as indexDirty?
     private indexDeclarations:CodeText<any>[] = [];
     private lastMergeEnd = true;
     private rename = false;
@@ -107,9 +107,8 @@ abstract class GeneralLoop {
         ]);
         return seq([
             rename,
-            this.before,
             seq(this.indexDeclarations),
-            this.wrapLoop(input, block)
+            this.wrapLoop(this.before, input, block)
         ]);
     }
 
@@ -124,7 +123,7 @@ abstract class GeneralLoop {
 
     protected abstract isArray():boolean;
 
-    protected abstract wrapLoop(inputCollection:CodeText<any>, block:CodeText<any>):CodeText<void>;
+    protected abstract wrapLoop(init:CodeText<any>, inputCollection:CodeText<any>, block:CodeText<any>):CodeText<void>;
 
     private replaceIndexes(text:CodeText<any>):CodeText<any> {
         var result = [];
@@ -172,6 +171,7 @@ abstract class GeneralLoop {
 
 class ArrayLoop extends GeneralLoop {
     private reversed:boolean = null;
+    private until:number = null;
 
     constructor() {
         super();
@@ -185,10 +185,15 @@ class ArrayLoop extends GeneralLoop {
         if (this.reversed === null) {
             this.reversed = !!loop.reversed;
         }
+        if (typeof loop.until === 'number') {
+            if (this.until === null || loop.until < this.until) {
+                this.until = loop.until;
+            }
+        }
     }
 
     createLoop():CodeText<void> {
-        if (!this.reversed && this.everyRowIsEmpty() && this.before === mapBefore && this.after === mapAfter) {
+        if (this.until === null && !this.reversed && this.everyRowIsEmpty() && this.before === mapBefore && this.after === mapAfter) {
             return setResult(call(prop<()=>any>(result, 'slice')));
         }
         return super.createLoop();
@@ -198,8 +203,8 @@ class ArrayLoop extends GeneralLoop {
         return true;
     }
 
-    protected wrapLoop(input:CodeText<any>, block:CodeText<any>):CodeText<void> {
-        return itar(input, block, this.reversed);
+    protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
+        return itar(init, input, block, this.reversed, this.until);
     }
 
     private everyRowIsEmpty():boolean {
@@ -213,8 +218,11 @@ class ArrayLoop extends GeneralLoop {
 }
 
 class MapLoop extends GeneralLoop { //todo reversed?
-    protected wrapLoop(input:CodeText<any>, block:CodeText<any>):CodeText<void> {
-        return itin(input, block);
+    protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
+        return seq([
+            init,
+            itin(input, block)
+        ]);
     }
 
     protected isArray():boolean {

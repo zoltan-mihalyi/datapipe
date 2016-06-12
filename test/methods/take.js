@@ -27,4 +27,23 @@ describe('take tests', function() {
     it('head is identical to take', function() {
         expect(dp().head().process([1, 2, 3])).toBe(1);
     });
+
+    it('using take after map should use fixed array length', function() {
+        expect(dp()
+            .map(function() {
+            })
+            .take(2)
+            .fn()
+            .toString()
+        ).toContain('new Array');
+    });
+
+    it('using take twice should iterate until the smaller number', function() {
+        expect(dp('array')
+            .take(2)
+            .take(3)
+            .fn()
+            .toString()
+        ).not.toContain('3');
+    });
 });

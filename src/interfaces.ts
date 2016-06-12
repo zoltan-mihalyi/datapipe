@@ -13,6 +13,7 @@ interface Loop {
     changesLength:boolean;
     reversed?:boolean;
     rename?:boolean;
+    until?:number;
 }
 
 interface Ret<T> {

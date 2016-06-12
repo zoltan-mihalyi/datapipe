@@ -123,6 +123,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     take(cnt?:number):ChildDataPipe<R,T,T> {
         //todo slice if array
         //todo pick first item if available
+        //todo if length >= data.length, do nothing
         if (cnt == null) {
             return this.subPipe<T>(CollectionType.UNKNOWN, {
                 rename: true,
@@ -139,16 +140,29 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }
 
         return this.subPipe<T>(CollectionType.ARRAY, {
-            rename: true, //todo calculate from codeText?
-            before: filterMapBefore,
-            after: filterMapAfter,
-            text: conditional(
-                gte(arrayIndex, param(cnt)),
-                br
-            ),
-            mergeStart: true,
-            mergeEnd: true,
-            changesLength: true
+            createCode: (ctx:Context)=> {
+                var loop:Loop = {
+                    rename: true, //todo calculate from codeText?
+                    before: filterMapBefore,
+                    after: filterMapAfter,
+                    text: conditional(
+                        gte(arrayIndex, param(cnt)),
+                        br
+                    ),
+                    mergeStart: true,
+                    mergeEnd: true,
+                    changesLength: false
+                };
+
+                if (ctx.loop.array && !ctx.loop.lengthDirty) {
+                    loop.until = cnt;
+                    loop.text = empty;
+                }
+
+                optimizeMap(loop, ctx);
+
+                return loop;
+            }
         }, true);
     }
 
@@ -454,7 +468,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     private mapLike<O>(text:CodeText<any>):ChildDataPipe<R,T,O> {
         return this.subPipe<O>(CollectionType.ARRAY, {
             createCode: (ctx:Context)=> {
-                var result:Loop = {
+                var loop:Loop = {
                     rename: true,
                     before: filterMapBefore,
                     after: filterMapAfter,
@@ -464,12 +478,9 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     changesLength: false
                 };
 
-                if (!ctx.loop || (!ctx.loop.lengthDirty && ctx.loop.array)) {
-                    result.before = mapBefore;
-                    result.after = mapAfter;
-                }
+                optimizeMap(loop, ctx);
 
-                return result;
+                return loop;
             }
         }, true);
     }
@@ -607,6 +618,13 @@ function whereFilter<T extends {[index:string]:any}>(properties:T) {
 
     var fn:string = codeTextToString(ret(func(['x'], retSeq(statements))), null); //todo inline
     return (new Function('properties', fn))(properties);
+}
+
+function optimizeMap(loop:Loop, ctx:Context):void {
+    if (!ctx.loop || (!ctx.loop.lengthDirty && ctx.loop.array)) {
+        loop.before = mapBefore;
+        loop.after = mapAfter;
+    }
 }
 
 export = <T>(typeName?:string) => {

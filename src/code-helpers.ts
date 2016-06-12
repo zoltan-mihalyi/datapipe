@@ -33,6 +33,7 @@ export var result = named<any>('data');
 export var current = named<any>('x');
 export var index = named<number>('i');
 export var arrayIndex = named<number>('arrayIndex');
+export var length:CodeText<number> = named<number>('length');
 export var cont:CodeText<void> = ['continue;'];
 export var br:CodeText<void> = ['break;'];
 export var undef:CodeText<void> = ['void 0'];
@@ -224,18 +225,17 @@ export function type(text:CodeText<any>, type:string):CodeText<boolean> {
     return ['typeof ', ...eq(text, literal(type))];
 }
 
-export function itar(array:CodeText<any[]>, block:CodeText<any>, reversed:boolean):CodeText<void> {
-    var lengthProp:CodeText<number> = named<number>('length');
+export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<any>, reversed:boolean, until?:number):CodeText<void> {
     var initial:CodeText<number>;
     var condition:CodeText<boolean>;
     var afterthought:CodeText<any>;
     if (reversed) {
-        initial = subtract(lengthProp, literal(1));
+        initial = subtract(length, literal(1));
         condition = gte(index, literal(0));
         afterthought = decrement(index);
     } else {
         initial = literal(0);
-        condition = lt(index, lengthProp);
+        condition = lt(index, length);
         afterthought = increment(index);
     }
     var loop = ['for(', ...seq([
@@ -244,8 +244,19 @@ export function itar(array:CodeText<any[]>, block:CodeText<any>, reversed:boolea
         afterthought
     ]), '){\n', ...block, '\n}'];
 
+    var lengthModifier:CodeText<void> = empty;
+    if (typeof until === 'number') {
+        let untilLiteral = literal(until);
+        lengthModifier = conditional(
+            gt(length, untilLiteral),
+            assign(length, untilLiteral)
+        );
+    }
+
     return seq([
-        declare(lengthProp, prop<number>(array, 'length')),
+        declare(length, prop<number>(array, 'length')),
+        lengthModifier,
+        init,
         loop
     ]);
 }

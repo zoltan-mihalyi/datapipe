@@ -42,6 +42,12 @@ describe('Test functions with chaining', function() {
 
 
     describe('Chaining with take', function() {
+        it('take, take', function() {
+            expect(dp()
+                .take(3)
+                .take(2)
+                .process([1, 2, 3, 4, 5])).toEqual([1, 2]);
+        });
 
         it('map and take', function() {
             expect(dp()
