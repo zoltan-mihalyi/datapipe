@@ -11,7 +11,8 @@ var wrapper1 = {
     fn: dp('array').indexBy(index).fn(),
     nativeFn: function(array) {
         var result = {};
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             var obj = array[i];
             result[index(obj)] = obj;
         }
@@ -24,7 +25,8 @@ var wrapper2 = {
     fn: dp('array').indexBy(indexName).fn(),
     nativeFn: function(array) {
         var result = {};
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             var obj = array[i];
             result[obj.x] = obj;
         }

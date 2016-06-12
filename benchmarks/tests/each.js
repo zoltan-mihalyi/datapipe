@@ -10,7 +10,8 @@ var context = {};
 var wrapper1 = {
     fn: dp('array').each(each).fn(),
     nativeFn: function(array) {
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             each(array[i]);
         }
         return array;
@@ -19,7 +20,8 @@ var wrapper1 = {
 var wrapper2 = {
     fn: dp('array').each(each, context).fn(),
     nativeFn: function(array) {
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             each.call(context, array[i]);
         }
         return array;

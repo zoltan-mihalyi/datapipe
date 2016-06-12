@@ -14,7 +14,8 @@ function predicate2(x, i) {
 var wrapper1 = {
     fn: dp('array').every(predicate).fn(),
     nativeFn: function(array) {
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             if (!(array[i].x > 0)) {
                 return false;
             }
@@ -26,7 +27,8 @@ var wrapper1 = {
 var wrapper2 = {
     fn: dp('array').every(predicate2).fn(),
     nativeFn: function(array) {
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             if (i === 3) {
                 return false;
             }

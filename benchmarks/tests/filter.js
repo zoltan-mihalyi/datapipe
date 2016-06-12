@@ -10,7 +10,8 @@ var wrapper1 = {
     fn: dp('array').filter(filter).fn(),
     nativeFn: function(array) {
         var result = [];
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             var obj = array[i];
             if (obj.x === 1) {
                 result.push(obj);
@@ -27,7 +28,8 @@ var wrapper2 = {
     fn: dp('array').filter(filter2).fn(),
     nativeFn: function(array) {
         var result = [];
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             if (i % 2 === 0) {
                 result.push(array[i]);
             }
@@ -47,7 +49,8 @@ var wrapper3 = {
     fn: dp('array').filter(filter3, context).fn(),
     nativeFn: function(array) {
         var result = [];
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             var obj = array[i];
             if (filter3.call(context, obj, i)) {
                 result.push(obj);

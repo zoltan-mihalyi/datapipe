@@ -10,7 +10,8 @@ function predicate(x) {
 var wrapper = {
     fn: dp('array').find(predicate).fn(),
     nativeFn: function(array) {
-        for (var i = 0; i < array.length; i++) {
+        var length = array.length;
+        for (var i = 0; i < length; i++) {
             var obj = array[i];
             if (predicate(obj)) {
                 return obj;

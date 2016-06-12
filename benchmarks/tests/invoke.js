@@ -6,9 +6,10 @@ var dp = require('../../dist/datapipe');
 var wrapper = {
     fn: dp('array').invoke('toString').fn(),
     nativeFn: function(array) {
-        var result = [];
-        for (var i = 0; i < array.length; i++) {
-            result.push(array[i].toString());
+        var length = array.length;
+        var result = new Array(length);
+        for (var i = 0; i < length; i++) {
+            result[i] = array[i].toString();
         }
         return result;
     }
