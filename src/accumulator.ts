@@ -199,7 +199,10 @@ class ArrayLoop extends GeneralLoop {
     }
 
     protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
-        return itar(init, input, block, this.reversed, this.until);
+        return itar(init, input, block, {
+            reversed: this.reversed,
+            until: this.until
+        });
     }
 }
 

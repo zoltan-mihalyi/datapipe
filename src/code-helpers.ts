@@ -79,7 +79,7 @@ export function literal<T extends string|number>(value:T):CodeText<T> {
     return [JSON.stringify(value)];
 }
 
-export function callParam<T>(fn:()=>T, context:any, params?:CodeText<any>[]):CodeText<T> {
+export function callParam<T>(fn:(...args)=>T, context:any, params?:CodeText<any>[]):CodeText<T> {
     var contextCodeText:CodeText<any> = context == null ? null : param(context);
 
     var usedParams:CodeText<any>[] = getUsedParams(fn, params ? params : [current, index]);
@@ -225,36 +225,50 @@ export function type(text:CodeText<any>, type:string):CodeText<boolean> {
     return ['typeof ', ...eq(text, literal(type))];
 }
 
-export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<any>, reversed:boolean, until?:number):CodeText<void> {
+interface ItarOpts {
+    reversed?:boolean;
+    until?:number;
+    level?:number;
+}
+
+export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<any>, opts:ItarOpts):CodeText<void> {
     var initial:CodeText<number>;
     var condition:CodeText<boolean>;
     var afterthought:CodeText<any>;
-    if (reversed) {
-        initial = subtract(length, literal(1));
-        condition = gte(index, literal(0));
-        afterthought = decrement(index);
+    var loopIndex = index;
+    var loopLength = length;
+
+    if (typeof opts.level === 'number') {
+        loopIndex = rename(index, opts.level);
+        loopLength = rename(length, opts.level);
+    }
+
+    if (opts.reversed) {
+        initial = subtract(loopLength, literal(1));
+        condition = gte(loopIndex, literal(0));
+        afterthought = decrement(loopIndex);
     } else {
         initial = literal(0);
-        condition = lt(index, length);
-        afterthought = increment(index);
+        condition = lt(loopIndex, loopLength);
+        afterthought = increment(loopIndex);
     }
     var loop = ['for(', ...seq([
-        declare(index, initial),
+        declare(loopIndex, initial),
         statement(condition),
         afterthought
     ]), '){\n', ...block, '\n}'];
 
     var lengthModifier:CodeText<void> = empty;
-    if (typeof until === 'number') {
-        let untilLiteral = literal(until);
+    if (typeof opts.until === 'number') {
+        let untilLiteral = literal(opts.until);
         lengthModifier = conditional(
-            gt(length, untilLiteral),
-            assign(length, untilLiteral)
+            gt(loopLength, untilLiteral),
+            assign(loopLength, untilLiteral)
         );
     }
 
     return seq([
-        declare(length, prop<number>(array, 'length')),
+        declare(loopLength, prop<number>(array, 'length')),
         lengthModifier,
         init,
         loop
@@ -271,4 +285,8 @@ export function statement(text:CodeText<any>, br?:boolean):CodeText<void> {
 
 export function par<T>(text:CodeText<T>):CodeText<T> {
     return ['(', ...text, ')'];
+}
+
+export function rename(orig:CodeText<any>, level:number) {
+    return named<number>(orig[0] + '' + level);
 }

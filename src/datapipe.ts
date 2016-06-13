@@ -47,7 +47,10 @@ import {
     arrayIndex,
     multiply,
     add,
-    par
+    par,
+    and,
+    itar,
+    rename
 } from "./code-helpers";
 import {CollectionType, filterMapBefore, filterMapAfter, mapBefore, mapAfter} from "./common";
 
@@ -66,8 +69,6 @@ type Primitive = string|number|boolean|void;
 type Provider<T> = {():T}|Primitive&T;
 
 type Mapper<I,O> = (data:I[])=>O[];
-
-var push = Array.prototype.push;
 
 abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     constructor(public type:CollectionType) {
@@ -190,28 +191,36 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     flatten(shallow?:boolean):ChildDataPipe<R,T,any> {
-        var reducer:(memo:T[], x) => T[];
         if (shallow) {
-            reducer = (memo, x)=> {
-                if (x && (x as any).length) {
-                    push.apply(memo, x);
-                } else {
-                    memo.push(x);
-                }
-                return memo;
-            };
-        } else {
-            reducer = (memo, x) => {
-                if (x && (x as any).length) {
-                    for (let i = 0; i < x.length; i++) {
-                        reducer(memo, x[i]);
-                    }
-                } else {
-                    memo.push(x);
-                }
-                return memo;
-            };
+            var offset = named<number>('offset');
+            var subIndex = rename(index, 1);
+            var text:CodeText<any> = conditional(
+                and(current, callParam(Array.isArray, null)),
+                seq([
+                    declare(offset, prop(result, 'length')),
+                    itar(
+                        empty,
+                        current,
+                        assign(prop(result, add(offset, subIndex)), prop(current, subIndex)),
+                        {level: 1}
+                    )
+                ]),
+                call(prop<()=>any>(result, 'push'), [current])
+            );
+            return this.reduceLike(CollectionType.ARRAY, setResult(array()), text, false);
         }
+
+        var reducer:(memo:T[], x) => T[];
+        reducer = (memo, x) => {
+            if (x && (x as any).length) {
+                for (let i = 0; i < x.length; i++) {
+                    reducer(memo, x[i]);
+                }
+            } else {
+                memo.push(x);
+            }
+            return memo;
+        };
         return this.reduce(reducer, () => []); //todo inline?
     }
 
