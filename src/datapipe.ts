@@ -209,19 +209,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             );
             return this.reduceLike(CollectionType.ARRAY, setResult(array()), text, false);
         }
-
-        var reducer:(memo:T[], x) => T[];
-        reducer = (memo, x) => {
-            if (x && (x as any).length) {
-                for (let i = 0; i < x.length; i++) {
-                    reducer(memo, x[i]);
-                }
-            } else {
-                memo.push(x);
-            }
-            return memo;
-        };
-        return this.reduce(reducer, () => []); //todo inline?
+        return this.subPipe<any>(CollectionType.ARRAY, setResult(callParam(flattenTo, null, [result, array()])), true);
     }
 
     invoke(method:string, ...methodArgs:any[]):ChildDataPipe<R,T,any>;
@@ -623,6 +611,20 @@ function optimizeMap(loop:Loop, ctx:Context):void {
         loop.before = mapBefore;
         loop.after = mapAfter;
     }
+}
+
+var isArray = Array.isArray;
+function flattenTo(array, result) {
+    var length = array.length;
+    for (var i = 0; i < length; ++i) {
+        var obj = array[i];
+        if (obj && isArray(obj)) {
+            flattenTo(obj, result);
+        } else {
+            result.push(obj);
+        }
+    }
+    return result;
 }
 
 export = <T>(typeName?:string) => {

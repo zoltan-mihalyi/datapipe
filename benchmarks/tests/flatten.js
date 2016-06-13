@@ -4,6 +4,7 @@ var dp = require('../../dist/datapipe');
 
 var _flatten = _.flatten;
 var __flatten = __.flatten;
+var __flattenDeep = __.flattenDeep;
 
 var isArray = Array.isArray;
 
@@ -28,6 +29,21 @@ var nativeFn1 = function(array) {
     return result;
 };
 
+var fn2 = dp('array').flatten().fn();
+var nativeFn2 = function(array, result) {
+    result || (result = []);
+    var length = array.length;
+    for (var i = 0; i < length; ++i) {
+        var obj = array[i];
+        if (obj && isArray(obj)) {
+            nativeFn2(obj, result);
+        } else {
+            result.push(obj);
+        }
+    }
+    return result;
+};
+
 module.exports = [{
     name: 'flatten shallow',
     tests: {
@@ -42,6 +58,22 @@ module.exports = [{
         },
         lodash: function() {
             return __flatten(array);
+        }
+    }
+}, {
+    name: 'flatten deep',
+    tests: {
+        native: function() {
+            return nativeFn2(array);
+        },
+        undersorcery: function() {
+            return fn2(array);
+        },
+        underscore: function() {
+            return _flatten(array);
+        },
+        lodash: function() {
+            return __flattenDeep(array);
         }
     }
 }];
