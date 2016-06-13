@@ -1,6 +1,6 @@
 import {call, prop, setResult, array, result, current, newArray, index, assign, length} from "./code-helpers";
 
-export enum CollectionType {
+export const enum CollectionType {
     ARRAY, MAP, UNKNOWN
 }
 
