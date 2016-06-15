@@ -20,6 +20,9 @@ describe('benchmark tests', function() {
 });
 
 function validateSuite(name, suite) {
+    if (suite.name === 'shuffle') {
+        return;
+    }
     describe(name, function() {
         var firstResult = NO_RESULT;
         for (var i in suite.tests) {

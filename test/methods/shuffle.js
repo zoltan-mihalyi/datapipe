@@ -18,6 +18,16 @@ describe('shuffle tests', function() {
         expect(shuffled.sort()).toEqual(array);
     });
 
+    it('shuffle should work after filter', function() {
+        var shuffled = dp('array')
+            .filter(function(x, i) {
+                return i % 2 === 0;
+            })
+            .shuffle()
+            .process(array);
+        expect(shuffled.sort()).toEqual([1, 3, 5]);
+    });
+
     it('shuffled array is not the same reference as the original.', function() {
         expect(dp()
             .shuffle()

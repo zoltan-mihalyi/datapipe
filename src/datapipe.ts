@@ -319,17 +319,26 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         var math:CodeText<{[index:string]:()=>number}> = named<any>('Math');
         var random:CodeText<number> = multiply(call(prop(math, 'random')), par(add(index, literal(1))));
         var flooredRandom:CodeText<number> = call(prop(math, 'floor'), [random]);
+
         return this.subPipe<T>(CollectionType.ARRAY, {
-            before: filterMapBefore,
-            text: seq([
-                declare(rand, flooredRandom),
-                conditional(neq(rand, index), assign(prop(result, index), prop(result, rand)))
-            ]),
-            after: assign(prop(result, rand), current),
-            mergeStart: true,
-            mergeEnd: false,
-            changesLength: true,
-            rename: true
+            createCode: (ctx:Context)=> {
+                var loop:Loop = {
+                    before: filterMapBefore,
+                    text: seq([
+                        declare(rand, flooredRandom),
+                        conditional(neq(rand, index), assign(prop(result, index), prop(result, rand)))
+                    ]),
+                    after: assign(prop(result, rand), current),
+                    mergeStart: true,
+                    mergeEnd: false,
+                    changesLength: true,
+                    rename: true
+                };
+
+                optimizeMap(loop, ctx);
+                
+                return loop;
+            }
         }, true);
     }
 
