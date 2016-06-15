@@ -328,7 +328,8 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             after: assign(prop(result, rand), current),
             mergeStart: true,
             mergeEnd: false,
-            changesLength: true
+            changesLength: true,
+            rename: true
         }, true);
     }
 

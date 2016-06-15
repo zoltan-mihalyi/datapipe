@@ -11,6 +11,13 @@ describe('shuffle tests', function() {
         expect(shuffled.sort()).toEqual(array);
     });
 
+    it('shuffle should work with array hint', function() {
+        var shuffled = dp('array')
+            .shuffle()
+            .process(array);
+        expect(shuffled.sort()).toEqual(array);
+    });
+
     it('shuffled array is not the same reference as the original.', function() {
         expect(dp()
             .shuffle()
