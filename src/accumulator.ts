@@ -105,9 +105,11 @@ abstract class LoopBlock implements CodeBlock {
     getCodeText():CodeText<void> {
         var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
         var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
+        var rowsSequence = seq(this.rows);
+        var declareCurrent = (usesCurrent(rowsSequence) || usesCurrent(this.after)) ? declare(current, prop(input, index)) : empty;
         var block:CodeText<void> = seq([
-            declare(current, prop(input, index)),
-            seq(this.rows),
+            declareCurrent,
+            rowsSequence,
             this.after
         ]);
         return seq([
@@ -340,10 +342,18 @@ function codeBlockConstructor(code:Code, array:boolean):CodeBlockConstructor {
 }
 
 function changesIndex(text:CodeText<any>):boolean {
+    return codeTextContains(text, cont);
+}
+
+function usesCurrent(text:CodeText<any>):boolean {
+    return codeTextContains(text, current);
+}
+
+function codeTextContains(text:CodeText<any>, part:CodeText<any>):boolean {
+    var name = part[0];
     for (var i = 0; i < text.length; i++) {
         var fragment = text[i];
-        var continueName = cont[0];
-        if (fragment === continueName) {
+        if (fragment === name) {
             return true;
         }
     }
