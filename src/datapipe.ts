@@ -154,7 +154,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     changesLength: false
                 };
 
-                if (ctx.loop.array && !ctx.loop.lengthDirty) {
+                if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) {
                     loop.until = cnt;
                     loop.text = empty;
                 }
@@ -336,7 +336,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 };
 
                 optimizeMap(loop, ctx);
-                
+
                 return loop;
             }
         }, true);
@@ -347,10 +347,23 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     size():ChildDataPipe<R,T,T> {
-        if (this.type !== CollectionType.ARRAY) {
-            return this.toArray().size(); //todo only toArray in the map type branch
-        }
-        return this.subPipe<T>(CollectionType.UNKNOWN, setResult(prop<number>(result, 'length')), true);
+        return this.subPipe<T>(CollectionType.UNKNOWN, {
+            createCode: (ctx:Context)=> {
+                if (ctx.array) {
+                    return setResult(prop<number>(result, 'length'));
+                } else {
+                    return {
+                        before: setResult(literal(0)),
+                        after: increment(result),
+                        text: empty,
+                        mergeStart: true,
+                        mergeEnd: false,
+                        changesLength: true,
+                        rename: true
+                    };
+                }
+            }
+        }, true);
     }
 
     partition(predicate:(t?:T) => boolean, context?:any) { //todo predicate type with index and list
@@ -617,7 +630,7 @@ function whereFilter<T extends {[index:string]:any}>(properties:T) {
 }
 
 function optimizeMap(loop:Loop, ctx:Context):void {
-    if (!ctx.loop || (!ctx.loop.lengthDirty && ctx.loop.array)) {
+    if (!ctx.loop || (!ctx.loop.lengthDirty && ctx.array)) {
         loop.before = mapBefore;
         loop.after = mapAfter;
     }

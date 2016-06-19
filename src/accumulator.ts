@@ -25,33 +25,40 @@ import {
 var arrayIndexName:string = arrayIndex[0] as string;
 var keyIndexName:string = index[0] as string;
 
-interface AccumulatorStrategy {
-    put(code:DynamicCode):void;
-    canPut(code:DynamicCode):boolean;
-    toCode(params:any[]):string;
+interface CodeBlockConstructor {
+    new():CodeBlock;
 }
 
-interface StrategyFactory {
-    new(parentType?:CollectionType):AccumulatorStrategy;
+interface CodeBlock {
+    getContext():Context;
+    put(code:Code):void;
+    canPut(code:Code):boolean;
+    getCodeText():CodeText<any>;
 }
 
-class SimpleStrategy implements AccumulatorStrategy {
+class SimpleBlock implements CodeBlock {
     private code:CodeText<any> = null;
 
     put(code:CodeText<any>):void {
         this.code = code;
     }
 
-    canPut():boolean {
+    canPut(code:Code):boolean {
         return this.code === null;
     }
 
-    toCode(params:any[]):string {
-        return codeTextToString(this.code, params);
+    getContext():Context {
+        return {
+            array: true
+        };
+    }
+
+    getCodeText():CodeText<any> {
+        return this.code;
     }
 }
 
-abstract class GeneralLoop {
+abstract class LoopBlock implements CodeBlock {
     protected before:CodeText<any> = empty;
     protected rows:CodeText<any>[] = [];
     protected after:CodeText<any> = empty;
@@ -63,7 +70,7 @@ abstract class GeneralLoop {
     private lastMergeEnd = true;
     private rename = false;
 
-    put(loop:Loop) {
+    put(loop:Loop):void {
         this.rename = this.rename || loop.rename;
         this.lastMergeEnd = loop.mergeEnd;
         this.lengthDirty = this.lengthDirty || loop.changesLength;
@@ -95,7 +102,7 @@ abstract class GeneralLoop {
         return this.lastMergeEnd && loop.mergeStart;
     }
 
-    createLoop():CodeText<void> {
+    getCodeText():CodeText<void> {
         var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
         var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
         var block:CodeText<void> = seq([
@@ -113,9 +120,9 @@ abstract class GeneralLoop {
     getContext():Context {
         return {
             loop: {
-                array: this.isArray(),
                 lengthDirty: this.lengthDirty
-            }
+            },
+            array: this.isArray()
         };
     }
 
@@ -167,7 +174,7 @@ abstract class GeneralLoop {
     }
 }
 
-class ArrayLoop extends GeneralLoop {
+class ArrayLoopBlock extends LoopBlock {
     private reversed:boolean = null;
     private until:number = null;
 
@@ -190,8 +197,8 @@ class ArrayLoop extends GeneralLoop {
         }
     }
 
-    createLoop():CodeText<void> {
-        return super.createLoop();
+    getCodeText():CodeText<void> {
+        return super.getCodeText();
     }
 
     protected isArray():boolean {
@@ -206,7 +213,7 @@ class ArrayLoop extends GeneralLoop {
     }
 }
 
-class MapLoop extends GeneralLoop { //todo reversed?
+class MapLoopBlock extends LoopBlock { //todo reversed?
     protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
         return seq([
             init,
@@ -219,53 +226,71 @@ class MapLoop extends GeneralLoop { //todo reversed?
     }
 }
 
-class LoopStrategy implements AccumulatorStrategy {
-    private arrayLoop:ArrayLoop = null;
-    private mapLoop:MapLoop = null;
+class MultiCode {
+    private arrayBlock:CodeBlock = null;
+    private mapBlock:CodeBlock = null;
     private empty:boolean = true;
 
     constructor(private type:CollectionType) {
-        if (type === CollectionType.ARRAY || type === CollectionType.UNKNOWN) {
-            this.arrayLoop = new ArrayLoop();
-        }
-        if (type === CollectionType.MAP || type === CollectionType.UNKNOWN) {
-            this.mapLoop = new MapLoop();
-        }
     }
 
     put(dynamicCode:DynamicCode) {
-        putTo(this.arrayLoop, dynamicCode);
-        putTo(this.mapLoop, dynamicCode);
+        this.putToBlock(dynamicCode, true);
+        this.putToBlock(dynamicCode, false);
         this.empty = false;
     }
 
     canPut(dynamicCode:DynamicCode):boolean {
-        return canPutTo(this.mapLoop, dynamicCode) && canPutTo(this.arrayLoop, dynamicCode);
+        return canPutTo(this.mapBlock, dynamicCode, false) && canPutTo(this.arrayBlock, dynamicCode, true);
     }
 
     toCode(params:any[]):string {
         var loops:CodeText<void>;
 
         if (this.type === CollectionType.ARRAY) {
-            loops = this.arrayLoop.createLoop();
+            loops = this.arrayBlock.getCodeText();
         } else if (this.type === CollectionType.MAP) {
-            loops = this.mapLoop.createLoop();
+            loops = this.mapBlock.getCodeText();
         } else {
             loops = seq([
                 conditional(
                     and(result, type(prop<boolean>(result, 'length'), 'number')),
-                    this.arrayLoop.createLoop(),
-                    this.mapLoop.createLoop()
+                    this.arrayBlock.getCodeText(),
+                    this.mapBlock.getCodeText()
                 ),
             ]);
         }
 
         return codeTextToString(loops, params);
     }
+
+    private putToBlock(dynamicCode:DynamicCode, array:boolean) {
+        var collectionType = array ? CollectionType.ARRAY : CollectionType.MAP;
+        var codeBlock = array ? this.arrayBlock : this.mapBlock;
+        if (codeBlock === null && (this.type === CollectionType.UNKNOWN || this.type === collectionType)) {
+            var code:Code;
+            if (isProvider(dynamicCode)) {
+                code = dynamicCode.createCode({array: array});
+            } else {
+                code = dynamicCode;
+            }
+            codeBlock = new (codeBlockConstructor(code, array))();
+            this.setBlock(codeBlock, array);
+        }
+        putTo(codeBlock, dynamicCode);
+    }
+
+    private setBlock(block:CodeBlock, array:boolean) {
+        if (array) {
+            this.arrayBlock = block;
+        } else {
+            this.mapBlock = block;
+        }
+    }
 }
 
 class Accumulator {
-    private strategy:AccumulatorStrategy = null;
+    private multiCode:MultiCode = null;
     private text:string[] = [];
     private params:any[] = [];
 
@@ -278,14 +303,10 @@ class Accumulator {
             this.flush();
         }
 
-        if (this.strategy === null) {
-            if (isProvider(dynamicCode)) {
-                this.strategy = new LoopStrategy(parentType); //todo provider can define default type
-            } else {
-                this.strategy = new (strategyFactory(dynamicCode))(parentType);
-            }
+        if (this.multiCode === null) {
+            this.multiCode = new MultiCode(parentType);
         }
-        this.strategy.put(dynamicCode);
+        this.multiCode.put(dynamicCode);
     }
 
     toCode():string {
@@ -297,25 +318,25 @@ class Accumulator {
         return this.params;
     }
 
-    private canPut(code:DynamicCode):boolean {
-        if (isProvider(code)) {
-            return this.strategy === null || this.strategy.canPut(code);
-        } else {
-            return this.strategy === null || (this.strategy instanceof strategyFactory(code) && this.strategy.canPut(code));
-        }
+    private canPut(dynamicCode:DynamicCode):boolean {
+        return this.multiCode === null || this.multiCode.canPut(dynamicCode);
     }
 
     private flush() {
-        this.text.push(this.strategy.toCode(this.params));
-        this.strategy = null;
+        this.text.push(this.multiCode.toCode(this.params));
+        this.multiCode = null;
     }
 }
 
-function strategyFactory(code:Code):StrategyFactory {
+function codeBlockConstructor(code:Code, array:boolean):CodeBlockConstructor {
     if (Accumulator.isLoop(code)) {
-        return LoopStrategy;
+        if (array) {
+            return ArrayLoopBlock;
+        } else {
+            return MapLoopBlock;
+        }
     }
-    return SimpleStrategy;
+    return SimpleBlock;
 }
 
 function changesIndex(text:CodeText<any>):boolean {
@@ -333,32 +354,36 @@ function isProvider(code:DynamicCode):code is CodeProvider {
     return typeof (code as CodeProvider).createCode === 'function';
 }
 
-function putTo(generalLoop:GeneralLoop, dynamicCode:DynamicCode) {
-    if (generalLoop === null) {
+function putTo(codeBlock:CodeBlock, dynamicCode:DynamicCode) {
+    if (codeBlock === null) {
         return;
     }
-    var loop:Loop;
-    if (isProvider(dynamicCode)) {
-        loop = dynamicCode.createCode(generalLoop.getContext()) as Loop;
-    } else {
-        loop = dynamicCode as Loop;
-    }
-    generalLoop.put(loop);
-}
-
-function canPutTo(loop:GeneralLoop, dynamicCode:DynamicCode):boolean {
     var code:Code;
     if (isProvider(dynamicCode)) {
-        if (!loop) {
-            return true;
-        }
-        code = dynamicCode.createCode(loop.getContext());
+        code = dynamicCode.createCode(codeBlock.getContext()) as Code;
     } else {
-        code = dynamicCode;
+        code = dynamicCode as Code;
+    }
+    codeBlock.put(code);
+}
+
+function canPutTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, array:boolean):boolean {
+    var code:Code;
+
+    if (codeBlock === null) {
+        return true;
     }
 
-    return loop === null || loop.canPut(code as Loop);
+    if (isProvider(dynamicCode)) {
+        code = dynamicCode.createCode(codeBlock.getContext());
+    } else {
+        code = dynamicCode;
+        if (!(codeBlock instanceof codeBlockConstructor(code, array))) {
+            return false;
+        }
+    }
 
+    return codeBlock.canPut(code);
 }
 
 export = Accumulator;

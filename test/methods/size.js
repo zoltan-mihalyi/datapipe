@@ -8,4 +8,12 @@ describe('size tests', function() {
     it('object size', function() {
         expect(dp().size().process({a: 1, b: 2, c: 3})).toEqual(3);
     });
+
+    it('size should not use iteration to determine array size', function() {
+        expect(dp()
+            .size()
+            .fn()
+            .toString()
+        ).not.toContain('<');
+    });
 });

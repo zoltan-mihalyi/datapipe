@@ -22,8 +22,8 @@ interface Ret<T> {
 interface Context {
     loop?:{
         lengthDirty:boolean;
-        array:boolean;
     };
+    array:boolean;
 }
 
 type Code = Loop | CodeText<any>;
