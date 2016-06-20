@@ -52,7 +52,20 @@ import {
     itar,
     rename
 } from "./code-helpers";
-import {CollectionType, filterMapBefore, filterMapAfter, mapBefore, mapAfter} from "./common";
+import {CollectionType, filterMapBefore, filterMapAfter, mapBefore, mapAfter, isProvider} from "./common";
+
+const NEEDS_ALL:NeedsProvider = (needs:Needs)=> {
+    if (needs.range) {
+        return {
+            range: needs.range
+        };
+    }
+    return {};
+};
+
+const NEEDS_SAME:NeedsProvider = (needs:Needs)=> {
+    return needs
+};
 
 interface DataPipeResult<R,T> {
     process(data:R[]):T;
@@ -62,6 +75,7 @@ interface DataPipeResult<R,T> {
 interface Step {
     code:DynamicCode;
     parentType:CollectionType;
+    needsProvider:NeedsProvider;
 }
 
 type Primitive = string|number|boolean|void;
@@ -140,7 +154,14 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }
 
         return this.subPipe<T>(CollectionType.ARRAY, {
-            createCode: (ctx:Context)=> {
+            createCode: (ctx:Context, needs:Needs)=> {
+                if (needs.size) {
+                    return conditional(
+                        gt(result, literal(cnt)),
+                        setResult(literal(cnt))
+                    );
+                }
+
                 var loop:Loop = {
                     rename: true, //todo calculate from codeText?
                     before: filterMapBefore,
@@ -162,8 +183,24 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 optimizeMap(loop, ctx);
 
                 return loop;
+            },
+            handlesSize: true
+        }, true, (needs:Needs) => {
+            if (needs.size) {
+                return needs;
             }
-        }, true);
+
+            var range = needs.range || {
+                    start: 0,
+                    length: Infinity
+                };
+            return {
+                range: {
+                    start: range.start,
+                    length: Math.min(range.length, cnt)
+                }
+            };
+        });
     }
 
     where(properties):ChildDataPipe<R,T,T> {
@@ -313,7 +350,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     shuffle():ChildDataPipe<R,T,T> {
         if (this.type !== CollectionType.ARRAY) {
-            return this.toArray().shuffle();
+            return this.toArray().shuffle(); //todo
         }
         var rand:CodeText<number> = named<number>('random');
         var math:CodeText<{[index:string]:()=>number}> = named<any>('Math');
@@ -321,7 +358,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         var flooredRandom:CodeText<number> = call(prop(math, 'floor'), [random]);
 
         return this.subPipe<T>(CollectionType.ARRAY, {
-            createCode: (ctx:Context)=> {
+            createCode: (ctx:Context, needs:Needs) => {
+                if (needs.size) {
+                    return empty;
+                }
+
                 var loop:Loop = {
                     before: filterMapBefore,
                     text: seq([
@@ -338,8 +379,9 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 optimizeMap(loop, ctx);
 
                 return loop;
-            }
-        }, true);
+            },
+            handlesSize: true
+        }, true, NEEDS_SAME);
     }
 
     toArray():ChildDataPipe<R,T,T> {
@@ -347,23 +389,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     size():ChildDataPipe<R,T,T> {
-        return this.subPipe<T>(CollectionType.UNKNOWN, {
-            createCode: (ctx:Context)=> {
-                if (ctx.array) {
-                    return setResult(prop<number>(result, 'length'));
-                } else {
-                    return {
-                        before: setResult(literal(0)),
-                        after: increment(result),
-                        text: empty,
-                        mergeStart: true,
-                        mergeEnd: false,
-                        changesLength: true,
-                        rename: true
-                    };
-                }
-            }
-        }, true);
+        return this.subPipe<T>(CollectionType.UNKNOWN, empty, true, ()=> {
+            return {
+                size: true
+            };
+        });
     }
 
     partition(predicate:(t?:T) => boolean, context?:any) { //todo predicate type with index and list
@@ -409,17 +439,33 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             condition = not(condition);
         }
         return this.subPipe<T>(CollectionType.ARRAY, {
-            rename: true,
-            changesIndex: true,
-            before: filterMapBefore,
-            after: filterMapAfter,
-            text: conditional(
-                condition,
-                cont
-            ),
-            mergeStart: true,
-            mergeEnd: true,
-            changesLength: true
+            createCode: (ctx:Context, needs:Needs)=> {
+                var before:CodeText<any>;
+                var after:CodeText<any>;
+
+                if (needs.size) {
+                    before = setResult(literal(0));
+                    after = increment(result);
+                } else {
+                    before = filterMapBefore;
+                    after = filterMapAfter;
+                }
+
+                return {
+                    rename: true,
+                    changesIndex: true,
+                    before: before,
+                    after: after,
+                    text: conditional(
+                        condition,
+                        cont
+                    ),
+                    mergeStart: true,
+                    mergeEnd: true,
+                    changesLength: true
+                }
+            },
+            handlesSize: true
         }, true);
     }
 
@@ -476,7 +522,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     private mapLike<O>(text:CodeText<any>):ChildDataPipe<R,T,O> {
         return this.subPipe<O>(CollectionType.ARRAY, {
-            createCode: (ctx:Context)=> {
+            createCode: (ctx:Context, needs:Needs)=> {
+                if (needs.size) {
+                    return empty;
+                }
+
                 var loop:Loop = {
                     rename: true,
                     before: filterMapBefore,
@@ -490,8 +540,9 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 optimizeMap(loop, ctx);
 
                 return loop;
-            }
-        }, true);
+            },
+            handlesSize: true
+        }, true, NEEDS_SAME);
     }
 
     private reduceLikeWithProvider<M>(reducer:(memo?:M, t?:T) => M, memo:Provider<M>, context:any, reversed:boolean) {
@@ -520,18 +571,20 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }, true);
     }
 
-    private subPipe<X>(type:CollectionType, code:DynamicCode, newResult:boolean):ChildDataPipe<R,T,X> {
-        return new ChildDataPipe<R,T,X>(type, this, code, newResult);
+    private subPipe<X>(type:CollectionType, code:DynamicCode, newResult:boolean, np?:NeedsProvider):ChildDataPipe<R,T,X> {
+        return new ChildDataPipe<R,T,X>(type, this, code, newResult, np);
     }
 }
 
 class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
     private processor:Mapper<R,T> = null;
     private newResult:boolean;
+    private needsProvider:NeedsProvider;
 
-    constructor(type:CollectionType, private parent:DataPipe<R,any,P>, private code:DynamicCode, newResult:boolean) {
+    constructor(type:CollectionType, private parent:DataPipe<R,any,P>, private code:DynamicCode, newResult:boolean, np?:NeedsProvider) {
         super(type);
         this.newResult = newResult || this.parent.hasNewResult();
+        this.needsProvider = np || NEEDS_ALL;
     }
 
     process(data:R[]):T[] {
@@ -554,7 +607,8 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
         var codes = this.parent.getSteps();
         codes.push({
             code: this.code,
-            parentType: this.parent.type
+            parentType: this.parent.type,
+            needsProvider: this.needsProvider
         });
         return codes;
     }
@@ -566,10 +620,16 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
     private createProcessor():Mapper<R,T> {
         var steps:Step[] = this.getSteps();
 
+        var needs = this.processNeeds(steps);
+
         var accumulator:Accumulator = new Accumulator();
         for (var i = 0; i < steps.length; i++) {
             let step:Step = steps[i];
-            accumulator.put(step.parentType, step.code);
+            if (needs.lengthTransformations[i]) {
+                accumulator.put(steps[i].parentType, sizeCodeProvider, {});
+            }
+
+            accumulator.put(step.parentType, step.code, needs.byIndex[i]);
         }
         var codeStr:string = accumulator.toCode();
         var params:any[] = accumulator.getParams();
@@ -581,7 +641,54 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
         }
         return (new Function(paramNames.join(','), fnBody)).apply(null, params);
     }
+
+    private processNeeds(steps:Step[]) {
+        var needs:Needs = {};
+        var needsByIndex:Needs[] = [];
+
+        var lengthTransformations = {};
+
+        for (var i = steps.length - 1; i >= 0; --i) {
+            let step = steps[i];
+
+            needsByIndex[i] = needs;
+            needs = step.needsProvider(needs);
+
+            if (needs.size && (i === 0 || !handlesSize(steps[i - 1]))) {
+                lengthTransformations[i] = true;
+            }
+        }
+
+        function handlesSize(step:Step):boolean {
+            var code:DynamicCode = step.code;
+            return isProvider(code) && code.handlesSize;
+        }
+
+        return {
+            byIndex: needsByIndex,
+            lengthTransformations: lengthTransformations
+        };
+    }
 }
+
+var sizeCodeProvider:CodeProvider = {
+    createCode: (ctx:Context)=> {
+        if (ctx.array) {
+            return setResult(prop<number>(result, 'length'));
+        } else {
+            return {
+                before: setResult(literal(0)),
+                after: increment(result),
+                text: empty,
+                mergeStart: true,
+                mergeEnd: false,
+                changesLength: true,
+                rename: true
+            };
+        }
+    },
+    handlesSize: true
+};
 
 class RootDataPipe<T> extends DataPipe<T,T,T> {
     process(data:T[]):T[] {

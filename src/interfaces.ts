@@ -26,10 +26,21 @@ interface Context {
     array:boolean;
 }
 
+interface Needs {
+    size?:boolean;
+    range?:{
+        start:number;
+        length:number
+    }
+}
+
+type NeedsProvider = (need?:Needs) => Needs;
+
 type Code = Loop | CodeText<any>;
 
 type CodeProvider = {
-    createCode:(ctx:Context)=>Code;
+    createCode:(ctx:Context, needs:Needs) => Code;
+    handlesSize:boolean;
 };
 
 type DynamicCode = Code|CodeProvider;

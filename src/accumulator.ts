@@ -1,5 +1,5 @@
 ///<reference path="interfaces.ts"/>
-import {CollectionType} from "./common";
+import {CollectionType, isProvider} from "./common";
 import {
     codeTextToString,
     named,
@@ -228,7 +228,7 @@ class MapLoopBlock extends LoopBlock { //todo reversed?
     }
 }
 
-class MultiCode {
+class MultiCode { //todo dont generate "if" when the branches are the same
     private arrayBlock:CodeBlock = null;
     private mapBlock:CodeBlock = null;
     private empty:boolean = true;
@@ -236,14 +236,14 @@ class MultiCode {
     constructor(private type:CollectionType) {
     }
 
-    put(dynamicCode:DynamicCode) {
-        this.putToBlock(dynamicCode, true);
-        this.putToBlock(dynamicCode, false);
+    put(dynamicCode:DynamicCode, needs:Needs) {
+        this.putToBlock(dynamicCode, needs, true);
+        this.putToBlock(dynamicCode, needs, false);
         this.empty = false;
     }
 
-    canPut(dynamicCode:DynamicCode):boolean {
-        return canPutTo(this.mapBlock, dynamicCode, false) && canPutTo(this.arrayBlock, dynamicCode, true);
+    canPut(dynamicCode:DynamicCode, needs:Needs):boolean {
+        return canPutTo(this.mapBlock, dynamicCode, needs, false) && canPutTo(this.arrayBlock, dynamicCode, needs, true);
     }
 
     toCode(params:any[]):string {
@@ -254,32 +254,40 @@ class MultiCode {
         } else if (this.type === CollectionType.MAP) {
             loops = this.mapBlock.getCodeText();
         } else {
-            loops = seq([
-                conditional(
-                    and(result, type(prop<boolean>(result, 'length'), 'number')),
-                    this.arrayBlock.getCodeText(),
-                    this.mapBlock.getCodeText()
-                ),
-            ]);
+            var arrayText = this.arrayBlock.getCodeText();
+            var mapText = this.mapBlock.getCodeText();
+
+
+            if (codeTextEquals(arrayText, mapText)) {
+                loops = arrayText;
+            } else {
+                loops = seq([
+                    conditional(
+                        and(result, type(prop<boolean>(result, 'length'), 'number')),
+                        arrayText,
+                        mapText
+                    ),
+                ]);
+            }
         }
 
         return codeTextToString(loops, params);
     }
 
-    private putToBlock(dynamicCode:DynamicCode, array:boolean) {
+    private putToBlock(dynamicCode:DynamicCode, needs:Needs, array:boolean) {
         var collectionType = array ? CollectionType.ARRAY : CollectionType.MAP;
         var codeBlock = array ? this.arrayBlock : this.mapBlock;
         if (codeBlock === null && (this.type === CollectionType.UNKNOWN || this.type === collectionType)) {
             var code:Code;
             if (isProvider(dynamicCode)) {
-                code = dynamicCode.createCode({array: array});
+                code = dynamicCode.createCode({array: array}, needs);
             } else {
                 code = dynamicCode;
             }
             codeBlock = new (codeBlockConstructor(code, array))();
             this.setBlock(codeBlock, array);
         }
-        putTo(codeBlock, dynamicCode);
+        putTo(codeBlock, dynamicCode, needs);
     }
 
     private setBlock(block:CodeBlock, array:boolean) {
@@ -300,15 +308,15 @@ class Accumulator {
         return !!(code as Loop).text;
     }
 
-    put(parentType:CollectionType, dynamicCode:DynamicCode):void {
-        if (!this.canPut(dynamicCode)) {
+    put(parentType:CollectionType, dynamicCode:DynamicCode, needs:Needs):void {
+        if (!this.canPut(dynamicCode, needs)) {
             this.flush();
         }
 
         if (this.multiCode === null) {
             this.multiCode = new MultiCode(parentType);
         }
-        this.multiCode.put(dynamicCode);
+        this.multiCode.put(dynamicCode, needs);
     }
 
     toCode():string {
@@ -320,8 +328,8 @@ class Accumulator {
         return this.params;
     }
 
-    private canPut(dynamicCode:DynamicCode):boolean {
-        return this.multiCode === null || this.multiCode.canPut(dynamicCode);
+    private canPut(dynamicCode:DynamicCode, needs:Needs):boolean {
+        return this.multiCode === null || this.multiCode.canPut(dynamicCode, needs);
     }
 
     private flush() {
@@ -360,24 +368,32 @@ function codeTextContains(text:CodeText<any>, part:CodeText<any>):boolean {
     return false;
 }
 
-function isProvider(code:DynamicCode):code is CodeProvider {
-    return typeof (code as CodeProvider).createCode === 'function';
+function codeTextEquals(text1:CodeText<any>, text2:CodeText<any>):boolean {
+    if (text1.length !== text2.length) {
+        return false;
+    }
+    for (var i = 0; i < text1.length; i++) {
+        if (text1[i] !== text2[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
-function putTo(codeBlock:CodeBlock, dynamicCode:DynamicCode) {
+function putTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, needs:Needs) {
     if (codeBlock === null) {
         return;
     }
     var code:Code;
     if (isProvider(dynamicCode)) {
-        code = dynamicCode.createCode(codeBlock.getContext()) as Code;
+        code = dynamicCode.createCode(codeBlock.getContext(), needs);
     } else {
-        code = dynamicCode as Code;
+        code = dynamicCode;
     }
     codeBlock.put(code);
 }
 
-function canPutTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, array:boolean):boolean {
+function canPutTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, needs:Needs, array:boolean):boolean {
     var code:Code;
 
     if (codeBlock === null) {
@@ -385,7 +401,7 @@ function canPutTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, array:boolean):b
     }
 
     if (isProvider(dynamicCode)) {
-        code = dynamicCode.createCode(codeBlock.getContext());
+        code = dynamicCode.createCode(codeBlock.getContext(), needs);
     } else {
         code = dynamicCode;
         if (!(codeBlock instanceof codeBlockConstructor(code, array))) {

@@ -9,6 +9,21 @@ describe('size tests', function() {
         expect(dp().size().process({a: 1, b: 2, c: 3})).toEqual(3);
     });
 
+    it('reduce and size', function() {
+        expect(dp()
+            .reduce(function(memo, x) {
+                if (x % 2 === 0) {
+                    memo.push(x);
+                }
+                return memo;
+            }, function() {
+                return [];
+            })
+            .size()
+            .process([1, 2, 3, 4, 5, 6])
+        ).toBe(3);
+    });
+
     it('size should not use iteration to determine array size', function() {
         expect(dp()
             .size()
