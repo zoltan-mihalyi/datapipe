@@ -136,20 +136,28 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     take(cnt?:number):ChildDataPipe<R,T,T> {
-        //todo pick first item if available
         //todo if length >= data.length, do nothing
         if (cnt == null) {
             return this.subPipe<T>(CollectionType.UNKNOWN, {
-                rename: true,
-                before: setResult(undef),
-                after: empty,
-                text: seq([
-                    setResult(current),
-                    br
-                ]),
-                mergeStart: true,
-                mergeEnd: false,
-                changesLength: true
+                createCode: (ctx:Context) => {
+                    if (ctx.array) {
+                        return setResult(prop(result, literal(0)));
+                    }
+
+                    return {
+                        rename: true,
+                        before: setResult(undef),
+                        after: empty,
+                        text: seq([
+                            setResult(current),
+                            br
+                        ]),
+                        mergeStart: true,
+                        mergeEnd: false,
+                        changesLength: true
+                    };
+                },
+                handlesSize: false
             }, false);
         }
 

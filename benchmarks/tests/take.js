@@ -5,9 +5,10 @@ var dp = require('../../dist/datapipe');
 
 var _take = _.take;
 var __take = __.take;
+var __head = __.head;
 
-var fn = dp('array').take(5).fn();
-var nativeFn = function(array) {
+var fn1 = dp('array').take(5).fn();
+var nativeFn1 = function(array) {
     var length = array.length;
     if (length > 5) {
         length = 5;
@@ -19,14 +20,19 @@ var nativeFn = function(array) {
     return result;
 };
 
-module.exports = {
+var fn2 = dp('array').take().fn();
+var nativeFn2 = function(array) {
+    return array[0];
+};
+
+module.exports = [{
     name: 'take 5',
     tests: {
         native: function() {
-            return nativeFn(array);
+            return nativeFn1(array);
         },
         undersorcery: function() {
-            return fn(array);
+            return fn1(array);
         },
         underscore: function() {
             return _take(array, 5);
@@ -35,4 +41,20 @@ module.exports = {
             return __take(array, 5);
         }
     }
-};
+}, {
+    name: 'take first',
+    tests: {
+        native: function() {
+            return nativeFn2(array);
+        },
+        undersorcery: function() {
+            return fn2(array);
+        },
+        underscore: function() {
+            return _take(array);
+        },
+        lodash: function() {
+            return __head(array);
+        }
+    }
+}];
