@@ -247,34 +247,38 @@ class MapLoopBlock extends LoopBlock { //todo reversed?
     }
 }
 
-class MultiCode { //todo dont generate "if" when the branches are the same
-    private arrayBlock:CodeBlock = null;
-    private mapBlock:CodeBlock = null;
+function matchesType(type:CollectionType, collectionType:CollectionType) {
+    return type === CollectionType.UNKNOWN || type === collectionType;
+}
+
+class MultiCode {
+    private arrayBlock:CodeBlock[] = [];
+    private mapBlock:CodeBlock[] = [];
     private empty:boolean = true;
 
     constructor(private type:CollectionType) {
     }
 
-    put(dynamicCode:DynamicCode, needs:Needs) {
-        this.putToBlock(dynamicCode, needs, true);
-        this.putToBlock(dynamicCode, needs, false);
+    put(dynamicCode:DynamicCode, needs:Needs, parentType:CollectionType) {
+        this.putToBlock(dynamicCode, needs, parentType, true);
+        this.putToBlock(dynamicCode, needs, parentType, false);
         this.empty = false;
     }
 
     canPut(dynamicCode:DynamicCode, needs:Needs):boolean {
-        return canPutTo(this.mapBlock, dynamicCode, needs, false) && canPutTo(this.arrayBlock, dynamicCode, needs, true);
+        return canPutTo(this.mapBlock, dynamicCode, needs, false) || canPutTo(this.arrayBlock, dynamicCode, needs, true);
     }
 
     toCode(params:any[]):string {
         var loops:CodeText<void>;
 
         if (this.type === CollectionType.ARRAY) {
-            loops = this.arrayBlock.getCodeText();
+            loops = getCodeTexts(this.arrayBlock);
         } else if (this.type === CollectionType.MAP) {
-            loops = this.mapBlock.getCodeText();
+            loops = getCodeTexts(this.mapBlock);
         } else {
-            var arrayText = this.arrayBlock.getCodeText();
-            var mapText = this.mapBlock.getCodeText();
+            var arrayText = getCodeTexts(this.arrayBlock);
+            var mapText = getCodeTexts(this.mapBlock);
 
             if (codeTextEquals(arrayText, mapText)) {
                 loops = arrayText;
@@ -292,28 +296,29 @@ class MultiCode { //todo dont generate "if" when the branches are the same
         return codeTextToString(loops, params);
     }
 
-    private putToBlock(dynamicCode:DynamicCode, needs:Needs, array:boolean) {
+    private putToBlock(dynamicCode:DynamicCode, needs:Needs, parentType:CollectionType, array:boolean) {
         var collectionType = array ? CollectionType.ARRAY : CollectionType.MAP;
-        var codeBlock = array ? this.arrayBlock : this.mapBlock;
-        if (codeBlock === null && (this.type === CollectionType.UNKNOWN || this.type === collectionType)) {
+        var codeBlocks:CodeBlock[] = array ? this.arrayBlock : this.mapBlock;
+
+        var shouldCreateCodeBlock = codeBlocks.length === 0 || !canPutTo(codeBlocks, dynamicCode, needs, array);
+        if (shouldCreateCodeBlock && matchesType(this.type, collectionType)) {
             var code:Code;
             if (isProvider(dynamicCode)) {
                 code = dynamicCode.createCode({array: array}, needs);
             } else {
                 code = dynamicCode;
             }
-            codeBlock = new (codeBlockConstructor(code, array))();
-            this.setBlock(codeBlock, array);
+            var isArrayBlock = array;
+            if (codeBlocks.length > 0) {
+                isArrayBlock = parentType === CollectionType.ARRAY
+            }
+            this.addBlock(new (codeBlockConstructor(code, isArrayBlock))(), array);
         }
-        putTo(codeBlock, dynamicCode, needs);
+        putTo(codeBlocks, dynamicCode, needs);
     }
 
-    private setBlock(block:CodeBlock, array:boolean) {
-        if (array) {
-            this.arrayBlock = block;
-        } else {
-            this.mapBlock = block;
-        }
+    private addBlock(block:CodeBlock, array:boolean) {
+        (array ? this.arrayBlock : this.mapBlock).push(block);
     }
 }
 
@@ -334,7 +339,7 @@ class Accumulator {
         if (this.multiCode === null) {
             this.multiCode = new MultiCode(parentType);
         }
-        this.multiCode.put(dynamicCode, needs);
+        this.multiCode.put(dynamicCode, needs, parentType);
     }
 
     toCode():string {
@@ -398,10 +403,11 @@ function codeTextEquals(text1:CodeText<any>, text2:CodeText<any>):boolean {
     return true;
 }
 
-function putTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, needs:Needs) {
-    if (codeBlock === null) {
+function putTo(codeBlocks:CodeBlock[], dynamicCode:DynamicCode, needs:Needs) {
+    if (codeBlocks.length === 0) {
         return;
     }
+    var codeBlock = last(codeBlocks);
     var code:Code;
     if (isProvider(dynamicCode)) {
         code = dynamicCode.createCode(codeBlock.getContext(), needs);
@@ -411,12 +417,14 @@ function putTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, needs:Needs) {
     codeBlock.put(code);
 }
 
-function canPutTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, needs:Needs, array:boolean):boolean {
+function canPutTo(codeBlocks:CodeBlock[], dynamicCode:DynamicCode, needs:Needs, array:boolean):boolean {
     var code:Code;
 
-    if (codeBlock === null) {
+    if (codeBlocks.length === 0) {
         return true;
     }
+
+    var codeBlock = last(codeBlocks);
 
     if (isProvider(dynamicCode)) {
         code = dynamicCode.createCode(codeBlock.getContext(), needs);
@@ -428,6 +436,21 @@ function canPutTo(codeBlock:CodeBlock, dynamicCode:DynamicCode, needs:Needs, arr
     }
 
     return codeBlock.canPut(code);
+}
+
+function last<T>(array:T[]):T {
+    return array[array.length - 1];
+}
+
+function getCodeTexts(codeBlocks:CodeBlock[]):CodeText<any> {
+    var results:CodeText<any>[] = [];
+
+    for (var i = 0; i < codeBlocks.length; i++) {
+        var codeBlock = codeBlocks[i];
+        results.push(codeBlock.getCodeText());
+    }
+
+    return seq(results);
 }
 
 export = Accumulator;

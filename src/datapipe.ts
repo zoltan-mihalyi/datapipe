@@ -259,6 +259,9 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     initial(cnt?:number):ChildDataPipe<R,T,T> {
+        if (this.type !== CollectionType.ARRAY) {
+            return this.toArray().initial(cnt);
+        }
         if (cnt == null) {
             cnt = 1;
         }
@@ -276,19 +279,12 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     rename: true,
                     before: filterMapBefore,
                     after: filterMapAfter,
-                    text: conditional(
-                        lt(arrayIndex, literal(cnt)),
-                        cont
-                    ),
-                    mergeStart: true,
+                    text: empty,
+                    mergeStart: ctx.array,
                     mergeEnd: true,
-                    changesLength: false
+                    changesLength: false,
+                    cutEnd: cnt
                 };
-
-                if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) { //todo duplicated
-                    loop.cutEnd = cnt;
-                    loop.text = empty;
-                }
 
                 optimizeMap(loop, ctx);
 

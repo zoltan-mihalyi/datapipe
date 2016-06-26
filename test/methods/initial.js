@@ -5,7 +5,7 @@ describe('initial tests', function() {
         expect(dp().initial(2).process([1, 2, 3, 4, 5, 6])).toEqual([1, 2, 3, 4]);
     });
 
-    xit('initial with object', function() { //todo
+    it('initial with object', function() {
         expect(dp().initial(2).process({a: 1, b: 2, c: 3, d: 4, e: 5, f: 6})).toEqual([1, 2, 3, 4]);
     });
 
