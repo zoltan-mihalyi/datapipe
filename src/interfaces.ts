@@ -39,6 +39,13 @@ interface Needs {
     }
 }
 
+interface CodeBlock {
+    getContext():Context;
+    put(code:Code):void;
+    canPut(code:Code):boolean;
+    getCodeText():CodeText<any>;
+}
+
 type NeedsProvider = (need?:Needs) => Needs;
 
 type Code = Loop | CodeText<any>;
