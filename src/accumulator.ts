@@ -19,7 +19,8 @@ import {
     increment,
     statement,
     arrayIndex,
-    cont
+    cont,
+    br
 } from "./code-helpers";
 
 var arrayIndexName:string = arrayIndex[0] as string;
@@ -73,8 +74,9 @@ abstract class LoopBlock implements CodeBlock {
     put(loop:Loop):void {
         this.rename = this.rename || loop.rename;
         this.lastMergeEnd = loop.mergeEnd;
-        this.lengthDirty = this.lengthDirty || loop.changesLength;
         var text:CodeText<any> = this.replaceIndexes(loop.text);
+
+        this.lengthDirty = this.lengthDirty || changesLength(text);
 
         var creatingArray = loop.before && loop.before.indexOf('[]') !== -1; //todo
 
@@ -374,6 +376,10 @@ function codeBlockConstructor(code:Code, array:boolean):CodeBlockConstructor {
 
 function changesIndex(text:CodeText<any>):boolean {
     return codeTextContains(text, cont);
+}
+
+function changesLength(text:CodeText<any>):boolean {
+    return codeTextContains(text, cont) || codeTextContains(text, br);
 }
 
 function usesCurrent(text:CodeText<any>):boolean {

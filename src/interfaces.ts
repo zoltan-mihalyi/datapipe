@@ -10,7 +10,6 @@ interface Loop {
     text:CodeText<any>;
     mergeStart:boolean;
     mergeEnd:boolean;
-    changesLength:boolean;
     reversed?:boolean;
     rename?:boolean;
     until?:number;

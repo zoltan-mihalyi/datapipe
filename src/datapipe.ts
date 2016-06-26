@@ -135,8 +135,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ])
             ),
             mergeStart: true,
-            mergeEnd: false,
-            changesLength: true //todo create mergeEnd enum!
+            mergeEnd: false
         }, true) as any;
     }
 
@@ -158,8 +157,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                             br
                         ]),
                         mergeStart: true,
-                        mergeEnd: false,
-                        changesLength: true
+                        mergeEnd: false
                     };
                 },
                 handlesSize: false
@@ -184,8 +182,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                         br
                     ),
                     mergeStart: true,
-                    mergeEnd: true,
-                    changesLength: false
+                    mergeEnd: true
                 };
 
                 if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) {
@@ -241,8 +238,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                         cont
                     ),
                     mergeStart: true,
-                    mergeEnd: true,
-                    changesLength: false
+                    mergeEnd: true
                 };
 
                 if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) {
@@ -282,7 +278,6 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     text: empty,
                     mergeStart: ctx.array,
                     mergeEnd: true,
-                    changesLength: false,
                     cutEnd: cnt
                 };
 
@@ -463,7 +458,6 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     after: assign(prop(result, rand), current),
                     mergeStart: true,
                     mergeEnd: false,
-                    changesLength: true,
                     rename: true
                 };
 
@@ -501,8 +495,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 call(prop<any>(part2, 'push'), [current])
             )),
             mergeStart: true,
-            mergeEnd: false,
-            changesLength: true
+            mergeEnd: false
         }, false).subPipe(CollectionType.ARRAY, setResult(array(part1, part2)), true);
     }
 
@@ -552,8 +545,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                         cont
                     ),
                     mergeStart: true,
-                    mergeEnd: true,
-                    changesLength: true
+                    mergeEnd: true
                 }
             },
             handlesSize: true
@@ -606,8 +598,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ])
             ),
             mergeStart: true,
-            mergeEnd: false,
-            changesLength: true
+            mergeEnd: false
         }, true) as DataPipeResult<R, any>;
     }
 
@@ -624,8 +615,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     after: filterMapAfter,
                     text: text,
                     mergeStart: true,
-                    mergeEnd: true,
-                    changesLength: false
+                    mergeEnd: true
                 };
 
                 optimizeMap(loop, ctx);
@@ -657,7 +647,6 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             text: text,
             mergeStart: !reversed,
             mergeEnd: false,
-            changesLength: true,
             reversed: reversed
         }, true);
     }
@@ -773,7 +762,6 @@ var sizeCodeProvider:CodeProvider = {
                 text: empty,
                 mergeStart: true,
                 mergeEnd: false,
-                changesLength: true,
                 rename: true
             };
         }
