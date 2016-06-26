@@ -59,12 +59,7 @@ import {CollectionType, isProvider} from "./common";
 const filterMapBefore = setResult(array());
 const filterMapAfter = call(prop<()=>any>(result, 'push'), [current]);
 
-const NEEDS_ALL:NeedsProvider = (needs:Needs)=> {
-    if (needs.range) {
-        return {
-            range: needs.range
-        };
-    }
+const NEEDS_ALL:NeedsProvider = () => {
     return {};
 };
 
@@ -186,7 +181,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 };
 
                 if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) {
-                    loop.until = cnt;
+                    loop.endFromStart = cnt;
                     loop.text = empty;
                 }
 
@@ -195,22 +190,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 return loop;
             },
             handlesSize: true
-        }, true, (needs:Needs) => {
-            if (needs.size) {
-                return needs;
-            }
-
-            var range = needs.range || {
-                    start: 0,
-                    length: Infinity
-                };
-            return {
-                range: {
-                    start: range.start,
-                    length: Math.min(range.length, cnt)
-                }
-            };
-        });
+        }, true, NEEDS_SAME);
     }
 
     rest(cnt?:number):ChildDataPipe<R,T,T> { //todo tail, drop
@@ -242,7 +222,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 };
 
                 if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) {
-                    loop.from = cnt;
+                    loop.startFromStart = cnt;
                     loop.text = empty;
                 }
 
@@ -278,7 +258,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     text: empty,
                     mergeStart: ctx.array,
                     mergeEnd: true,
-                    cutEnd: cnt
+                    endFromEnd: cnt
                 };
 
                 optimizeMap(loop, ctx);
@@ -817,12 +797,12 @@ function whereFilter<T extends {[index:string]:any}>(properties:T) {
 
 function optimizeMap(loop:Loop, ctx:Context):void {
     if (!ctx.loop || (!ctx.loop.lengthDirty && ctx.array)) {
-        var from = loop.from || 0;
+        var start = loop.startFromStart || 0;
         if (ctx.loop) {
-            from += ctx.loop.from;
+            start += ctx.loop.range.startFromStart;
         }
-        loop.before = mapBefore(from);
-        loop.after = mapAfter(from);
+        loop.before = mapBefore(start);
+        loop.after = mapAfter(start);
     }
 }
 

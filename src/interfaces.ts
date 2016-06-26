@@ -4,7 +4,13 @@ interface ArrayT<T,E> extends Array<E> {
 
 type CodeText<T> = ArrayT<T,string|{0:any}>;
 
-interface Loop {
+interface LoopRange {
+    endFromStart?:number;
+    startFromStart?:number;
+    endFromEnd?:number;
+}
+
+interface Loop extends LoopRange {
     before?:CodeText<any>;
     after?:CodeText<any>;
     text:CodeText<any>;
@@ -12,9 +18,6 @@ interface Loop {
     mergeEnd:boolean;
     reversed?:boolean;
     rename?:boolean;
-    until?:number;
-    from?:number;
-    cutEnd?:number;
 }
 
 interface Ret<T> {
@@ -23,7 +26,7 @@ interface Ret<T> {
 interface Context {
     loop?:{
         lengthDirty:boolean;
-        from:number
+        range?:LoopRange;
     };
     array:boolean;
 }

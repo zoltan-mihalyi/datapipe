@@ -227,10 +227,10 @@ export function type(text:CodeText<any>, type:string):CodeText<boolean> {
 
 interface ItarOpts {
     reversed?:boolean;
-    until?:number;
-    from?:number;
+    endFromStart?:number;
+    startFromStart?:number;
+    endFromEnd?:number;
     level?:number;
-    cutEnd?:number;
 }
 
 export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<any>, opts:ItarOpts):CodeText<void> {
@@ -239,7 +239,7 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
     var afterthought:CodeText<any>;
     var loopIndex = index;
     var loopLength = length;
-    var from = opts.from || 0;
+    var from = opts.startFromStart || 0;
 
     if (typeof opts.level === 'number') {
         loopIndex = rename(index, opts.level);
@@ -262,20 +262,20 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
     ]), '){\n', ...block, '\n}'];
 
     var lengthModifier:CodeText<void> = empty;
-    if (typeof opts.until === 'number') {
-        let untilLiteral = literal(opts.until);
+    if (typeof opts.endFromStart === 'number') {
+        let endLiteral = literal(opts.endFromStart);
         lengthModifier = conditional(
-            gt(loopLength, untilLiteral),
-            assign(loopLength, untilLiteral)
+            gt(loopLength, endLiteral),
+            assign(loopLength, endLiteral)
         );
     }
 
-    if (opts.cutEnd) {
-        let cutEndLiteral = literal(opts.cutEnd);
+    if (opts.endFromEnd) {
+        let endLiteral = literal(opts.endFromEnd);
         lengthModifier = seq([
             assign(loopLength, ternary(
-                gt(loopLength, cutEndLiteral),
-                subtract(loopLength, cutEndLiteral),
+                gt(loopLength, endLiteral),
+                subtract(loopLength, endLiteral),
                 literal(0)
             )),
             lengthModifier

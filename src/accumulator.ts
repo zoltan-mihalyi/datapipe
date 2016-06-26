@@ -124,15 +124,10 @@ abstract class LoopBlock implements CodeBlock {
     getContext():Context {
         return {
             loop: {
-                lengthDirty: this.lengthDirty,
-                from: this.getFrom()
+                lengthDirty: this.lengthDirty
             },
             array: this.isArray()
         };
-    }
-
-    protected getFrom():number {
-        return 0;
     }
 
     protected abstract isArray():boolean;
@@ -185,9 +180,9 @@ abstract class LoopBlock implements CodeBlock {
 
 class ArrayLoopBlock extends LoopBlock {
     private reversed:boolean = null;
-    private until:number = null;
-    private from:number = 0;
-    private cutEnd:number = 0;
+    private endFromStart:number = null;
+    private startFromStart:number = 0;
+    private endFromEnd:number = 0;
 
     constructor() {
         super();
@@ -201,16 +196,16 @@ class ArrayLoopBlock extends LoopBlock {
         if (this.reversed === null) {
             this.reversed = !!loop.reversed;
         }
-        if (typeof loop.until === 'number') {
-            if (this.until === null || loop.until < this.until) {
-                this.until = loop.until;
+        if (typeof loop.endFromStart === 'number') {
+            if (this.endFromStart === null || loop.endFromStart < this.endFromStart) {
+                this.endFromStart = loop.endFromStart;
             }
         }
-        if (typeof loop.from === 'number') {
-            this.from += loop.from;
+        if (typeof loop.startFromStart === 'number') {
+            this.startFromStart += loop.startFromStart;
         }
-        if (typeof loop.cutEnd === 'number') {
-            this.cutEnd += loop.cutEnd;
+        if (typeof loop.endFromEnd === 'number') {
+            this.endFromEnd += loop.endFromEnd;
         }
     }
 
@@ -218,8 +213,12 @@ class ArrayLoopBlock extends LoopBlock {
         return super.getCodeText();
     }
 
-    protected getFrom():number {
-        return this.from;
+    getContext():Context {
+        var ctx:Context = super.getContext();
+        ctx.loop.range = {
+            startFromStart: this.startFromStart
+        };
+        return ctx;
     }
 
     protected isArray():boolean {
@@ -229,9 +228,9 @@ class ArrayLoopBlock extends LoopBlock {
     protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
         return itar(init, input, block, {
             reversed: this.reversed,
-            until: this.until,
-            from: this.from,
-            cutEnd: this.cutEnd
+            endFromStart: this.endFromStart,
+            startFromStart: this.startFromStart,
+            endFromEnd: this.endFromEnd
         });
     }
 }
