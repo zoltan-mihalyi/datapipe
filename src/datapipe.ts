@@ -216,7 +216,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         });
     }
 
-    rest(cnt?:number):ChildDataPipe<R,T,T> {
+    rest(cnt?:number):ChildDataPipe<R,T,T> { //todo tail, drop
         if (cnt == null) {
             cnt = 1;
         }
@@ -256,6 +256,46 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             },
             handlesSize: true
         }, true, NEEDS_SAME); //todo change range
+    }
+
+    initial(cnt?:number):ChildDataPipe<R,T,T> {
+        if (cnt == null) {
+            cnt = 1;
+        }
+        return this.subPipe<T>(CollectionType.ARRAY, {
+            createCode: (ctx:Context, needs:Needs) => {
+                if (needs.size) { //todo duplication
+                    return setResult(ternary(
+                        gt(result, literal(cnt)),
+                        subtract(result, literal(cnt)),
+                        literal(0)
+                    ));
+                }
+
+                var loop:Loop = {
+                    rename: true,
+                    before: filterMapBefore,
+                    after: filterMapAfter,
+                    text: conditional(
+                        lt(arrayIndex, literal(cnt)),
+                        cont
+                    ),
+                    mergeStart: true,
+                    mergeEnd: true,
+                    changesLength: false
+                };
+
+                if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) { //todo duplicated
+                    loop.cutEnd = cnt;
+                    loop.text = empty;
+                }
+
+                optimizeMap(loop, ctx);
+
+                return loop;
+            },
+            handlesSize: true
+        }, true, NEEDS_SAME);
     }
 
     where(properties):ChildDataPipe<R,T,T> {

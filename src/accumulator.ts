@@ -185,6 +185,7 @@ class ArrayLoopBlock extends LoopBlock {
     private reversed:boolean = null;
     private until:number = null;
     private from:number = 0;
+    private cutEnd:number = 0;
 
     constructor() {
         super();
@@ -206,6 +207,9 @@ class ArrayLoopBlock extends LoopBlock {
         if (typeof loop.from === 'number') {
             this.from += loop.from;
         }
+        if (typeof loop.cutEnd === 'number') {
+            this.cutEnd += loop.cutEnd;
+        }
     }
 
     getCodeText():CodeText<void> {
@@ -224,7 +228,8 @@ class ArrayLoopBlock extends LoopBlock {
         return itar(init, input, block, {
             reversed: this.reversed,
             until: this.until,
-            from: this.from
+            from: this.from,
+            cutEnd: this.cutEnd
         });
     }
 }

@@ -230,6 +230,7 @@ interface ItarOpts {
     until?:number;
     from?:number;
     level?:number;
+    cutEnd?:number;
 }
 
 export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<any>, opts:ItarOpts):CodeText<void> {
@@ -269,6 +270,17 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
         );
     }
 
+    if (opts.cutEnd) {
+        let cutEndLiteral = literal(opts.cutEnd);
+        lengthModifier = seq([
+            assign(loopLength, ternary(
+                gt(loopLength, cutEndLiteral),
+                subtract(loopLength, cutEndLiteral),
+                literal(0)
+            )),
+            lengthModifier
+        ]);
+    }
     return seq([
         declare(loopLength, prop<number>(array, 'length')),
         lengthModifier,

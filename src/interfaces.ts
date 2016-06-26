@@ -15,6 +15,7 @@ interface Loop {
     rename?:boolean;
     until?:number;
     from?:number;
+    cutEnd?:number;
 }
 
 interface Ret<T> {
