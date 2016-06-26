@@ -56,4 +56,13 @@ describe('rest tests', function() {
             .process([1, 2, 3, 4, 5])
         ).toBe('543');
     });
+
+    it('using size after rest', function() {
+        var fn = dp()
+            .rest(2)
+            .size()
+            .fn();
+        expect(fn([1, 2, 3, 4, 5])).toBe(3);
+        expect(fn([1])).toBe(0);
+    });
 });

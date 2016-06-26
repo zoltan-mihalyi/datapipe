@@ -221,7 +221,17 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             cnt = 1;
         }
         return this.subPipe<T>(CollectionType.ARRAY, {
-            createCode: (ctx:Context) => {
+            createCode: (ctx:Context, needs:Needs) => {
+                if (needs.size) {
+                    return setResult(
+                        ternary(
+                            gt(result, literal(cnt)),
+                            subtract(result, literal(cnt)),
+                            literal(0)
+                        )
+                    );
+                }
+
                 var loop:Loop = {
                     rename: true,
                     before: filterMapBefore,
@@ -245,7 +255,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 return loop;
             },
             handlesSize: true
-        }, true);
+        }, true, NEEDS_SAME); //todo change range
     }
 
     where(properties):ChildDataPipe<R,T,T> {
