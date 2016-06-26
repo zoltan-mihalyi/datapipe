@@ -50,9 +50,14 @@ import {
     par,
     and,
     itar,
-    rename
+    rename,
+    length,
+    newArray
 } from "./code-helpers";
-import {CollectionType, filterMapBefore, filterMapAfter, mapBefore, mapAfter, isProvider} from "./common";
+import {CollectionType, isProvider} from "./common";
+
+const filterMapBefore = setResult(array());
+const filterMapAfter = call(prop<()=>any>(result, 'push'), [current]);
 
 const NEEDS_ALL:NeedsProvider = (needs:Needs)=> {
     if (needs.range) {
@@ -162,7 +167,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }
 
         return this.subPipe<T>(CollectionType.ARRAY, {
-            createCode: (ctx:Context, needs:Needs)=> {
+            createCode: (ctx:Context, needs:Needs) => {
                 if (needs.size) {
                     return conditional(
                         gt(result, literal(cnt)),
@@ -209,6 +214,38 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 }
             };
         });
+    }
+
+    rest(cnt?:number):ChildDataPipe<R,T,T> {
+        if (cnt == null) {
+            cnt = 1;
+        }
+        return this.subPipe<T>(CollectionType.ARRAY, {
+            createCode: (ctx:Context) => {
+                var loop:Loop = {
+                    rename: true,
+                    before: filterMapBefore,
+                    after: filterMapAfter,
+                    text: conditional(
+                        lt(arrayIndex, literal(cnt)),
+                        cont
+                    ),
+                    mergeStart: true,
+                    mergeEnd: true,
+                    changesLength: false
+                };
+
+                if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) {
+                    loop.from = cnt;
+                    loop.text = empty;
+                }
+
+                optimizeMap(loop, ctx);
+
+                return loop;
+            },
+            handlesSize: true
+        }, true);
     }
 
     where(properties):ChildDataPipe<R,T,T> {
@@ -746,8 +783,12 @@ function whereFilter<T extends {[index:string]:any}>(properties:T) {
 
 function optimizeMap(loop:Loop, ctx:Context):void {
     if (!ctx.loop || (!ctx.loop.lengthDirty && ctx.array)) {
-        loop.before = mapBefore;
-        loop.after = mapAfter;
+        var from = loop.from || 0;
+        if (ctx.loop) {
+            from += ctx.loop.from;
+        }
+        loop.before = mapBefore(from);
+        loop.after = mapAfter(from);
     }
 }
 
@@ -763,6 +804,20 @@ function flattenTo(array, result) {
         }
     }
     return result;
+}
+
+function mapBefore(from:number):CodeText<void> {
+    var size:CodeText<number> = from === 0 ? length : ternary(
+        gt(length, literal(from)),
+        subtract(length, literal(from)),
+        literal(0)
+    );
+    return setResult(newArray(size));
+}
+
+function mapAfter(from:number):CodeText<void> {
+    var idx = from === 0 ? index : subtract(index, literal(from));
+    return assign(prop(result, idx), current);
 }
 
 export = <T>(typeName?:string) => {

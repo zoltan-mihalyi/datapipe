@@ -228,6 +228,7 @@ export function type(text:CodeText<any>, type:string):CodeText<boolean> {
 interface ItarOpts {
     reversed?:boolean;
     until?:number;
+    from?:number;
     level?:number;
 }
 
@@ -237,6 +238,7 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
     var afterthought:CodeText<any>;
     var loopIndex = index;
     var loopLength = length;
+    var from = opts.from || 0;
 
     if (typeof opts.level === 'number') {
         loopIndex = rename(index, opts.level);
@@ -244,11 +246,11 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
     }
 
     if (opts.reversed) {
-        initial = subtract(loopLength, literal(1));
+        initial = subtract(loopLength, literal(1 + from));
         condition = gte(loopIndex, literal(0));
         afterthought = decrement(loopIndex);
     } else {
-        initial = literal(0);
+        initial = literal(from);
         condition = lt(loopIndex, loopLength);
         afterthought = increment(loopIndex);
     }

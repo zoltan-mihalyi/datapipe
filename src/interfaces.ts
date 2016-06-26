@@ -14,6 +14,7 @@ interface Loop {
     reversed?:boolean;
     rename?:boolean;
     until?:number;
+    from?:number;
 }
 
 interface Ret<T> {
@@ -22,6 +23,7 @@ interface Ret<T> {
 interface Context {
     loop?:{
         lengthDirty:boolean;
+        from:number
     };
     array:boolean;
 }

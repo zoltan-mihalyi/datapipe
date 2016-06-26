@@ -122,10 +122,15 @@ abstract class LoopBlock implements CodeBlock {
     getContext():Context {
         return {
             loop: {
-                lengthDirty: this.lengthDirty
+                lengthDirty: this.lengthDirty,
+                from: this.getFrom()
             },
             array: this.isArray()
         };
+    }
+
+    protected getFrom():number {
+        return 0;
     }
 
     protected abstract isArray():boolean;
@@ -179,6 +184,7 @@ abstract class LoopBlock implements CodeBlock {
 class ArrayLoopBlock extends LoopBlock {
     private reversed:boolean = null;
     private until:number = null;
+    private from:number = 0;
 
     constructor() {
         super();
@@ -197,10 +203,17 @@ class ArrayLoopBlock extends LoopBlock {
                 this.until = loop.until;
             }
         }
+        if (typeof loop.from === 'number') {
+            this.from += loop.from;
+        }
     }
 
     getCodeText():CodeText<void> {
         return super.getCodeText();
+    }
+
+    protected getFrom():number {
+        return this.from;
     }
 
     protected isArray():boolean {
@@ -210,7 +223,8 @@ class ArrayLoopBlock extends LoopBlock {
     protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
         return itar(init, input, block, {
             reversed: this.reversed,
-            until: this.until
+            until: this.until,
+            from: this.from
         });
     }
 }
@@ -256,7 +270,6 @@ class MultiCode { //todo dont generate "if" when the branches are the same
         } else {
             var arrayText = this.arrayBlock.getCodeText();
             var mapText = this.mapBlock.getCodeText();
-
 
             if (codeTextEquals(arrayText, mapText)) {
                 loops = arrayText;
