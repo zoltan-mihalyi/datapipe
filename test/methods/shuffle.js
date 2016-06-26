@@ -4,11 +4,11 @@ describe('shuffle tests', function() {
     var array = [1, 2, 3, 4, 5, 6];
     it('shuffled array has the same items', function() {
 
-        var shuffled = dp()
+        expect(dp()
             .shuffle()
-            .process(array);
-
-        expect(shuffled.sort()).toEqual(array);
+            .process(array)
+            .sort()
+        ).toEqual(array);
     });
 
     it('shuffle should work with array hint', function() {
@@ -33,5 +33,13 @@ describe('shuffle tests', function() {
             .shuffle()
             .process(array)
         ).not.toBe(array);
+    });
+
+    it('shuffle object', function() {
+        expect(dp()
+            .shuffle()
+            .process({a: 1, b: 2, c: 3})
+            .sort()
+        ).toEqual([1, 2, 3]);
     });
 });
