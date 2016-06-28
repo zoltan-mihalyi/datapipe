@@ -8,6 +8,19 @@ function operator<P,R>(op:string):Operator<P,R> {
     };
 }
 
+function operatorWithNullValue(op:string, nullValue:number):Operator<number,number> {
+    return function (a:CodeText<number>, b:CodeText<number>):CodeText<number> {
+        if (isNumberLiteral(a, nullValue)) {
+            return b;
+        }
+        if (isNumberLiteral(b, nullValue)) {
+            return a;
+        }
+
+        return [...a, op, ...b];
+    };
+}
+
 function prefixOperator<I,O>(prefix):(text:CodeText<I>)=>CodeText<O> {
     return function (text:CodeText<I>):CodeText<O> {
         return [prefix, ...text];
@@ -20,8 +33,8 @@ export var neq = operator<any,boolean>('!==');
 export var lt = operator<number,boolean>('<');
 export var gt = operator<number, boolean>('>');
 export var gte = operator<number, boolean>('>=');
-export var subtract = operator<number,number>('-');
-export var add = operator<number,number>('+');
+export var subtract = operatorWithNullValue('-', 0);
+export var add = operatorWithNullValue('+', 0);
 export var multiply = operator<number,number>('*');
 export var and = operator<boolean,boolean>('&&');
 
@@ -43,6 +56,9 @@ export var negativeInfinity:CodeText<number> = ['-Infinity'];
 export var trueValue:CodeText<boolean> = ['true'];
 export var falseValue:CodeText<boolean> = ['false'];
 export var empty:CodeText<void> = [];
+
+export var itarMapBefore = named('itarMapBefore');
+export var itarMapAfter = named('itarMapAfter');
 
 export function paramName(index:number) {
     return '_p' + index;
@@ -227,10 +243,41 @@ export function type(text:CodeText<any>, type:string):CodeText<boolean> {
 
 interface ItarOpts {
     reversed?:boolean;
-    endFromStart?:number;
-    startFromStart?:number;
-    endFromEnd?:number;
+    ranges?:LoopRange[];
     level?:number;
+}
+
+function compatible(lastRange:LoopRange, range:LoopRange):boolean {
+    if (!lastRange) {
+        return false;
+    }
+    return lastRange.definesStart === range.definesStart && lastRange.relativeToStart === range.relativeToStart;
+}
+
+function put(lastRange:LoopRange, range:LoopRange) {
+    if (lastRange.definesStart === lastRange.relativeToStart) { //rest or initial
+        lastRange.value += range.value;
+    } else { //take or last
+        if (range.value < lastRange.value) {
+            lastRange.value = range.value;
+        }
+    }
+}
+
+function mergeRanges(ranges:LoopRange[]) {
+    var result:LoopRange[] = [];
+
+    for (var i = 0; i < ranges.length; i++) {
+        var range:LoopRange = ranges[i];
+        var lastRange = result[result.length - 1];
+        if (compatible(lastRange, range)) {
+            put(lastRange, range);
+        } else {
+            result.push(range);
+        }
+    }
+
+    return result;
 }
 
 export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<any>, opts:ItarOpts):CodeText<void> {
@@ -239,19 +286,46 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
     var afterthought:CodeText<any>;
     var loopIndex = index;
     var loopLength = length;
-    var from = opts.startFromStart || 0;
+    var ranges:LoopRange[] = mergeRanges(opts.ranges || []);
 
     if (typeof opts.level === 'number') {
         loopIndex = rename(index, opts.level);
         loopLength = rename(length, opts.level);
     }
 
+    var declarations:CodeText<any>[] = [];
+    var startConstant = 0;
+    for (var i = 0; i < ranges.length; i++) {
+        var range:LoopRange = ranges[i];
+        var value = range.value;
+        if (range.definesStart) {
+            startConstant = value;
+        } else {
+            if (range.relativeToStart) {//take
+                let endLiteral = literal(value);
+                declarations.push(conditional(
+                    gt(loopLength, endLiteral),
+                    assign(loopLength, endLiteral)
+                ));
+            } else { //initial
+                let endLiteral = literal(value);
+                declarations.push(assign(loopLength, ternary(
+                    gt(loopLength, endLiteral),
+                    subtract(loopLength, endLiteral),
+                    literal(0)
+                )));
+            }
+        }
+    }
+
+    var startCodeText:CodeText<number> = literal(startConstant);
+
     if (opts.reversed) {
-        initial = subtract(loopLength, literal(1 + from));
+        initial = subtract(loopLength, add(literal(1), startCodeText));
         condition = gte(loopIndex, literal(0));
         afterthought = decrement(loopIndex);
     } else {
-        initial = literal(from);
+        initial = startCodeText;
         condition = lt(loopIndex, loopLength);
         afterthought = increment(loopIndex);
     }
@@ -259,38 +333,62 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
         declare(loopIndex, initial),
         statement(condition),
         afterthought
-    ]), '){\n', ...block, '\n}'];
+    ]), '){\n', ...ensureCurrentInitialized(array, substituteItarMapAfter(block, startCodeText), opts.level), '\n}'];
 
-    var lengthModifier:CodeText<void> = empty;
-    if (typeof opts.endFromStart === 'number') {
-        let endLiteral = literal(opts.endFromStart);
-        lengthModifier = conditional(
-            gt(loopLength, endLiteral),
-            assign(loopLength, endLiteral)
-        );
-    }
-
-    if (opts.endFromEnd) {
-        let endLiteral = literal(opts.endFromEnd);
-        lengthModifier = seq([
-            assign(loopLength, ternary(
-                gt(loopLength, endLiteral),
-                subtract(loopLength, endLiteral),
-                literal(0)
-            )),
-            lengthModifier
-        ]);
-    }
     return seq([
         declare(loopLength, prop<number>(array, 'length')),
-        lengthModifier,
-        init,
+        seq(declarations),
+        substituteItarMapBefore(init, startCodeText, loopLength),
         loop
     ]);
 }
 
-export function itin(array:CodeText<{[index:string]:any}>, block:CodeText<any>):CodeText<void> {
-    return ['for(var ', ...index, ' in ', ...array, '){\n', ...block, '\n}'];
+function substituteItarMapBefore(codeText:CodeText<any>, startCodeText:CodeText<number>, loopLength:CodeText<number>):CodeText<void> {
+    var size:CodeText<number> = isZero(startCodeText) ? loopLength : ternary(
+        gt(loopLength, startCodeText),
+        subtract(loopLength, startCodeText),
+        literal(0)
+    );
+    return substitute(codeText, itarMapBefore[0] as string, setResult(newArray(size)));
+}
+
+function isZero(codeText:CodeText<number>) {
+    return isNumberLiteral(codeText, 0);
+}
+
+function isNumberLiteral(codeText:CodeText<number>, literal:number) {
+    return codeText.length === 1 && codeText[0] === literal + '';
+}
+
+function substituteItarMapAfter(codeText:CodeText<any>, startCodeText:CodeText<number>):CodeText<void> {
+    var newAfter = assign(prop(result, subtract(index, startCodeText)), current);
+    return substitute(codeText, itarMapAfter[0] as string, newAfter);
+}
+
+function substitute(codeText:CodeText<any>, find:string, replace:CodeText<any>) {
+    var resultCodeText:CodeText<void> = [];
+
+    for (var i = 0; i < codeText.length; i++) {
+        var fragment = codeText[i];
+        if (fragment === find) {
+            push.apply(resultCodeText, replace);
+        } else {
+            resultCodeText.push(fragment);
+        }
+    }
+
+    return resultCodeText;
+}
+
+export function itin(map:CodeText<{[index:string]:any}>, block:CodeText<any>):CodeText<void> {
+    return ['for(var ', ...index, ' in ', ...map, '){\n', ...ensureCurrentInitialized(map, block), '\n}'];
+}
+
+function ensureCurrentInitialized(collection:CodeText<any>, codeText:CodeText<any>, level?:number):CodeText<any> {
+    if (typeof level !== 'number' && usesCurrent(codeText)) {
+        return seq([declare(current, prop(collection, index)), codeText]);
+    }
+    return codeText;
 }
 
 export function statement(text:CodeText<any>, br?:boolean):CodeText<void> {
@@ -303,4 +401,20 @@ export function par<T>(text:CodeText<T>):CodeText<T> {
 
 export function rename(orig:CodeText<any>, level:number) {
     return named<number>(orig[0] + '' + level);
+}
+
+
+function usesCurrent(text:CodeText<any>):boolean {
+    return codeTextContains(text, current);
+}
+
+export function codeTextContains(text:CodeText<any>, part:CodeText<any>):boolean {
+    var name = part[0];
+    for (var i = 0; i < text.length; i++) {
+        var fragment = text[i];
+        if (fragment === name) {
+            return true;
+        }
+    }
+    return false;
 }

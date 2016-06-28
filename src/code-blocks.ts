@@ -6,15 +6,14 @@ import {
     seq,
     declare,
     result,
-    current,
-    prop,
     statement,
     increment,
     literal,
     itin,
     cont,
     br,
-    itar
+    itar,
+    codeTextContains
 } from "./code-helpers";
 
 var arrayIndexName:string = arrayIndex[0] as string;
@@ -94,13 +93,8 @@ abstract class LoopBlock implements CodeBlock {
     getCodeText():CodeText<void> {
         var input:CodeText<any> = named(this.rename ? 'dataOld' : 'data');
         var rename:CodeText<void> = this.rename ? declare(input, result) : empty;
-        var rowsSequence = seq(this.rows);
-        var declareCurrent = (usesCurrent(rowsSequence) || usesCurrent(this.after)) ? declare(current, prop(input, index)) : empty;
-        var block:CodeText<void> = seq([
-            declareCurrent,
-            rowsSequence,
-            this.after
-        ]);
+        var block:CodeText<void> = seq([seq(this.rows), this.after]);
+
         return seq([
             rename,
             seq(this.indexDeclarations),
@@ -167,9 +161,7 @@ abstract class LoopBlock implements CodeBlock {
 
 class ArrayLoopBlock extends LoopBlock {
     private reversed:boolean = null;
-    private endFromStart:number = null;
-    private startFromStart:number = 0;
-    private endFromEnd:number = 0;
+    private ranges:LoopRange[] = [];
 
     constructor() {
         super();
@@ -183,29 +175,14 @@ class ArrayLoopBlock extends LoopBlock {
         if (this.reversed === null) {
             this.reversed = !!loop.reversed;
         }
-        if (typeof loop.endFromStart === 'number') {
-            if (this.endFromStart === null || loop.endFromStart < this.endFromStart) {
-                this.endFromStart = loop.endFromStart;
-            }
-        }
-        if (typeof loop.startFromStart === 'number') {
-            this.startFromStart += loop.startFromStart;
-        }
-        if (typeof loop.endFromEnd === 'number') {
-            this.endFromEnd += loop.endFromEnd;
+
+        if (loop.range) {
+            this.ranges.push(loop.range);
         }
     }
 
     getCodeText():CodeText<void> {
         return super.getCodeText();
-    }
-
-    getContext():Context {
-        var ctx:Context = super.getContext();
-        ctx.loop.range = {
-            startFromStart: this.startFromStart
-        };
-        return ctx;
     }
 
     protected isArray():boolean {
@@ -215,9 +192,7 @@ class ArrayLoopBlock extends LoopBlock {
     protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
         return itar(init, input, block, {
             reversed: this.reversed,
-            endFromStart: this.endFromStart,
-            startFromStart: this.startFromStart,
-            endFromEnd: this.endFromEnd
+            ranges: this.ranges
         });
     }
 }
@@ -241,21 +216,6 @@ function changesIndex(text:CodeText<any>):boolean {
 
 function changesLength(text:CodeText<any>):boolean {
     return codeTextContains(text, cont) || codeTextContains(text, br);
-}
-
-function usesCurrent(text:CodeText<any>):boolean {
-    return codeTextContains(text, current);
-}
-
-function codeTextContains(text:CodeText<any>, part:CodeText<any>):boolean {
-    var name = part[0];
-    for (var i = 0; i < text.length; i++) {
-        var fragment = text[i];
-        if (fragment === name) {
-            return true;
-        }
-    }
-    return false;
 }
 
 function isLoop(code:Code):code is Loop {

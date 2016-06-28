@@ -53,4 +53,12 @@ describe('take tests', function() {
             .toString()
         ).not.toContain('3');
     });
+
+    it('take and initial', function() {
+        expect(dp()
+            .take(2)
+            .initial(2)
+            .process([1, 2, 3])
+        ).toEqual([]);
+    });
 });

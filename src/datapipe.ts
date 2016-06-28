@@ -51,8 +51,8 @@ import {
     and,
     itar,
     rename,
-    length,
-    newArray
+    itarMapBefore,
+    itarMapAfter
 } from "./code-helpers";
 import {CollectionType, isProvider} from "./common";
 
@@ -64,7 +64,25 @@ const NEEDS_ALL:NeedsProvider = () => {
 };
 
 const NEEDS_SAME:NeedsProvider = (needs:Needs)=> {
-    return needs
+    return needs;
+};
+
+const SIZE_CODE_PROVIDER:CodeProvider = {
+    createCode: (ctx:Context)=> {
+        if (ctx.array) {
+            return setResult(prop<number>(result, 'length'));
+        } else {
+            return {
+                before: setResult(literal(0)),
+                after: increment(result),
+                text: empty,
+                mergeStart: true,
+                mergeEnd: false,
+                rename: true
+            };
+        }
+    },
+    handlesSize: true
 };
 
 interface DataPipeResult<R,T> {
@@ -181,7 +199,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 };
 
                 if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) {
-                    loop.endFromStart = cnt;
+                    loop.range = {
+                        definesStart: false,
+                        relativeToStart: true,
+                        value: cnt
+                    };
                     loop.text = empty;
                 }
 
@@ -222,7 +244,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 };
 
                 if (ctx.array && !(ctx.loop && ctx.loop.lengthDirty)) {
-                    loop.startFromStart = cnt;
+                    loop.range = {
+                        definesStart: true,
+                        relativeToStart: true,
+                        value: cnt
+                    };
                     loop.text = empty;
                 }
 
@@ -258,7 +284,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     text: empty,
                     mergeStart: ctx.array,
                     mergeEnd: true,
-                    endFromEnd: cnt
+                    range: {
+                        definesStart: false,
+                        relativeToStart: false,
+                        value: cnt
+                    }
                 };
 
                 optimizeMap(loop, ctx);
@@ -526,7 +556,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     ),
                     mergeStart: true,
                     mergeEnd: true
-                }
+                };
             },
             handlesSize: true
         }, true);
@@ -686,7 +716,7 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
         for (var i = 0; i < steps.length; i++) {
             let step:Step = steps[i];
             if (needs.lengthTransformations[i]) {
-                accumulator.put(steps[i].parentType, sizeCodeProvider, {});
+                accumulator.put(steps[i].parentType, SIZE_CODE_PROVIDER, {});
             }
 
             accumulator.put(step.parentType, step.code, needs.byIndex[i]);
@@ -730,24 +760,6 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
         };
     }
 }
-
-var sizeCodeProvider:CodeProvider = {
-    createCode: (ctx:Context)=> {
-        if (ctx.array) {
-            return setResult(prop<number>(result, 'length'));
-        } else {
-            return {
-                before: setResult(literal(0)),
-                after: increment(result),
-                text: empty,
-                mergeStart: true,
-                mergeEnd: false,
-                rename: true
-            };
-        }
-    },
-    handlesSize: true
-};
 
 class RootDataPipe<T> extends DataPipe<T,T,T> {
     process(data:T[]):T[] {
@@ -795,14 +807,10 @@ function whereFilter<T extends {[index:string]:any}>(properties:T) {
     return (new Function('properties', fn))(properties);
 }
 
-function optimizeMap(loop:Loop, ctx:Context):void {
+function optimizeMap(loop:Loop, ctx:Context):void { //todo auto
     if (!ctx.loop || (!ctx.loop.lengthDirty && ctx.array)) {
-        var start = loop.startFromStart || 0;
-        if (ctx.loop) {
-            start += ctx.loop.range.startFromStart;
-        }
-        loop.before = mapBefore(start);
-        loop.after = mapAfter(start);
+        loop.before = itarMapBefore;
+        loop.after = itarMapAfter;
     }
 }
 
@@ -818,20 +826,6 @@ function flattenTo(array, result) {
         }
     }
     return result;
-}
-
-function mapBefore(from:number):CodeText<void> {
-    var size:CodeText<number> = from === 0 ? length : ternary(
-        gt(length, literal(from)),
-        subtract(length, literal(from)),
-        literal(0)
-    );
-    return setResult(newArray(size));
-}
-
-function mapAfter(from:number):CodeText<void> {
-    var idx = from === 0 ? index : subtract(index, literal(from));
-    return assign(prop(result, idx), current);
 }
 
 export = <T>(typeName?:string) => {

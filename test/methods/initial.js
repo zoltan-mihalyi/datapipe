@@ -64,4 +64,12 @@ describe('initial tests', function() {
             .process([1, 2, 3, 4, 5])
         ).toEqual(2);
     });
+
+    it('initial and take', function() {
+        expect(dp()
+            .initial(2)
+            .take(2)
+            .process([1, 2, 3])
+        ).toEqual([1]);
+    });
 });

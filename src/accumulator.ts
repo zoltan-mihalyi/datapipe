@@ -62,7 +62,7 @@ class MultiCode {
             }
             var isArrayBlock = array;
             if (codeBlocks.length > 0) {
-                isArrayBlock = parentType === CollectionType.ARRAY
+                isArrayBlock = parentType === CollectionType.ARRAY;
             }
             this.addBlock(new (codeBlockConstructor(code, isArrayBlock))(), array);
         }
