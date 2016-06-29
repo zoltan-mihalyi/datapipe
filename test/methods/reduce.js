@@ -31,4 +31,44 @@ describe('reduce tests', function() {
         expect(collect.process([1, 2, 3])).toEqual([1, 2, 3]);
         expect(collect.process([4, 5, 6])).toEqual([4, 5, 6]);
     });
+
+    it('The result of reduce should be treaten as unknown', function() {
+        expect(dp()
+            .reduce(function(memo, x, i) {
+                memo[i] = x;
+                return memo;
+            }, function() {
+                return {};
+            })
+            .sortBy()
+            .process([3, 1, 2])
+        ).toEqual([1, 2, 3]);
+
+        expect(dp()
+            .reduce(function(memo, x) {
+                memo.push(x);
+                return memo;
+            }, function() {
+                return [];
+            })
+            .sortBy()
+            .process([3, 1, 2])
+        ).toEqual([1, 2, 3]);
+
+        expect(dp('map')
+            .reduce(function() {
+            }, '')
+            .sortBy()
+            .fn()
+            .toString()
+        ).toContain('++');
+
+        expect(dp('array')
+            .reduce(function() {
+            }, '')
+            .sortBy()
+            .fn()
+            .toString()
+        ).toContain(' in ');
+    });
 });

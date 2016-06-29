@@ -18,7 +18,8 @@ class MultiCode {
     }
 
     canPut(dynamicCode:DynamicCode, needs:Needs):boolean {
-        return canPutTo(this.mapBlock, dynamicCode, needs, false) || canPutTo(this.arrayBlock, dynamicCode, needs, true);
+        return (matchesType(this.type, CollectionType.MAP) && canPutTo(this.mapBlock, dynamicCode, needs, false))
+            || (matchesType(this.type, CollectionType.ARRAY) && canPutTo(this.arrayBlock, dynamicCode, needs, true));
     }
 
     toCode(params:any[]):string {

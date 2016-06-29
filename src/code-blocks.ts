@@ -36,7 +36,7 @@ class SimpleBlock implements CodeBlock {
 
     getContext():Context {
         return {
-            array: true
+            array: true //todo
         };
     }
 

@@ -408,7 +408,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     sortBy(fn:string|((x?:T)=>number), context?:any):ChildDataPipe<R,T,T> {
         //todo advanced logic, when used after map-like processors
         var text:CodeText<any>;
-        if (!this.hasNewResult()) {
+        if (!this.hasNewResult() || this.type !== CollectionType.ARRAY) {
             return this.toArray().sortBy(fn, context);
         }
         if (!fn) {
