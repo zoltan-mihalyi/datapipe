@@ -287,6 +287,7 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
     var loopIndex = index;
     var loopLength = length;
     var ranges:LoopRange[] = mergeRanges(opts.ranges || []);
+    var start = named<number>('start');
 
     if (typeof opts.level === 'number') {
         loopIndex = rename(index, opts.level);
@@ -299,7 +300,25 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
         var range:LoopRange = ranges[i];
         var value = range.value;
         if (range.definesStart) {
-            startConstant = value;
+            if (range.relativeToStart) { //rest
+                if (startConstant === null) {
+                    declarations.push(assign(start, add(start, literal(value))));
+                } else {
+                    startConstant = value;
+                }
+            } else { //last
+                if (startConstant !== null) {
+                    declarations.push(declare(start, literal(startConstant)));
+                }
+                var newStart = subtract(loopLength, literal(value));
+                declarations.push(conditional(
+                    gt(newStart, startConstant === null ? start : literal(startConstant)),
+                    assign(start, newStart)
+                ));
+                startConstant = null;
+            }
+
+
         } else {
             if (range.relativeToStart) {//take
                 let endLiteral = literal(value);
@@ -318,7 +337,7 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
         }
     }
 
-    var startCodeText:CodeText<number> = literal(startConstant);
+    var startCodeText:CodeText<number> = startConstant === null ? start : literal(startConstant);
 
     if (opts.reversed) {
         initial = subtract(loopLength, add(literal(1), startCodeText));

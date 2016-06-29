@@ -67,6 +67,10 @@ const NEEDS_SAME:NeedsProvider = (needs:Needs)=> {
     return needs;
 };
 
+const enum ResultCreation {
+    NEW_OBJECT, USES_PREVIOUS, EXISTING_OBJECT
+}
+
 const SIZE_CODE_PROVIDER:CodeProvider = {
     createCode: (ctx:Context)=> {
         if (ctx.array) {
@@ -120,7 +124,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeStart: true,
             mergeEnd: true,
             changesLength: false
-        }, false);
+        }, ResultCreation.USES_PREVIOUS);
     }
 
     reduce<M>(reducer:(memo:M[], t:T)=>M[], memo:Provider<M[]>):ChildDataPipe<R,T,M>;
@@ -149,7 +153,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             ),
             mergeStart: true,
             mergeEnd: false
-        }, true) as any;
+        }, ResultCreation.EXISTING_OBJECT) as any;
     }
 
     take(cnt?:number):ChildDataPipe<R,T,T> {
@@ -174,7 +178,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                     };
                 },
                 handlesSize: false
-            }, false);
+            }, ResultCreation.EXISTING_OBJECT);
         }
 
         return this.subPipe<T>(CollectionType.ARRAY, {
@@ -212,7 +216,47 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 return loop;
             },
             handlesSize: true
-        }, true, NEEDS_SAME);
+        }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
+    }
+
+    last(cnt?:number):ChildDataPipe<R,T,T> { //todo very similar to take
+        if (this.type !== CollectionType.ARRAY) {
+            return this.toArray().last(cnt);
+        }
+        if (cnt == null) {
+            let text = setResult(prop(result, subtract(prop<number>(result, 'length'), literal(1))));
+            return this.subPipe<T>(CollectionType.UNKNOWN, text, ResultCreation.EXISTING_OBJECT);
+        }
+
+        return this.subPipe<T>(CollectionType.ARRAY, {
+            createCode: (ctx:Context, needs:Needs) => {
+                if (needs.size) { //todo duplication
+                    return conditional(
+                        gt(result, literal(cnt)),
+                        setResult(literal(cnt))
+                    );
+                }
+
+                var loop:Loop = {
+                    rename: true,
+                    before: filterMapBefore,
+                    after: filterMapAfter,
+                    text: empty,
+                    mergeStart: ctx.array,
+                    mergeEnd: true,
+                    range: {
+                        definesStart: true,
+                        relativeToStart: false,
+                        value: cnt
+                    }
+                };
+
+                optimizeMap(loop, ctx);
+
+                return loop;
+            },
+            handlesSize: true
+        }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
 
     rest(cnt?:number):ChildDataPipe<R,T,T> { //todo tail, drop
@@ -257,7 +301,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 return loop;
             },
             handlesSize: true
-        }, true, NEEDS_SAME); //todo change range
+        }, ResultCreation.NEW_OBJECT, NEEDS_SAME); //todo change range
     }
 
     initial(cnt?:number):ChildDataPipe<R,T,T> {
@@ -296,7 +340,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 return loop;
             },
             handlesSize: true
-        }, true, NEEDS_SAME);
+        }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
 
     where(properties):ChildDataPipe<R,T,T> {
@@ -342,7 +386,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             );
             return this.reduceLike(CollectionType.ARRAY, setResult(array()), text, false);
         }
-        return this.subPipe<any>(CollectionType.ARRAY, setResult(callParam(flattenTo, null, [result, array()])), true);
+        return this.subPipe<any>(CollectionType.ARRAY, setResult(callParam(flattenTo, null, [result, array()])), ResultCreation.NEW_OBJECT);
     }
 
     invoke(method:string, ...methodArgs:any[]):ChildDataPipe<R,T,any>;
@@ -421,7 +465,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ))
             )]), true); //todo cache values??
         }
-        return this.subPipe<T>(CollectionType.ARRAY, text, true);
+        return this.subPipe<T>(CollectionType.ARRAY, text, ResultCreation.NEW_OBJECT);
     }
 
     countBy(property?:string|((x?:T)=>any), context?:any):ChildDataPipe<R,T,number> {
@@ -476,7 +520,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 return loop;
             },
             handlesSize: true
-        }, true, NEEDS_SAME);
+        }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
 
     toArray():ChildDataPipe<R,T,T> {
@@ -484,7 +528,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     size():ChildDataPipe<R,T,T> {
-        return this.subPipe<T>(CollectionType.UNKNOWN, empty, true, ()=> {
+        return this.subPipe<T>(CollectionType.UNKNOWN, empty, ResultCreation.NEW_OBJECT, ()=> {
             return {
                 size: true
             };
@@ -506,7 +550,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             )),
             mergeStart: true,
             mergeEnd: false
-        }, false).subPipe(CollectionType.ARRAY, setResult(array(part1, part2)), true);
+        }, ResultCreation.USES_PREVIOUS).subPipe(CollectionType.ARRAY, setResult(array(part1, part2)), ResultCreation.NEW_OBJECT);
     }
 
     first(cnt?:number):ChildDataPipe<R,T,T> {
@@ -559,7 +603,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 };
             },
             handlesSize: true
-        }, true);
+        }, ResultCreation.NEW_OBJECT);
     }
 
     private edge(initial:CodeText<number>, operator:Operator<number,boolean>,
@@ -609,7 +653,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             ),
             mergeStart: true,
             mergeEnd: false
-        }, true) as DataPipeResult<R, any>;
+        }, ResultCreation.NEW_OBJECT) as DataPipeResult<R, any>;
     }
 
     private mapLike<O>(text:CodeText<any>):ChildDataPipe<R,T,O> {
@@ -633,7 +677,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 return loop;
             },
             handlesSize: true
-        }, true, NEEDS_SAME);
+        }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
 
     private reduceLikeWithProvider<M>(reducer:(memo?:M, t?:T) => M, memo:Provider<M>, context:any, reversed:boolean) {
@@ -658,11 +702,11 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeStart: !reversed,
             mergeEnd: false,
             reversed: reversed
-        }, true);
+        }, ResultCreation.NEW_OBJECT);
     }
 
-    private subPipe<X>(type:CollectionType, code:DynamicCode, newResult:boolean, np?:NeedsProvider):ChildDataPipe<R,T,X> {
-        return new ChildDataPipe<R,T,X>(type, this, code, newResult, np);
+    private subPipe<X>(type:CollectionType, code:DynamicCode, resultCreation:ResultCreation, np?:NeedsProvider):ChildDataPipe<R,T,X> {
+        return new ChildDataPipe<R,T,X>(type, this, code, resultCreation, np);
     }
 }
 
@@ -671,9 +715,20 @@ class ChildDataPipe<R,P,T> extends DataPipe<R,P,T> { //todo no need parent type?
     private newResult:boolean;
     private needsProvider:NeedsProvider;
 
-    constructor(type:CollectionType, private parent:DataPipe<R,any,P>, private code:DynamicCode, newResult:boolean, np?:NeedsProvider) {
+    constructor(type:CollectionType, private parent:DataPipe<R,any,P>, private code:DynamicCode, resultCreation:ResultCreation, np?:NeedsProvider) {
         super(type);
-        this.newResult = newResult || this.parent.hasNewResult();
+        switch (resultCreation) {
+            case ResultCreation.NEW_OBJECT:
+                this.newResult = true;
+                break;
+            case ResultCreation.USES_PREVIOUS:
+                this.newResult = this.parent.hasNewResult();
+                break;
+            case ResultCreation.EXISTING_OBJECT:
+                this.newResult = false;
+                break;
+        }
+
         this.needsProvider = np || NEEDS_ALL;
     }
 

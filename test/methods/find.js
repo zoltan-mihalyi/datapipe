@@ -18,4 +18,16 @@ describe('Test "find"', function() {
             return x % 4 === 0;
         }).process([1, 2, 3])).toBeUndefined()
     });
+
+    it('find and sortBy', function() {
+        var array = [[2, 1]];
+        var result = dp()
+            .find(function() {
+                return true;
+            })
+            .sortBy()
+            .process(array);
+        expect(result).not.toBe(array[0]);
+        expect(result).toEqual([1, 2]);
+    });
 });
