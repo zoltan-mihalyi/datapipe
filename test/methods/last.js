@@ -62,5 +62,34 @@ describe('last tests', function() {
         ).toEqual([]);
     });
 
-    //todo rest and last
+    it('last and rest', function() {
+        expect(dp()
+            .last(3)
+            .rest(2)
+            .process([1, 2, 3, 4])
+        ).toEqual([4]);
+    });
+
+    it('last, rest, last', function() {
+        expect(dp()
+            .last(4)
+            .rest(2)
+            .last(3)
+            .process([1, 2, 3, 4, 5])
+        ).toEqual([4, 5]);
+    });
+
+    it('last and size', function() {
+        expect(dp()
+            .last(2)
+            .size()
+            .process([1, 2, 3])
+        ).toBe(2);
+
+        expect(dp()
+            .last(4)
+            .size()
+            .process([1, 2, 3])
+        ).toBe(3);
+    });
 });

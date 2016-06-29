@@ -142,11 +142,6 @@ function putTo(codeBlocks:CodeBlock[], dynamicCode:DynamicCode, needs:Needs) {
 
 function canPutTo(codeBlocks:CodeBlock[], dynamicCode:DynamicCode, needs:Needs, array:boolean):boolean {
     var code:Code;
-
-    if (codeBlocks.length === 0) {
-        return true;
-    }
-
     var codeBlock = last(codeBlocks);
 
     if (isProvider(dynamicCode)) {
