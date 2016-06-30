@@ -343,6 +343,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
 
+    compact():ChildDataPipe<R,T,T> {
+        return this.filterLike(current, null, false);
+    }
+
     where(properties):ChildDataPipe<R,T,T> {
         return this.filter(whereFilter(properties));
     }
@@ -571,8 +575,13 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     abstract hasNewResult():boolean;
 
-    private filterLike(predicate:(t?:T) => boolean, context:any, inverted?:boolean):ChildDataPipe<R,T,T> {
-        var condition:CodeText<boolean> = callParam(predicate, context);
+    private filterLike(predicate:CodeText<boolean>|((t?:T) => boolean), context:any, inverted?:boolean):ChildDataPipe<R,T,T> {
+        var condition:CodeText<boolean>;
+        if (typeof predicate === 'function') {
+            condition = callParam(predicate as (t?:T)=>boolean, context);
+        } else {
+            condition = predicate as CodeText<boolean>;
+        }
         if (!inverted) {
             condition = not(condition);
         }
