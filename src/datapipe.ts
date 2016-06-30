@@ -582,6 +582,30 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return result;
     }
 
+    union(...arrays:T[][]):ChildDataPipe<R,T,T> {
+        var unique:T[] = [];
+        var statements:CodeText<void>[] = [];
+        for (var i = 0; i < arrays.length; i++) {
+            var array:T[] = arrays[i];
+            for (var j = 0; j < array.length; j++) {
+                var item = array[j];
+                if (unique.indexOf(item) !== -1) {
+                    continue;
+                }
+                unique.push(item);
+                statements.push(conditional(
+                    eq(call(prop<()=>number>(result, 'indexOf'), [param(item)]), literal(-1)),
+                    call(prop<()=>any>(result, 'push'), [param(item)])
+                ));
+            }
+        }
+        var target:DataPipe<R,P,T> = this;
+        if (this.type !== CollectionType.ARRAY || !this.hasNewResult()) {
+            target = this.toArray();
+        }
+        return target.subPipe<T>(CollectionType.ARRAY, seq(statements), ResultCreation.NEW_OBJECT);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
