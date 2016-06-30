@@ -52,6 +52,30 @@ describe('take tests', function() {
             .fn()
             .toString()
         ).not.toContain('3');
+
+        expect(dp('array')
+            .take(3)
+            .take(2)
+            .fn()
+            .toString()
+        ).not.toContain('3');
+    });
+
+    it('take first and size', function() {
+        expect(dp()
+            .take()
+            .size()
+            .process([{a: 1, b: 2}, {}, {}])
+        ).toBe(2);
+    });
+
+    it('take and size', function() {
+        var fn = dp()
+            .take(3)
+            .size()
+            .fn();
+        expect(fn([1, 2])).toBe(2);
+        expect(fn([1, 2, 3, 4])).toBe(3);
     });
 
     it('take and initial', function() {
