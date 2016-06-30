@@ -7,7 +7,7 @@ describe('union tests', function() {
         var obj2 = {};
 
         expect(dp()
-            .union([1, 3], [4, obj, obj2])
+            .union([1, 3], [3, 4, obj, obj2])
             .process([1, 2, obj])
         ).toEqual([1, 2, obj, 3, 4, obj2]);
     });
@@ -29,4 +29,24 @@ describe('union tests', function() {
 
         expect(arr.length).not.toBe(3);
     });
+
+    it('union array', function() {
+        expect(dp('array')
+            .union([2])
+            .process([1])
+        ).toEqual([1, 2]);
+    });
+
+
+    it('union after map', function() {
+        expect(dp('array')
+            .map(function(x) {
+                return x - 1;
+            })
+            .union([2])
+            .process([2])
+        ).toEqual([1, 2]);
+    });
+
+
 });
