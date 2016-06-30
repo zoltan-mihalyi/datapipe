@@ -52,7 +52,8 @@ import {
     itar,
     rename,
     itarMapBefore,
-    itarMapAfter
+    itarMapAfter,
+    eq
 } from "./code-helpers";
 import {CollectionType, isProvider} from "./common";
 
@@ -563,6 +564,22 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     head(cnt?:number):ChildDataPipe<R,T,T> {
         return this.take(cnt);
+    }
+
+    without(...items:any[]):DataPipe<R,T,T> {
+        var filteredItems = [];
+        var result:DataPipe<R,T,T> = this;
+
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            if (filteredItems.indexOf(item) !== -1) {
+                continue;
+            }
+            filteredItems.push(item);
+            result = result.filterLike(eq(current, param(item)), null, true); //todo generate shorter code using OR
+        }
+
+        return result;
     }
 
     abstract process(data:R[]):T[];
