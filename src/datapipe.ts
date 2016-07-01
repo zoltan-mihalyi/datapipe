@@ -53,7 +53,10 @@ import {
     rename,
     itarMapBefore,
     itarMapAfter,
-    eq
+    eq,
+    newArray,
+    length,
+    iterSimple
 } from "./code-helpers";
 import {CollectionType, isProvider} from "./common";
 
@@ -639,6 +642,29 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     uniq():ChildDataPipe<R,T,T> {
         return this.filterLike(neq(call(prop<()=>number>(result, 'indexOf'), [current]), literal(-1)), null, true);
+    }
+
+    unzip():ChildDataPipe<R,T,T> {
+        var dataOldVar = named<any[]>('dataOld');
+        var resultLengthVar = named<number>('resultLength');
+        var innerIndex = rename(index, 1);
+        return this.subPipe<T>(CollectionType.ARRAY, seq([
+            declare(dataOldVar, result),
+            declare(resultLengthVar, literal(0)),
+            declare(length, prop(dataOldVar, 'length')),
+            iterSimple(length, seq([
+                declare(current, prop(prop(dataOldVar, index), 'length')),
+                conditional(
+                    gt(current, resultLengthVar),
+                    assign(resultLengthVar, current)
+                )
+            ])),
+            setResult(newArray(resultLengthVar)),
+            iterSimple(resultLengthVar, seq([
+                declare(current, assign(prop(result, index), newArray(length))),
+                iterSimple(length, assign(prop(current, innerIndex), prop(prop(dataOldVar, innerIndex), index)), 1)
+            ]))
+        ]), ResultCreation.NEW_OBJECT);
     }
 
     abstract process(data:R[]):T[];

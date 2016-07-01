@@ -280,7 +280,15 @@ function mergeRanges(ranges:LoopRange[]) {
     return result;
 }
 
-export function iter(declaration:CodeText<any>, condition:CodeText<boolean>, afterthought:CodeText<any>, block:CodeText<any>):CodeText<void>{
+export function iterSimple(end:CodeText<number>, block:CodeText<any>, level?:number):CodeText<void> {
+    var loopIndex = index;
+    if (typeof level === 'number') {
+        loopIndex = rename(index, level);
+    }
+    return iter(declare(loopIndex, literal(0)), lt(loopIndex, end), increment(loopIndex), block);
+}
+
+export function iter(declaration:CodeText<any>, condition:CodeText<boolean>, afterthought:CodeText<any>, block:CodeText<any>):CodeText<void> {
     return ['for(', ...seq([
         declaration,
         statement(condition),
