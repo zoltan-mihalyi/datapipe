@@ -606,6 +606,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return target.subPipe<T>(CollectionType.ARRAY, seq(statements), ResultCreation.NEW_OBJECT);
     }
 
+    uniq():ChildDataPipe<R,T,T> {
+        return this.filterLike(neq(call(prop<()=>number>(result, 'indexOf'), [current]), literal(-1)), null, true);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
