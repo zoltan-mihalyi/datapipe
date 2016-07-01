@@ -437,3 +437,15 @@ export function codeTextContains(text:CodeText<any>, part:CodeText<any>):boolean
     }
     return false;
 }
+
+export function codeTextEquals(text1:CodeText<any>, text2:CodeText<any>):boolean {
+    if (text1.length !== text2.length) {
+        return false;
+    }
+    for (var i = 0; i < text1.length; i++) {
+        if (text1[i] !== text2[i]) {
+            return false;
+        }
+    }
+    return true;
+}

@@ -1,6 +1,6 @@
 ///<reference path="interfaces.ts"/>
 import {CollectionType, isProvider} from "./common";
-import {codeTextToString, result, seq, prop, conditional, and, type} from "./code-helpers";
+import {codeTextToString, result, seq, prop, conditional, and, type, codeTextEquals} from "./code-helpers";
 import {codeBlockConstructor} from "./code-blocks";
 
 class MultiCode {
@@ -112,18 +112,6 @@ class Accumulator {
 
 function matchesType(type:CollectionType, collectionType:CollectionType) {
     return type === CollectionType.UNKNOWN || type === collectionType;
-}
-
-function codeTextEquals(text1:CodeText<any>, text2:CodeText<any>):boolean {
-    if (text1.length !== text2.length) {
-        return false;
-    }
-    for (var i = 0; i < text1.length; i++) {
-        if (text1[i] !== text2[i]) {
-            return false;
-        }
-    }
-    return true;
 }
 
 function putTo(codeBlocks:CodeBlock[], dynamicCode:DynamicCode, needs:Needs) {
