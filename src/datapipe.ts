@@ -599,11 +599,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 ));
             }
         }
-        var target:DataPipe<R,P,T> = this;
-        if (this.type !== CollectionType.ARRAY || !this.hasNewResult()) {
-            target = this.toArray();
-        }
-        return target.subPipe<T>(CollectionType.ARRAY, seq(statements), ResultCreation.NEW_OBJECT);
+        return this.uniq().subPipe<T>(CollectionType.ARRAY, seq(statements), ResultCreation.NEW_OBJECT);
     }
 
     uniq():ChildDataPipe<R,T,T> {

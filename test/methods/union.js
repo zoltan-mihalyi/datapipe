@@ -12,6 +12,20 @@ describe('union tests', function() {
         ).toEqual([1, 2, obj, 3, 4, obj2]);
     });
 
+    it('union should filter the duplicates in the array', function() {
+        expect(dp()
+            .union([1, 2, 3])
+            .process([1, 2, 2])
+        ).toEqual([1, 2, 3]);
+    });
+
+    it('union with no params', function() {
+        expect(dp()
+            .union()
+            .process([1, 2, 2])
+        ).toEqual([1, 2]);
+    });
+
     it('union with map', function() {
         expect(dp()
             .union([1, 3])
