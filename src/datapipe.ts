@@ -628,6 +628,15 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.uniq().filterLike(eq(call(prop<any>(param(items), 'indexOf'), [current]), literal(-1)), null, true);
     }
 
+    difference(...arrays:any[]):ChildDataPipe<R,T,T> {
+        var concatenated = [];
+        for (var i = 0; i < arrays.length; i++) {
+            var array = arrays[i];
+            Array.prototype.push.apply(concatenated, array);
+        }
+        return this.without.apply(this, concatenated);
+    }
+
     uniq():ChildDataPipe<R,T,T> {
         return this.filterLike(neq(call(prop<()=>number>(result, 'indexOf'), [current]), literal(-1)), null, true);
     }
