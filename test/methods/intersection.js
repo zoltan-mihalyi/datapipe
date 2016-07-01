@@ -21,9 +21,6 @@ describe('intersection tests', function() {
     });
 
     it('intersection without parameters', function() {
-        console.log(dp()
-            .intersection().fn()+'');
-
         expect(dp()
             .intersection()
             .process([1, 2, 1, 3])
