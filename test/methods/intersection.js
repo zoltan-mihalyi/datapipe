@@ -3,7 +3,7 @@ var dp = require('../../dist/datapipe');
 describe('intersection tests', function() {
     it('the result of intersection should contain element from the array if it is contained at least in one of the target arrays.', function() {
         expect(dp()
-            .intersection([1, 2, 3], [1, 3, 4])
+            .intersection([1, 2, 1, 3], [1, 3, 4])
             .process([1, 2, 2, 3, 4, 3, 5])
         ).toEqual([1, 3]);
     });
@@ -18,5 +18,15 @@ describe('intersection tests', function() {
                 d: 4
             })
         ).toEqual([1, 3])
+    });
+
+    it('intersection without parameters', function() {
+        console.log(dp()
+            .intersection().fn()+'');
+
+        expect(dp()
+            .intersection()
+            .process([1, 2, 1, 3])
+        ).toEqual([1, 2, 3]);
     });
 });

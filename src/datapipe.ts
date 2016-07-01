@@ -604,7 +604,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
 
     intersection(...arrays:T[][]):ChildDataPipe<R,T,T> {
         if (arrays.length === 0) {
-            return this.subPipe<T>(CollectionType.ARRAY, setResult(array()), ResultCreation.NEW_OBJECT);
+            return this.uniq();
         }
 
         var items:T[] = [];
