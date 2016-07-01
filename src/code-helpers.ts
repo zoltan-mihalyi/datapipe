@@ -280,6 +280,14 @@ function mergeRanges(ranges:LoopRange[]) {
     return result;
 }
 
+export function iter(declaration:CodeText<any>, condition:CodeText<boolean>, afterthought:CodeText<any>, block:CodeText<any>):CodeText<void>{
+    return ['for(', ...seq([
+        declaration,
+        statement(condition),
+        afterthought
+    ]), '){\n', ...block, '\n}'];
+}
+
 export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<any>, opts:ItarOpts):CodeText<void> {
     var initial:CodeText<number>;
     var condition:CodeText<boolean>;
@@ -348,11 +356,13 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
         condition = lt(loopIndex, loopLength);
         afterthought = increment(loopIndex);
     }
-    var loop = ['for(', ...seq([
+
+    var loop = iter(
         declare(loopIndex, initial),
-        statement(condition),
-        afterthought
-    ]), '){\n', ...ensureCurrentInitialized(array, substituteItarMapAfter(block, startCodeText), opts.level), '\n}'];
+        condition,
+        afterthought,
+        ensureCurrentInitialized(array, substituteItarMapAfter(block, startCodeText), opts.level)
+    );
 
     return seq([
         declare(loopLength, prop<number>(array, 'length')),
