@@ -602,6 +602,32 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.uniq().subPipe<T>(CollectionType.ARRAY, seq(statements), ResultCreation.NEW_OBJECT);
     }
 
+    intersection(...arrays:T[][]):ChildDataPipe<R,T,T> {
+        if (arrays.length === 0) {
+            return this.subPipe<T>(CollectionType.ARRAY, setResult(array()), ResultCreation.NEW_OBJECT);
+        }
+
+        var items:T[] = [];
+
+        var first = arrays[0];
+        outer:for (var i = 0; i < first.length; i++) {
+            var item = first[i];
+            if (items.indexOf(item) !== -1) {
+                continue;
+            }
+            for (var j = 1; j < arrays.length; j++) {
+                let array = arrays[j];
+                if (array.indexOf(item) === -1) {
+                    continue outer;
+                }
+            }
+            items.push(item);
+        }
+
+        //todo unroll indexOf?
+        return this.uniq().filterLike(eq(call(prop<any>(param(items), 'indexOf'), [current]), literal(-1)), null, true);
+    }
+
     uniq():ChildDataPipe<R,T,T> {
         return this.filterLike(neq(call(prop<()=>number>(result, 'indexOf'), [current]), literal(-1)), null, true);
     }
