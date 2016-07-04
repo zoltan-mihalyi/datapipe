@@ -644,11 +644,20 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.filterLike(neq(call(prop<()=>number>(result, 'indexOf'), [current]), literal(-1)), null, true);
     }
 
-    unzip():ChildDataPipe<R,T,T> {
+    zip(...arrays:any[][]):ChildDataPipe<R,T,any[]> {
+        var withArrays:CodeText<any>[] = [result]; //todo could be optimized, since there are fix parameters.
+        for (var i = 0; i < arrays.length; i++) {
+            withArrays.push(param(arrays[i]));
+        }
+        var code = setResult(array.apply(null, withArrays)); //data = [data,_p0,_p1,...]
+        return this.subPipe<T>(CollectionType.ARRAY, code, ResultCreation.NEW_OBJECT).unzip();
+    }
+
+    unzip():ChildDataPipe<R,T,any[]> {
         var dataOldVar = named<any[]>('dataOld');
         var resultLengthVar = named<number>('resultLength');
         var innerIndex = rename(index, 1);
-        return this.subPipe<T>(CollectionType.ARRAY, seq([
+        return this.subPipe<any[]>(CollectionType.ARRAY, seq([
             declare(dataOldVar, result),
             declare(resultLengthVar, literal(0)),
             declare(length, prop(dataOldVar, 'length')),
