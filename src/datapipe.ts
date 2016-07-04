@@ -676,6 +676,18 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         ]), ResultCreation.NEW_OBJECT);
     }
 
+    object(values?:any[]):ChildDataPipe<R,T,any> {
+        var currentArray = current as CodeText<any[]>;
+        var text:CodeText<any>;
+        if (values) {
+            text = assign(prop(result, current), prop(param(values), index));
+        } else {
+            text = assign(prop(result, prop(currentArray, 0)), prop(currentArray, 1));
+        }
+
+        return this.reduceLike(CollectionType.MAP, setResult(obj()), text, false);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
