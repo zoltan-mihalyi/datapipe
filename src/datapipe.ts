@@ -708,6 +708,14 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.sortedIndexLike(item, false, iteratee, context);
     }
 
+    findIndex(predicate:(t?:T)=>boolean, context?:any):DataPipeResult<R,number> {
+        return this.indexOfLike(predicate, false, true, context);
+    }
+
+    findLastIndex(predicate:(t?:T)=>boolean, context?:any):DataPipeResult<R,number> {
+        return this.indexOfLike(predicate, true, true, context);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
@@ -857,9 +865,10 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT);
     }
 
-    private indexOfLike(item:any, reversed:boolean):DataPipeResult<R,number> {
+    private indexOfLike(item:any, reversed:boolean, predicate?:boolean, context?:any):DataPipeResult<R,number> {
+        var condition = predicate ? access(item, context) : eq(current, param(item));
         return this.reduceLike(CollectionType.UNKNOWN, setResult(literal(-1)), conditional(
-            eq(current, param(item)),
+            condition,
             seq([
                 setResult(index),
                 br
