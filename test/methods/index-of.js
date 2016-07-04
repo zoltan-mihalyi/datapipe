@@ -14,4 +14,11 @@ describe('indexOf tests', function() {
             .process([1, 2, 3])
         ).toBe(-1);
     });
+
+    it('indexOf sorted', function() {
+        expect(dp()
+            .indexOf(9, true)
+            .process([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        ).toBe(8);
+    })
 });

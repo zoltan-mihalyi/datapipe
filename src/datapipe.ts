@@ -56,7 +56,7 @@ import {
     eq,
     newArray,
     length,
-    iterSimple
+    iterSimple, iter, divide, toInt
 } from "./code-helpers";
 import {CollectionType, isProvider} from "./common";
 
@@ -688,22 +688,49 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.reduceLike(CollectionType.MAP, setResult(obj()), text, false);
     }
 
+    indexOf(item:any, sorted?:boolean):DataPipeResult<R,number> {
+        var code:Code;
+        if (sorted) {
+            let start = named<number>('start');
+            let end = named<number>('end');
+            let dataOld = named<any>('dataOld');
+            code = seq([
+                declare(dataOld, result),
+                setResult(literal(-1)),
+                declare(start, literal(0)),
+                declare(end, subtract(prop<number>(dataOld, 'length'), literal(1))),
+                iter(statement(empty), gte(end, start), empty, seq([
+                    declare(index, toInt(divide(par(add(start, end)), literal(2)))),
+                    declare(current, prop(dataOld, index)),
+                    conditional(
+                        lt(current, param(item)),
+                        assign(start, add(index, literal(1))),
+                        conditional(
+                            gt(current, param(item)),
+                            assign(end, subtract(index, literal(1))),
+                            seq([setResult(index), br])
+                        )
+                    ),
+                ]))
+            ]);
+        } else {
+            code = {
+                rename: true,
+                before: setResult(literal(-1)),
+                after: empty,
+                text: conditional(
+                    eq(current, param(item)),
+                    seq([
+                        setResult(index),
+                        br
+                    ])
+                ),
+                mergeStart: true,
+                mergeEnd: false
+            };
+        }
 
-    indexOf(item:any):DataPipeResult<R,number> {
-        return this.subPipe(CollectionType.UNKNOWN, {
-            rename: true,
-            before: setResult(literal(-1)),
-            after: empty,
-            text: conditional(
-                eq(current, param(item)),
-                seq([
-                    setResult(index),
-                    br
-                ])
-            ),
-            mergeStart: true,
-            mergeEnd: false
-        }, ResultCreation.NEW_OBJECT) as any;
+        return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
     }
 
     abstract process(data:R[]):T[];

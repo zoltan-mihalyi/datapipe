@@ -27,6 +27,12 @@ function prefixOperator<I,O>(prefix):(text:CodeText<I>)=>CodeText<O> {
     };
 }
 
+function suffixOperator<I,O>(suffix):(text:CodeText<I>)=>CodeText<O> {
+    return function (text:CodeText<I>):CodeText<O> {
+        return [...text, suffix];
+    };
+}
+
 export var eql = operator<any,boolean>('==');
 export var eq = operator<any,boolean>('===');
 export var neq = operator<any,boolean>('!==');
@@ -36,11 +42,14 @@ export var gte = operator<number, boolean>('>=');
 export var subtract = operatorWithNullValue('-', 0);
 export var add = operatorWithNullValue('+', 0);
 export var multiply = operator<number,number>('*');
+export var divide = operator<number,number>('/');
 export var and = operator<boolean,boolean>('&&');
 
 export var not = prefixOperator<boolean,boolean>('!');
 export var increment = prefixOperator<number,number>('++');
 export var decrement = prefixOperator<number,number>('--');
+
+export var toInt = suffixOperator('| 0');
 
 export var result = named<any>('data');
 export var current = named<any>('x');
