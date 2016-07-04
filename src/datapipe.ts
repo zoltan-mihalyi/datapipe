@@ -696,35 +696,16 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             return this.indexOfLike(item, false);
         }
 
-        let start = named<number>('start');
-        let end = named<number>('end');
-        let dataOld = named<any>('dataOld');
-        var code:CodeText<void> = seq([
-            declare(dataOld, result),
-            setResult(literal(-1)),
-            declare(start, literal(0)),
-            declare(end, subtract(prop<number>(dataOld, 'length'), literal(1))),
-            iter(statement(empty), gte(end, start), empty, seq([
-                declare(index, toInt(divide(par(add(start, end)), literal(2)))),
-                declare(current, prop(dataOld, index)),
-                conditional(
-                    lt(current, param(item)),
-                    assign(start, add(index, literal(1))),
-                    conditional(
-                        gt(current, param(item)),
-                        assign(end, subtract(index, literal(1))),
-                        seq([setResult(index), br])
-                    )
-                ),
-            ]))
-        ]);
-        return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
-
+        return this.sortedIndexLike(item, true);
     }
 
     lastIndexOf(item:any, fromIndex?:number):DataPipeResult<R,number> {
         var target:this = fromIndex ? this.take(fromIndex) as any : this;
         return target.indexOfLike(item, true);
+    }
+
+    sortedIndex(item:any, iteratee?:string|((x?:T) => number), context?:any):DataPipeResult<R,number> {
+        return this.sortedIndexLike(item, false, iteratee, context);
     }
 
     abstract process(data:R[]):T[];
@@ -884,6 +865,46 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
                 br
             ])
         ), reversed) as any;
+    }
+
+    private sortedIndexLike(item:any, exactMatch:boolean, iteratee?:string|((x?:T) => number), context?:any):DataPipeResult<R,number> {
+        var initializeDefaultValue:CodeText<void>;
+
+        var start = named<number>('start');
+        var end = named<number>('end');
+        var dataOld = named<any>('dataOld');
+        var moveEnd = assign(end, subtract(index, literal(1)));
+        var extractResult:CodeText<void>;
+        if (exactMatch) {
+            initializeDefaultValue = setResult(literal(-1));
+            moveEnd = conditional(
+                gt(current, param(item)),
+                moveEnd,
+                seq([setResult(index), br])
+            );
+            extractResult = empty;
+        } else {
+            initializeDefaultValue = empty;
+            extractResult = assign(result, start);
+        }
+
+        var code:CodeText<void> = seq([
+            declare(dataOld, result),
+            initializeDefaultValue,
+            declare(start, literal(0)),
+            declare(end, subtract(prop<number>(dataOld, 'length'), literal(1))),
+            iter(statement(empty), gte(end, start), empty, seq([
+                declare(index, toInt(divide(par(add(start, end)), literal(2)))),
+                declare(current, access(iteratee, context, prop(dataOld, index))),
+                conditional(
+                    lt(current, access(iteratee, context, param(item))),
+                    assign(start, add(index, literal(1))),
+                    moveEnd
+                ),
+            ])),
+            extractResult
+        ]);
+        return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
     }
 
     private subPipe<X>(type:CollectionType, code:DynamicCode, resultCreation:ResultCreation, np?:NeedsProvider):ChildDataPipe<R,T,X> {

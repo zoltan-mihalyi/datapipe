@@ -237,9 +237,10 @@ export function access(fn:string|(()=>any), context?:any, variable?:CodeText<any
     variable = variable || current;
     if (typeof fn === 'function') {
         return callParam(fn, context, customVariable ? [variable] : [variable, index]);
-    } else {
+    } else if ((typeof fn === 'string')) {
         return prop(variable, fn);
     }
+    return variable;
 }
 
 export function cast<T>(text:CodeText<any>):CodeText<T> {
