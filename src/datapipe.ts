@@ -56,7 +56,10 @@ import {
     eq,
     newArray,
     length,
-    iterSimple, iter, divide, toInt
+    iterSimple,
+    iter,
+    divide,
+    toInt
 } from "./code-helpers";
 import {CollectionType, isProvider} from "./common";
 
@@ -689,48 +692,39 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
     }
 
     indexOf(item:any, sorted?:boolean):DataPipeResult<R,number> {
-        var code:Code;
-        if (sorted) {
-            let start = named<number>('start');
-            let end = named<number>('end');
-            let dataOld = named<any>('dataOld');
-            code = seq([
-                declare(dataOld, result),
-                setResult(literal(-1)),
-                declare(start, literal(0)),
-                declare(end, subtract(prop<number>(dataOld, 'length'), literal(1))),
-                iter(statement(empty), gte(end, start), empty, seq([
-                    declare(index, toInt(divide(par(add(start, end)), literal(2)))),
-                    declare(current, prop(dataOld, index)),
-                    conditional(
-                        lt(current, param(item)),
-                        assign(start, add(index, literal(1))),
-                        conditional(
-                            gt(current, param(item)),
-                            assign(end, subtract(index, literal(1))),
-                            seq([setResult(index), br])
-                        )
-                    ),
-                ]))
-            ]);
-        } else {
-            code = {
-                rename: true,
-                before: setResult(literal(-1)),
-                after: empty,
-                text: conditional(
-                    eq(current, param(item)),
-                    seq([
-                        setResult(index),
-                        br
-                    ])
-                ),
-                mergeStart: true,
-                mergeEnd: false
-            };
+        if (!sorted) {
+            return this.indexOfLike(item, false);
         }
 
+        let start = named<number>('start');
+        let end = named<number>('end');
+        let dataOld = named<any>('dataOld');
+        var code:CodeText<void> = seq([
+            declare(dataOld, result),
+            setResult(literal(-1)),
+            declare(start, literal(0)),
+            declare(end, subtract(prop<number>(dataOld, 'length'), literal(1))),
+            iter(statement(empty), gte(end, start), empty, seq([
+                declare(index, toInt(divide(par(add(start, end)), literal(2)))),
+                declare(current, prop(dataOld, index)),
+                conditional(
+                    lt(current, param(item)),
+                    assign(start, add(index, literal(1))),
+                    conditional(
+                        gt(current, param(item)),
+                        assign(end, subtract(index, literal(1))),
+                        seq([setResult(index), br])
+                    )
+                ),
+            ]))
+        ]);
         return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
+
+    }
+
+    lastIndexOf(item:any, fromIndex?:number):DataPipeResult<R,number> {
+        var target:this = fromIndex ? this.take(fromIndex) as any : this;
+        return target.indexOfLike(item, true);
     }
 
     abstract process(data:R[]):T[];
@@ -880,6 +874,16 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             mergeEnd: false,
             reversed: reversed
         }, ResultCreation.NEW_OBJECT);
+    }
+
+    private indexOfLike(item:any, reversed:boolean):DataPipeResult<R,number> {
+        return this.reduceLike(CollectionType.UNKNOWN, setResult(literal(-1)), conditional(
+            eq(current, param(item)),
+            seq([
+                setResult(index),
+                br
+            ])
+        ), reversed) as any;
     }
 
     private subPipe<X>(type:CollectionType, code:DynamicCode, resultCreation:ResultCreation, np?:NeedsProvider):ChildDataPipe<R,T,X> {

@@ -4,7 +4,7 @@ describe('indexOf tests', function() {
     it('indexOf when item is present', function() {
         expect(dp()
             .indexOf(2)
-            .process([1, 2, 3, 4])
+            .process([1, 2, 3, 4, 1, 2, 3, 4])
         ).toBe(1);
     });
 
@@ -32,5 +32,5 @@ describe('indexOf tests', function() {
             .indexOf(9, true)
             .process([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         ).toBe(8);
-    })
+    });
 });
