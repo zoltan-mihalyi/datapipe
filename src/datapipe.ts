@@ -716,6 +716,21 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.indexOfLike(predicate, true, true, context);
     }
 
+    range(start?:number, stop?:number, step?:number):ChildDataPipe<R,number,number> { //todo create literal if no need to merge end
+        if (stop == null) { //todo check for infinite loops!
+            stop = start;
+            start = 0;
+        }
+        step = step || 1;
+
+        var size = Math.ceil((stop - start) / step);
+
+        //todo don't create unnecessary array!
+        var init = this.subPipe<number>(CollectionType.ARRAY, setResult(newArray(literal(size))), ResultCreation.NEW_OBJECT); //todo size
+
+        return init.mapLike<number>(assign(current, add(multiply(index, literal(step)), literal(start))));
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
