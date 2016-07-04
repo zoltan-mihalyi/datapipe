@@ -85,4 +85,24 @@ describe('take tests', function() {
             .process([1, 2, 3])
         ).toEqual([]);
     });
+
+    it('take and reduce', function() {
+        expect(dp()
+            .take(2)
+            .reduce(function(memo, x) {
+                return memo + x;
+            }, '')
+            .process([1, 2, 3])
+        ).toEqual('12');
+    });
+
+    it('take and reduceRight', function() {
+        expect(dp()
+            .take(2)
+            .reduceRight(function(memo, x) {
+                return memo + x;
+            }, '')
+            .process([1, 2, 3])
+        ).toEqual('21');
+    });
 });

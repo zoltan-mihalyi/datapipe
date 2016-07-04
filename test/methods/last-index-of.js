@@ -16,9 +16,6 @@ describe('lastIndexOf tests', function() {
     });
 
     it('lastIndexOf with fromIndex', function() {
-        console.log(dp()
-            .lastIndexOf(2, 6).fn()+'');
-
         expect(dp()
             .lastIndexOf(2, 6)
             .process([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
