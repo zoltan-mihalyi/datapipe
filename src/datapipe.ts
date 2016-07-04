@@ -688,6 +688,24 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.reduceLike(CollectionType.MAP, setResult(obj()), text, false);
     }
 
+
+    indexOf(item:any):DataPipeResult<R,number> {
+        return this.subPipe(CollectionType.UNKNOWN, {
+            rename: true,
+            before: setResult(literal(-1)),
+            after: empty,
+            text: conditional(
+                eq(current, param(item)),
+                seq([
+                    setResult(index),
+                    br
+                ])
+            ),
+            mergeStart: true,
+            mergeEnd: false
+        }, ResultCreation.NEW_OBJECT) as any;
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
