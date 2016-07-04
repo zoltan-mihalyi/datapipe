@@ -15,6 +15,18 @@ describe('indexOf tests', function() {
         ).toBe(-1);
     });
 
+    it('indexOf with object', function() {
+        expect(dp()
+            .indexOf(3)
+            .process({
+                'a': 1,
+                'b': 2,
+                'c': 3,
+                'd': 4
+            })
+        ).toBe('c');
+    });
+
     it('indexOf sorted', function() {
         expect(dp()
             .indexOf(9, true)
