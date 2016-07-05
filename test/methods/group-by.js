@@ -32,4 +32,14 @@ describe('groupBy tests', function() {
             .process(data)
         ).toEqual(afterGroup);
     });
+
+    it('groupBy with properties', function() {
+        expect(u()
+            .groupBy({x: 1})
+            .process(data)
+        ).toEqual({
+            true: [{x: 1, y: 2}, {a: 3, x: 1}],
+            false: [{z: 1}, {x: 2, y: 3}]
+        });
+    });
 });

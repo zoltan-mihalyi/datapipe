@@ -46,6 +46,13 @@ interface CodeBlock {
     getCodeText():CodeText<any>;
 }
 
+type IterateeFunction<T,R> = (t?:T) => R;
+type Properties = {[index:string]:any};
+type PredicateFunction<T> = IterateeFunction<T,boolean>;
+type Iteratee<T,R> =  IterateeFunction<T,R> | Properties;
+type Predicate<T> =  Iteratee<T,boolean>;
+type Accessible<T,R> = string|number|IterateeFunction<T,R|boolean>
+
 type NeedsProvider = (need?:Needs) => Needs;
 
 type Code = Loop | CodeText<any>;

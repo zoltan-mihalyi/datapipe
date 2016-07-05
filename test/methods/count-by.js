@@ -46,4 +46,14 @@ describe('countBy tests', function() {
             odd: 3
         });
     });
+
+    it('countBy with properties', function() {
+        expect(u()
+            .countBy({a: 1})
+            .process([{a: 1}, {a: 2}, {a: 3}, {}])
+        ).toEqual({
+            true: 1,
+            false: 3
+        });
+    });
 });

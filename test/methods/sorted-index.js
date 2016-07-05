@@ -32,4 +32,11 @@ describe('sortedIndex tests', function() {
             .process([{x: 1}, {x: 2}, {x: 4}, {x: 5}, {x: 6}])
         ).toBe(2);
     });
+
+    it('sortedIndex with iteratee properties', function() {
+        expect(u()
+            .sortedIndex({x: 1, a: 1}, {x: 1})
+            .process([{x: 2}, {x: 3}, {x: 1}, {x: 1}])
+        ).toBe(2);
+    });
 });

@@ -32,4 +32,14 @@ describe('indexBy tests', function() {
             .process(data)
         ).toEqual(afterInfex);
     });
+
+    it('indexBy with properties', function() {
+        expect(u()
+            .indexBy({x: 1})
+            .process(data)
+        ).toEqual({
+            true: {a: 3, x: 1},
+            false: {x: 2, y: 3}
+        });
+    });
 });

@@ -27,4 +27,11 @@ describe('findLastIndex tests', function() {
             .process([1, 2, 3, 4, 1, 2, 3, 4])
         ).toBe(5);
     });
+
+    it('findLastIndex with properties', function() {
+        expect(u()
+            .findLastIndex({a: 2})
+            .process([{a: 1}, {a: 2}, {a: 3}, {a: 4}, {a: 1}, {a: 2}, {a: 3}, {a: 4}])
+        ).toBe(5);
+    });
 });

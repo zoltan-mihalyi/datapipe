@@ -26,6 +26,13 @@ describe('sortBy tests', function() {
         ).toEqual([5, 4, 6, 3, 1, 2]);
     });
 
+    it('sortBy with properties', function() {
+        expect(u()
+            .sortBy({a: 1})
+            .process([{a: 0}, {a: 1, b: 1}, {a: 2}, {a: 1, b: 2}, {a: 3}])
+        ).toEqual([{a: 0}, {a: 2}, {a: 3}, {a: 1, b: 1}, {a: 1, b: 2}]);
+    });
+
     it('sortBy with property name.', function() {
         expect(u()
             .sortBy('x')

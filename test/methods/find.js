@@ -19,6 +19,13 @@ describe('Test "find"', function() {
         }).process([1, 2, 3])).toBeUndefined()
     });
 
+    it('find properties', function() {
+        expect(u()
+            .find({a: 1})
+            .process([{x: 1}, {a: 1}, {a: 2}, {a: 1}])
+        ).toEqual({a: 1});
+    });
+
     it('find and sortBy', function() {
         var array = [[2, 1]];
         var result = u()

@@ -232,12 +232,12 @@ export function ret<T>(code:CodeText<T>):CodeText<Ret<T>> {
     return ['return ', ...code, ';'];
 }
 
-export function access(fn:string|(()=>any), context?:any, variable?:CodeText<any>):CodeText<any> {
+export function access(fn:Accessible<any,any>, context?:any, variable?:CodeText<any>):CodeText<any> {
     var customVariable:boolean = !!variable;
     variable = variable || current;
     if (typeof fn === 'function') {
         return callParam(fn, context, customVariable ? [variable] : [variable, index]);
-    } else if ((typeof fn === 'string')) {
+    } else if (typeof fn === 'string') {
         return prop(variable, fn);
     }
     return variable;

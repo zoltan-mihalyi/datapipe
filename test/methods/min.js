@@ -33,6 +33,13 @@ describe('min tests', function() {
         ).toEqual({x: 1});
     });
 
+    it('min with properties', function() {
+        expect(u()
+            .min({x: 1})
+            .process([{x: 1}, {x: 3}, {x: 2}, {x: 1}, {x: 4}])
+        ).toEqual({x: 3});
+    });
+
     it('min with 0 element', function() {
         expect(u()
             .min()

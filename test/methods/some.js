@@ -20,6 +20,20 @@ describe('some tests', function() {
         ).toBe(false);
     });
 
+    it('some with properties with match', function() {
+        expect(u()
+            .some({a: 1})
+            .process([{a: 2}, {}, {b: 1}, {a: 1}])
+        ).toBe(true);
+    });
+
+    it('some with properties without match', function() {
+        expect(u()
+            .some({a: 0})
+            .process([{a: 2}, {}, {b: 1}, {a: 1}])
+        ).toBe(false);
+    });
+
     it('some should return false on empty arrays', function() {
         expect(u()
             .some(function() {

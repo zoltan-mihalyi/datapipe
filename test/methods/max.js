@@ -33,6 +33,13 @@ describe('max tests', function() {
         ).toEqual({x: 4});
     });
 
+    it('max with properties', function() {
+        expect(u()
+            .max({x: 3})
+            .process([{x: 1}, {x: 3}, {x: 2}, {x: 1}, {x: 4}])
+        ).toEqual({x: 3});
+    });
+
     it('max with 0 element', function() {
         expect(u()
             .max()
