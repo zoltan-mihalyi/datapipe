@@ -716,7 +716,7 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         return this.indexOfLike(predicate, true, true, context);
     }
 
-    range(start?:number, stop?:number, step?:number):ChildDataPipe<R,number,number> { //todo create literal if no need to merge end
+    range(start?:number, stop?:number, step?:number):ChildDataPipe<R,T,number> {
         if (stop == null) { //todo check for infinite loops!
             stop = start;
             start = 0;
@@ -724,11 +724,13 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
         step = step || 1;
 
         var size = Math.ceil((stop - start) / step);
+        var elements:CodeText<number>[] = [];
+        for (var i = 0; i < size; i++) {
+            elements.push(literal(i * step + start));
+        }
 
-        //todo don't create unnecessary array!
-        var init = this.subPipe<number>(CollectionType.ARRAY, setResult(newArray(literal(size))), ResultCreation.NEW_OBJECT); //todo size
-
-        return init.mapLike<number>(assign(current, add(multiply(index, literal(step)), literal(start))));
+        var createArray:CodeText<void> = setResult(array.apply(null, elements));
+        return this.subPipe<number>(CollectionType.ARRAY, createArray, ResultCreation.NEW_OBJECT);
     }
 
     abstract process(data:R[]):T[];
