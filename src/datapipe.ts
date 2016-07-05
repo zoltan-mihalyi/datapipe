@@ -646,8 +646,25 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.without.apply(this, concatenated);
     }
 
-    uniq():DataPipe<R,T> {
-        return this.filterLike(neq(call(prop<()=>number>(result, 'indexOf'), [current]), literal(-1)), null, true);
+    uniq(isSorted:boolean, iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T>;
+    uniq(iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T>;
+    uniq(isSorted?:boolean|Iteratee<T,any>, iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T> {
+        if (typeof isSorted !== 'boolean') { //
+            context = iteratee;
+            iteratee = isSorted as Iteratee<T,any>;
+            //todo isSorted = false;
+        }
+        if (iteratee == null) {
+            return this.filterLike(notContains(result, current), null, true);
+        }
+
+        let seen = named<any[]>('seen');
+        let computed = named<any>('computed');
+        let declareComputed = declare(computed, access(toAccessible(iteratee), context));
+        let pushComputedToSeen = call(prop(seen, 'push'), [computed]);
+        return this //todo cannot use mergeEnd in situations like this
+            .subPipe<T>(CollectionType.ARRAY, declare(seen, array()), ResultCreation.USES_PREVIOUS)
+            .filterLike(notContains(seen, computed), null, true, declareComputed, pushComputedToSeen);
     }
 
     zip(...arrays:any[][]):DataPipe<R,any[]> {
@@ -746,7 +763,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     abstract hasNewResult():boolean;
 
-    private filterLike(predicate:CodeText<boolean>|Predicate<T>, context:any, inverted?:boolean):DataPipe<R,T> { //todo rearrange for safety
+    private filterLike(predicate:CodeText<boolean>|Predicate<T>, context:any, inverted?:boolean, textBefore?:CodeText<any>, elseCode?:CodeText<any>):DataPipe<R,T> { //todo rearrange for safety
         var condition:CodeText<boolean>;
         if (isArray(predicate)) {
             condition = predicate as CodeText<boolean>;
@@ -774,10 +791,14 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
                     changesIndex: true,
                     before: before,
                     after: after,
-                    text: conditional(
-                        condition,
-                        cont
-                    ),
+                    text: seq([
+                        textBefore || empty,
+                        conditional(
+                            condition,
+                            cont,
+                            elseCode
+                        )
+                    ]),
                     mergeStart: true,
                     mergeEnd: true
                 };
@@ -993,4 +1014,8 @@ function toAccessible<T,R>(iteratee?:Iteratee<T,R>):Accessible<T,R> {
     } else {
         return whereFilter(iteratee as Properties);
     }
+}
+
+function notContains(array:CodeText<any[]>, object:CodeText<any>):CodeText<boolean> {
+    return neq(call(prop<()=>number>(array, 'indexOf'), [object]), literal(-1));
 }
