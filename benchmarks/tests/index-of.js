@@ -23,7 +23,6 @@ var nativeFn1 = function(array) {
 };
 
 var fn2 = dp('array').indexOf(15, true).fn();
-console.log(fn2+'');
 
 var nativeFn2 = function(array) {
     var start = 0;

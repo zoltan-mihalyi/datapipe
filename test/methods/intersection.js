@@ -26,4 +26,19 @@ describe('intersection tests', function() {
             .process([1, 2, 1, 3])
         ).toEqual([1, 2, 3]);
     });
+
+    it('intersection with empty array', function() {
+        expect(dp()
+            .intersection([])
+            .process([1, 2, 1, 3])
+        ).toEqual([]);
+    });
+
+    it('intersection and size', function() {
+        expect(dp()
+            .intersection([])
+            .size()
+            .process([1, 2, 1, 3])
+        ).toEqual(0);
+    });
 });

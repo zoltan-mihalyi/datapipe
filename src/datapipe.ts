@@ -630,8 +630,40 @@ abstract class DataPipe<R,P,T> implements DataPipeResult<R,T[]> {
             items.push(item);
         }
 
-        //todo unroll indexOf?
-        return this.uniq().filterLike(eq(call(prop<any>(param(items), 'indexOf'), [current]), literal(-1)), null, true);
+        var predicate:CodeText<boolean>;
+
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i];
+            let subCondition = neq(current, param(item));
+            if (predicate) {
+                predicate = and(predicate, subCondition);
+            } else {
+                predicate = subCondition;
+            }
+        }
+
+        var unique = this.uniq();
+        if (items.length) {
+            return unique.filterLike(predicate, null, true);
+        } else {
+            return unique.subPipe<T>(CollectionType.ARRAY, {//todo move this branch to filterLike as a special case?
+                createCode: (ctx:Context, needs:Needs) => {
+                    if (needs.size) {
+                        return setResult(literal(0));
+                    }
+                    return {
+                        rename: true,
+                        changesIndex: true,
+                        before: filterMapBefore,
+                        after: filterMapAfter,
+                        text: cont,
+                        mergeStart: true,
+                        mergeEnd: true
+                    };
+                },
+                handlesSize: true
+            }, ResultCreation.NEW_OBJECT);
+        }
     }
 
     difference(...arrays:any[]):ChildDataPipe<R,T,T> {
