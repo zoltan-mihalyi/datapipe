@@ -10,7 +10,7 @@ describe('partition tests', function() {
         ).toEqual([[2, 4], [1, 3, 5]]);
     });
 
-    xit('partition with property', function() { //todo enable
+    it('partition with property', function() {
         expect(u()
             .partition('a')
             .process([{}, {a: 1, b: 1}, {a: 0}, {a: 1, b: 2}, {a: 2}])

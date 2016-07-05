@@ -87,8 +87,8 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     constructor(public type:CollectionType) {
     }
 
-    map<O>(fn:(t?:T)=>O, context?:any):DataPipe<R,O> { //todo is there a correlation between fields?
-        return this.mapLike<O>(assign(current, callParam(fn, context)));
+    map<O>(iteratee:Iteratee<T,O>, context?:any):DataPipe<R,O> { //todo is there a correlation between fields?
+        return this.mapLike<O>(assign(current, access(toAccessible(iteratee), context)));
     }
 
     filter(predicate:Predicate<T>, context?:any):DataPipe<R,T> { //todo filter with properties and regexp
@@ -122,7 +122,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             before: setResult(undef),
             after: empty,
             text: conditional(
-                callParam(toIterateeFunction(predicate), context),
+                access(toAccessible(predicate), context),
                 seq([
                     setResult(current),
                     br
@@ -324,11 +324,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.filterLike(current, null, false);
     }
 
-    where(properties:Properties):DataPipe<R,T> { //todo alias
+    where(properties:PropertyOrProperties):DataPipe<R,T> { //todo alias
         return this.filter(properties);
     }
 
-    findWhere(properties:Properties):DataPipeResult<R,any> { //todo alias
+    findWhere(properties:PropertyOrProperties):DataPipeResult<R,any> { //todo alias
         return this.find(properties);
     }
 
@@ -399,19 +399,19 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         ));
     }
 
-    min(iteratee:string|Iteratee<T,number>):DataPipeResult<R, T>;
+    min(iteratee:Iteratee<T,number>):DataPipeResult<R, T>;
     min():DataPipeResult<R, number>;
-    min(iteratee?:string|Iteratee<T,number>, context?:any) {
+    min(iteratee?:Iteratee<T,number>, context?:any) {
         return this.edge(infinity, lt, iteratee, context);
     }
 
-    max(iteratee:string|Iteratee<T,number>):DataPipeResult<R, T>;
+    max(iteratee:Iteratee<T,number>):DataPipeResult<R, T>;
     max():DataPipeResult<R, number>;
-    max(iteratee?:string|Iteratee<T,number>, context?:any) {
+    max(iteratee?:Iteratee<T,number>, context?:any) {
         return this.edge(negativeInfinity, gt, iteratee, context);
     }
 
-    groupBy(iteratee:string|Iteratee<T,string|number>, context?:any):DataPipe<R,T[]> {
+    groupBy(iteratee:Iteratee<T,string|number>, context?:any):DataPipe<R,T[]> {
         var group = named<string>('group');
         var text:CodeText<any> = seq([
             declare(group, access(toAccessible(iteratee), context)),
@@ -425,12 +425,12 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.reduceLike<T[]>(CollectionType.MAP, setResult(obj()), text, false);
     }
 
-    indexBy(iteratee:string|Iteratee<T,string|number>, context?:any):DataPipe<R,T> {
+    indexBy(iteratee:Iteratee<T,string|number>, context?:any):DataPipe<R,T> {
         var assignment = assign(prop(result, access(toAccessible(iteratee), context)), current);
         return this.reduceLike<T>(CollectionType.MAP, setResult(obj()), assignment, false); //todo dont care order?
     }
 
-    sortBy(iteratee:string|Iteratee<T,string|number>, context?:any):DataPipe<R,T> {
+    sortBy(iteratee:Iteratee<T,string|number>, context?:any):DataPipe<R,T> {
         //todo advanced logic, when used after map-like processors
         var text:CodeText<any>;
         if (!this.hasNewResult() || this.type !== CollectionType.ARRAY) {
@@ -450,7 +450,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.subPipe<T>(CollectionType.ARRAY, text, ResultCreation.NEW_OBJECT);
     }
 
-    countBy(iteratee?:string|Iteratee<T,number>, context?:any):DataPipe<R,number> {
+    countBy(iteratee?:Iteratee<T,number>, context?:any):DataPipe<R,number> {
         var group:CodeText<any>;
         var firstStatement = empty;
         if (!iteratee) {
@@ -526,7 +526,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
                 declare(part2, array())
             ]),
             text: statement(ternary(
-                callParam(toIterateeFunction(predicate), context),
+                access(toAccessible(predicate), context),
                 call(prop<any>(part1, 'push'), [current]),
                 call(prop<any>(part2, 'push'), [current])
             )),
@@ -707,7 +707,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return target.indexOfLike(item, true);
     }
 
-    sortedIndex(item:any, iteratee?:string|Iteratee<T,string|number>, context?:any):DataPipeResult<R,number> {
+    sortedIndex(item:any, iteratee?:Iteratee<T,string|number>, context?:any):DataPipeResult<R,number> {
         return this.sortedIndexLike(item, false, iteratee, context);
     }
 
@@ -746,12 +746,12 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     abstract hasNewResult():boolean;
 
-    private filterLike(predicate:CodeText<boolean>|Predicate<T>, context:any, inverted?:boolean):DataPipe<R,T> {
+    private filterLike(predicate:CodeText<boolean>|Predicate<T>, context:any, inverted?:boolean):DataPipe<R,T> { //todo rearrange for safety
         var condition:CodeText<boolean>;
         if (isArray(predicate)) {
             condition = predicate as CodeText<boolean>;
         } else {
-            condition = callParam(toIterateeFunction<T, boolean>(predicate), context);
+            condition = access(toAccessible<T, boolean>(predicate), context);
         }
         if (!inverted) {
             condition = not(condition);
@@ -787,7 +787,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     private edge(initial:CodeText<number>, operator:Operator<number,boolean>,
-                 iteratee?:string|Iteratee<T,number>, context?:any):DataPipeResult<R,any> {
+                 iteratee?:Iteratee<T,number>, context?:any):DataPipeResult<R,any> {
         var initialize = setResult(initial);
         if (!iteratee) {
             return this.reduceLike(CollectionType.UNKNOWN, initialize, conditional(
@@ -812,7 +812,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     private everyLike(predicate:Predicate<T>, context:any, inverted?:boolean):DataPipeResult<R, boolean> {
-        var condition = callParam(toIterateeFunction(predicate), context);
+        var condition = access(toAccessible(predicate), context); //todo access(toAccessible common
 
         if (!inverted) {
             condition = not(condition);
@@ -885,8 +885,8 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT);
     }
 
-    private indexOfLike(item:any, reversed:boolean, predicate?:boolean, context?:any):DataPipeResult<R,number> {
-        var condition = predicate ? access(toIterateeFunction(item), context) : eq(current, param(item));
+    private indexOfLike(item:any, reversed:boolean, predicate?:boolean, context?:any):DataPipeResult<R,number> { //todo rearrange properties
+        var condition = predicate ? access(toAccessible(item), context) : eq(current, param(item));
         return this.reduceLike(CollectionType.UNKNOWN, setResult(literal(-1)), conditional(
             condition,
             seq([
@@ -896,7 +896,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         ), reversed) as any;
     }
 
-    private sortedIndexLike(item:any, exactMatch:boolean, iteratee?:string|Iteratee<T,string|number>, context?:any):DataPipeResult<R,number> {
+    private sortedIndexLike(item:any, exactMatch:boolean, iteratee?:Iteratee<T,string|number>, context?:any):DataPipeResult<R,number> {
         var initializeDefaultValue:CodeText<void>;
 
         var start = named<number>('start');
@@ -947,7 +947,7 @@ function isPrimitive(value:any) {
     return value === null || (typeof value !== 'function' && typeof value !== 'object');
 }
 
-function whereFilter(properties:Properties):PredicateFunction<any> {
+function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
 
     var statements:CodeText<void|Ret<boolean>>[] = [];
     for (let i in properties) {
@@ -987,17 +987,10 @@ function flattenTo(array, result) {
     return result;
 }
 
-function toAccessible<T,R>(iteratee:string|Iteratee<T,R>):Accessible<T,R> {
-    if (typeof iteratee === 'string' || typeof iteratee === 'number' || iteratee == null) {
+function toAccessible<T,R>(iteratee:Iteratee<T,R>):Accessible<T,R> {
+    if (typeof iteratee === 'string' || typeof iteratee === 'number' || iteratee == null || typeof  iteratee === 'function') {
         return iteratee as any;
     } else {
-        return toIterateeFunction(iteratee);
+        return whereFilter(iteratee as Properties);
     }
-}
-
-function toIterateeFunction<T,R>(iteratee:Iteratee<T,R>):IterateeFunction<T,R|boolean> {
-    if (typeof iteratee === 'function') {
-        return iteratee as IterateeFunction<T,R>;
-    }
-    return whereFilter(iteratee as Properties);
 }

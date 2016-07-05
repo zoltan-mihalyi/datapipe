@@ -19,6 +19,20 @@ describe('every tests', function() {
         ).toBe(true);
     });
 
+    it('every with property', function() {
+        expect(u()
+            .every('a')
+            .process([{a: 1}, {a: true, b: 2}])
+        ).toBe(true);
+    });
+
+    it('every with property and mismatch', function() {
+        expect(u()
+            .every('a')
+            .process([{a: 1}, {b: 2}])
+        ).toBe(false);
+    });
+
     it('every with properties', function() {
         expect(u()
             .every({a: 1})

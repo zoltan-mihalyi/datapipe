@@ -20,6 +20,13 @@ describe('filter tests', function() {
         ).toEqual([{x: 1}, {x: 1, y: 4}]);
     });
 
+    it('filter property', function() {
+        expect(u()
+            .filter('y')
+            .process([{x: 1}, {x: 2, y: 3}, {x: 1, y: 4}])
+        ).toEqual([{x: 2, y: 3}, {x: 1, y: 4}]);
+    });
+
     it('filter with special property names', function() {
         var properties = {'\'\n\r\\': 1};
         expect(u().filter(properties).process([{'\'\n\r\\': 1}]).length).toEqual(1);

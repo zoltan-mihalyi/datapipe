@@ -20,6 +20,20 @@ describe('some tests', function() {
         ).toBe(false);
     });
 
+    it('some with property', function() {
+        expect(u()
+            .some('b')
+            .process([{a: 1}, {a: 1, b: 2}])
+        ).toBe(true);
+    });
+
+    it('some with property and mismatch', function() {
+        expect(u()
+            .some('c')
+            .process([{a: 1}, {b: 2}])
+        ).toBe(false);
+    });
+
     it('some with properties with match', function() {
         expect(u()
             .some({a: 1})

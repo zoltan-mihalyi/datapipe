@@ -28,6 +28,13 @@ describe('findLastIndex tests', function() {
         ).toBe(5);
     });
 
+    it('findLastIndex with property', function() {
+        expect(u()
+            .findLastIndex('a')
+            .process([{b: 1}, {a: 1}, {a: 3}, {b: 4}, {b: 1}, {a: 2}, {b: 3}, {b: 4}])
+        ).toBe(5);
+    });
+
     it('findLastIndex with properties', function() {
         expect(u()
             .findLastIndex({a: 2})

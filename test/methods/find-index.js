@@ -28,6 +28,13 @@ describe('findIndex tests', function() {
         ).toBe(1);
     });
 
+    it('findIndex with property', function() {
+        expect(u()
+            .findIndex('a')
+            .process([{b: 1}, {a: 2}, {a: 3}, {a: 4}])
+        ).toBe(1);
+    });
+
     it('findIndex with properties', function() {
         expect(u()
             .findIndex({a: 2})
