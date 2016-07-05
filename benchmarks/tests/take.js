@@ -1,13 +1,13 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _take = _.take;
 var __take = __.take;
 var __head = __.head;
 
-var fn1 = dp('array').take(5).fn();
+var fn1 = u('array').take(5).fn();
 var nativeFn1 = function(array) {
     var length = array.length;
     if (length > 5) {
@@ -20,7 +20,7 @@ var nativeFn1 = function(array) {
     return result;
 };
 
-var fn2 = dp('array').take().fn();
+var fn2 = u('array').take().fn();
 var nativeFn2 = function(array) {
     return array[0];
 };

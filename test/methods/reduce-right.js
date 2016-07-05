@@ -1,8 +1,8 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('reduceRight tests', function() {
     it('Calling reduceRight should work as expected.', function() {
-        expect(dp()
+        expect(u()
             .reduceRight(function(memo, x) {
                 return memo + x;
             }, '')
@@ -10,7 +10,7 @@ describe('reduceRight tests', function() {
     });
 
     it('reduceRight with context', function() {
-        expect(dp()
+        expect(u()
             .reduceRight(function(memo, x) {
                 return memo + x + this.value;
             }, '', {value: '-'})
@@ -19,7 +19,7 @@ describe('reduceRight tests', function() {
     });
 
     it('reduceRight with index', function() {
-        expect(dp()
+        expect(u()
             .reduceRight(function(memo, x, i) {
                 memo.push(i);
                 return memo;

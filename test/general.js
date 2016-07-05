@@ -1,35 +1,35 @@
-var dp = require('../dist/datapipe');
+var u = require('../dist/main');
 var codeHelpers = require('../dist/code-helpers');
 
 describe('Test general usage', function() {
     it('fn method', function() {
-        var addOneToAll = dp().map(function(x) {
+        var addOneToAll = u().map(function(x) {
             return x + 1;
         }).fn();
 
-        expect(dp()
+        expect(u()
             .map(addOneToAll)
             .process([[1, 2], [3, 4]])
         ).toEqual([[2, 3], [4, 5]]);
     });
 
     it('root process', function() {
-        expect(dp()
+        expect(u()
             .process([1, 2, 3])
         ).toEqual([1, 2, 3]);
 
-        expect(dp()
+        expect(u()
             .compile()
             .process([1, 2, 3])
         ).toEqual([1, 2, 3]);
 
-        expect(dp()
+        expect(u()
             .fn()([1, 2, 3])
         ).toEqual([1, 2, 3]);
     });
 
     it('iterate object', function() {
-        expect(dp()
+        expect(u()
             .pluck('x')
             .process({
                 a: {x: 1},
@@ -40,7 +40,7 @@ describe('Test general usage', function() {
     });
 
     it('iterate as object when length property is not number', function() {
-        expect(dp()
+        expect(u()
             .pluck('x')
             .process({
                 a: {x: 1},
@@ -51,14 +51,14 @@ describe('Test general usage', function() {
     });
 
     it('Calling functions with context should use .call, but without context should not.', function() {
-        expect(dp()
+        expect(u()
             .map(function() {
             }, {})
             .fn()
             .toString()
         ).toContain('.call');
 
-        expect(dp()
+        expect(u()
             .map(function() {
             })
             .fn()
@@ -72,7 +72,7 @@ describe('Test general usage', function() {
         }
 
         it('Reuse parameters for the two loops', function() {
-            expect(dp()
+            expect(u()
                 .map(identity)
                 .fn()
                 .toString()
@@ -80,7 +80,7 @@ describe('Test general usage', function() {
         });
 
         it('Reuse parameters across steps and loops', function() {
-            expect(dp('array')
+            expect(u('array')
                 .map(identity)
                 .map(identity)
                 .fn()

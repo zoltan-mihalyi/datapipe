@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _indexBy = _.indexBy;
 var __keyBy = __.keyBy;
@@ -10,7 +10,7 @@ function index(x) {
     return x.x;
 }
 
-var fn1 = dp('array').indexBy(index).fn();
+var fn1 = u('array').indexBy(index).fn();
 var nativeFn1 = function(array) {
     var result = {};
     var length = array.length;
@@ -22,7 +22,7 @@ var nativeFn1 = function(array) {
 };
 var indexName = 'x';
 
-var fn2 = dp('array').indexBy(indexName).fn();
+var fn2 = u('array').indexBy(indexName).fn();
 var nativeFn2 = function(array) {
     var result = {};
     var length = array.length;

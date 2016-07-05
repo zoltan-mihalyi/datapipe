@@ -1,15 +1,15 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('max tests', function() {
     it('max should work as expected', function() {
-        expect(dp()
+        expect(u()
             .max()
             .process([5, 6, 3, 2, 4])
         ).toBe(6);
     });
 
     it('max with iteratee', function() {
-        expect(dp()
+        expect(u()
             .max(function(x) {
                 return x.x;
             })
@@ -18,7 +18,7 @@ describe('max tests', function() {
     });
 
     it('max with context', function() {
-        expect(dp()
+        expect(u()
             .max(function(x) {
                 return x[this];
             }, 'x')
@@ -27,19 +27,19 @@ describe('max tests', function() {
     });
 
     it('max with property', function() {
-        expect(dp()
+        expect(u()
             .max('x')
             .process([{x: 3}, {x: 2}, {x: 4}, {x: 1}])
         ).toEqual({x: 4});
     });
 
     it('max with 0 element', function() {
-        expect(dp()
+        expect(u()
             .max()
             .process([])
         ).toBe(-Infinity);
 
-        expect(dp()
+        expect(u()
             .max(function(x) {
                 return x.x;
             })

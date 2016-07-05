@@ -1,4 +1,4 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('union tests', function() {
 
@@ -6,28 +6,28 @@ describe('union tests', function() {
         var obj = {};
         var obj2 = {};
 
-        expect(dp()
+        expect(u()
             .union([1, 3], [3, 4, obj, obj2])
             .process([1, 2, obj])
         ).toEqual([1, 2, obj, 3, 4, obj2]);
     });
 
     it('union should filter the duplicates in the array', function() {
-        expect(dp()
+        expect(u()
             .union([1, 2, 3])
             .process([1, 2, 2])
         ).toEqual([1, 2, 3]);
     });
 
     it('union with no params', function() {
-        expect(dp()
+        expect(u()
             .union()
             .process([1, 2, 2])
         ).toEqual([1, 2]);
     });
 
     it('union with map', function() {
-        expect(dp()
+        expect(u()
             .union([1, 3])
             .process({a: 1, b: 2})
         ).toEqual([1, 2, 3]);
@@ -36,7 +36,7 @@ describe('union tests', function() {
     it('union should not change the original array', function() {
         var arr = [1, 2];
 
-        expect(dp()
+        expect(u()
             .union([3])
             .process(arr)
         ).toEqual([1, 2, 3]);
@@ -45,7 +45,7 @@ describe('union tests', function() {
     });
 
     it('union array', function() {
-        expect(dp('array')
+        expect(u('array')
             .union([2])
             .process([1])
         ).toEqual([1, 2]);
@@ -53,7 +53,7 @@ describe('union tests', function() {
 
 
     it('union after map', function() {
-        expect(dp('array')
+        expect(u('array')
             .map(function(x) {
                 return x - 1;
             })

@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _countBy = _.countBy;
 var __countBy = __.countBy;
@@ -10,7 +10,7 @@ function getX(x) {
     return x.x;
 }
 
-var fn1 = dp('array').countBy(getX).fn();
+var fn1 = u('array').countBy(getX).fn();
 var nativeFn1 = function(array) {
     var result = {};
     var length = array.length;
@@ -26,7 +26,7 @@ var nativeFn1 = function(array) {
     return result;
 };
 
-var fn2 = dp('array').countBy('x').fn();
+var fn2 = u('array').countBy('x').fn();
 var nativeFn2 = function(array) {
     var result = {};
     var length = array.length;

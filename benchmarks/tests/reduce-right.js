@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _reduceRight = _.reduceRight;
 var __reduceRight = __.reduceRight;
@@ -15,7 +15,7 @@ function reducer(memo, x) {
     }
 }
 
-var fn = dp('array').reduceRight(reducer, 0).fn();
+var fn = u('array').reduceRight(reducer, 0).fn();
 var nativeFn = function(array) {
     var memo = 0;
     for (var i = array.length - 1; i >= 0; --i) {

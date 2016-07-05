@@ -1,8 +1,8 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('partition tests', function() {
     it('simple partition', function() {
-        expect(dp()
+        expect(u()
             .partition(function(x) {
                 return x % 2 === 0;
             })

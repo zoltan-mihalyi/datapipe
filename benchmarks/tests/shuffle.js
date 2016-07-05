@@ -1,12 +1,12 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _shuffle = _.shuffle;
 var __shuffle = __.shuffle;
 
-var fn = dp('array').shuffle().fn();
+var fn = u('array').shuffle().fn();
 
 
 var nativeFn = function(array) {

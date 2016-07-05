@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _toArray = _.toArray;
 var __toArray = __.toArray;
@@ -13,7 +13,7 @@ var map = {
     d: 4
 };
 
-var fn1 = dp('array').toArray().fn();
+var fn1 = u('array').toArray().fn();
 var nativeFn1 = function(array) {
     var length = array.length;
     var result = new Array(length);
@@ -23,10 +23,11 @@ var nativeFn1 = function(array) {
     return result;
 };
 
-var fn2 = dp('map').toArray().fn();
+var fn2 = u('map').toArray().fn();
 var nativeFn2 = function(map) {
     var result = [];
     for (var i in map) {
+        //noinspection JSUnfilteredForInLoop
         result.push(map[i]);
     }
     return result;

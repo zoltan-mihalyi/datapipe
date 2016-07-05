@@ -1,6 +1,6 @@
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _intersection = _.intersection;
 var __intersection = __.intersection;
@@ -9,7 +9,7 @@ var array = [0, 1, 1, 2, 3, 2, 3, 4, 5, 6];
 var intersection1 = [1, 3, 5, 7];
 var intersection2 = [1, 2, 3, 4];
 
-var fn = dp('array').intersection(intersection1, intersection2).fn();
+var fn = u('array').intersection(intersection1, intersection2).fn();
 
 var nativeFn = function(array) {
     var result = [];

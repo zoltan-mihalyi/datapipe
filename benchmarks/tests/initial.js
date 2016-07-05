@@ -1,12 +1,12 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _initial = _.initial;
 var __initial = __.dropRight;
 
-var fn = dp('array').initial(5).fn();
+var fn = u('array').initial(5).fn();
 
 var nativeFn = function(array) {
     var length = array.length;

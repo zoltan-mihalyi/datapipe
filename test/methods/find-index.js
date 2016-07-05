@@ -1,8 +1,8 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('findIndex tests', function() {
     it('findIndex when item is present', function() {
-        expect(dp()
+        expect(u()
             .findIndex(function(obj) {
                 return obj === 2;
             })
@@ -11,7 +11,7 @@ describe('findIndex tests', function() {
     });
 
     it('findIndex when item is not present', function() {
-        expect(dp()
+        expect(u()
             .findIndex(function(obj) {
                 return obj === 4;
             })
@@ -20,7 +20,7 @@ describe('findIndex tests', function() {
     });
 
     it('findIndex with context', function() {
-        expect(dp()
+        expect(u()
             .findIndex(function(obj) {
                 return obj === this.value;
             }, {value: 2})
@@ -29,7 +29,7 @@ describe('findIndex tests', function() {
     });
 
     it('findIndex with object', function() {
-        expect(dp()
+        expect(u()
             .findIndex(function(x) {
                 return x === 3;
             })

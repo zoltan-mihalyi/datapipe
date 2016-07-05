@@ -1,9 +1,9 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('some tests', function() {
 
     it('some should return false if none of the elements match the predicate', function() {
-        expect(dp()
+        expect(u()
             .some(function(x) {
                 return x % 2 === 0;
             })
@@ -12,7 +12,7 @@ describe('some tests', function() {
     });
 
     it('some with context', function() {
-        expect(dp()
+        expect(u()
             .some(function(x) {
                 return x % this.value === 0;
             }, {value: 2})
@@ -21,7 +21,7 @@ describe('some tests', function() {
     });
 
     it('some should return false on empty arrays', function() {
-        expect(dp()
+        expect(u()
             .some(function() {
                 throw new Error('Predicate called on what?');
             })
@@ -30,7 +30,7 @@ describe('some tests', function() {
     });
 
     it('some should return true if any of the elements match the predicate', function() {
-        expect(dp()
+        expect(u()
             .some(function(x) {
                 return x % 2 === 0;
             })

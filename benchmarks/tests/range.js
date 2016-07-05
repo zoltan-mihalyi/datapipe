@@ -1,11 +1,11 @@
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _range = _.range;
 var __range = __.range;
 
-var fn = dp().range(0, 20, 3).fn();
+var fn = u().range(0, 20, 3).fn();
 var nativeFn = function() {
     return [0, 3, 6, 9, 12, 15, 18];
 };

@@ -1,13 +1,13 @@
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _compact = _.compact;
 var __compact = __.compact;
 
 var array = [0, 1, '', 2, null, void 0, 3, false, 4];
 
-var fn = dp('array').compact().fn();
+var fn = u('array').compact().fn();
 var nativeFn = function(array) {
     var result = [];
     var length = array.length;

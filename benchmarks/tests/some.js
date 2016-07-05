@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _some = _.some;
 var __some = __.some;
@@ -9,7 +9,7 @@ var __some = __.some;
 function predicate(x) {
     return x.x < 0;
 }
-var fn1 = dp('array').some(predicate).fn();
+var fn1 = u('array').some(predicate).fn();
 var nativeFn1 = function(array) {
     var length = array.length;
     for (var i = 0; i < length; ++i) {
@@ -20,12 +20,13 @@ var nativeFn1 = function(array) {
     return false;
 };
 
+//noinspection JSUnusedLocalSymbols
 function predicate2(x, i) {
     return i === 3;
 }
 
 
-var fn2 = dp('array').some(predicate2).fn();
+var fn2 = u('array').some(predicate2).fn();
 var nativeFn2 = function(array) {
     var length = array.length;
     for (var i = 0; i < length; ++i) {

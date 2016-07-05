@@ -1,16 +1,16 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('size tests', function() {
     it('array size', function() {
-        expect(dp().size().process([1, 2, 3])).toEqual(3);
+        expect(u().size().process([1, 2, 3])).toEqual(3);
     });
 
     it('object size', function() {
-        expect(dp().size().process({a: 1, b: 2, c: 3})).toEqual(3);
+        expect(u().size().process({a: 1, b: 2, c: 3})).toEqual(3);
     });
 
     it('reduce and size', function() {
-        expect(dp()
+        expect(u()
             .reduce(function(memo, x) {
                 if (x % 2 === 0) {
                     memo.push(x);
@@ -25,7 +25,7 @@ describe('size tests', function() {
     });
 
     it('size should not use iteration to determine array size', function() {
-        expect(dp()
+        expect(u()
             .size()
             .fn()
             .toString()

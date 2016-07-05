@@ -1,4 +1,4 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('indexBy tests', function() {
     var data = [{x: 1, y: 2}, {z: 1}, {a: 3, x: 1}, {x: 2, y: 3}];
@@ -9,14 +9,14 @@ describe('indexBy tests', function() {
     };
 
     it('indexBy with property name', function() {
-        expect(dp()
+        expect(u()
             .indexBy('x')
             .process(data)
         ).toEqual(afterInfex);
     });
 
     it('indexBy with function', function() {
-        expect(dp()
+        expect(u()
             .indexBy(function(x) {
                 return x.x;
             })
@@ -25,7 +25,7 @@ describe('indexBy tests', function() {
     });
 
     it('indexBy with context', function() {
-        expect(dp()
+        expect(u()
             .indexBy(function(x) {
                 return x[this];
             }, 'x')

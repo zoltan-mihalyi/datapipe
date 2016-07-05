@@ -1,15 +1,15 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('sortBy tests', function() {
     it('sortBy without parameters should return a simple sorted array.', function() {
-        expect(dp()
+        expect(u()
             .sortBy()
             .process([3, 6, 2, 4, 1, 5])
         ).toEqual([1, 2, 3, 4, 5, 6]);
     });
 
     it('sortBy with rank provider.', function() {
-        expect(dp()
+        expect(u()
             .sortBy(function(x) {
                 return Math.sin(x);
             })
@@ -18,7 +18,7 @@ describe('sortBy tests', function() {
     });
 
     it('sortBy with context', function() {
-        expect(dp()
+        expect(u()
             .sortBy(function(x) {
                 return this.sin(x);
             }, Math)
@@ -27,7 +27,7 @@ describe('sortBy tests', function() {
     });
 
     it('sortBy with property name.', function() {
-        expect(dp()
+        expect(u()
             .sortBy('x')
             .process([{x: 2}, {x: 1, y: 2}, {x: 3}, {y: 1}])
         ).toEqual([{x: 1, y: 2}, {x: 2}, {x: 3}, {y: 1}]);
@@ -35,10 +35,10 @@ describe('sortBy tests', function() {
 
     it('sortBy does not modify the original array', function() {
         var array = [3, 1, 2];
-        dp()
+        u()
             .sortBy()
             .process(array);
-        dp()
+        u()
             .each(function() {
             })
             .sortBy()
@@ -47,7 +47,7 @@ describe('sortBy tests', function() {
     });
 
     it('sortBy does not copy the array when the array is created by a previous step.', function() {
-        expect(dp()
+        expect(u()
             .take(2)
             .sortBy()
             .fn()
@@ -56,7 +56,7 @@ describe('sortBy tests', function() {
     });
 
     it('shortBy should work on objects', function() {
-        expect(dp()
+        expect(u()
             .sortBy()
             .process({a: 2, b: 1, c: 3})
         ).toEqual([1, 2, 3]);

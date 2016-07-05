@@ -1,13 +1,13 @@
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var array = [1, 2, 3, 4, 5, 6];
 
 var _without = _.without;
 var __without = __.without;
 
-var fn = dp('array').without(1, 3, 5).fn();
+var fn = u('array').without(1, 3, 5).fn();
 var nativeFn = function(array) {
     var length = array.length;
     var result = [];

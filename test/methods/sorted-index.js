@@ -1,15 +1,15 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('sortedIndex tests', function() {
     it('sortedIndex without iteratee', function() {
-        expect(dp()
+        expect(u()
             .sortedIndex(3)
             .process([1, 2, 4, 5, 6])
         ).toBe(2);
     });
 
     it('sortedIndex with iteratee function', function() {
-        expect(dp()
+        expect(u()
             .sortedIndex({x: 3}, function(obj) {
                 return obj.x
             })
@@ -18,7 +18,7 @@ describe('sortedIndex tests', function() {
     });
 
     it('sortedIndex with iteratee function and context', function() {
-        expect(dp()
+        expect(u()
             .sortedIndex({x: 3}, function(obj) {
                 return obj[this.prop]
             }, {prop: 'x'})
@@ -27,7 +27,7 @@ describe('sortedIndex tests', function() {
     });
 
     it('sortedIndex with iteratee property', function() {
-        expect(dp()
+        expect(u()
             .sortedIndex({x: 3}, 'x')
             .process([{x: 1}, {x: 2}, {x: 4}, {x: 5}, {x: 6}])
         ).toBe(2);

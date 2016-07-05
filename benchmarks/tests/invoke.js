@@ -1,12 +1,12 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _invoke = _.invoke;
 var __invoke = __.invokeMap;
 
-var fn = dp('array').invoke('toString').fn();
+var fn = u('array').invoke('toString').fn();
 var nativeFn = function(array) {
     var length = array.length;
     var result = new Array(length);

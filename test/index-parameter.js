@@ -1,22 +1,22 @@
-var dp = require('../dist/datapipe');
+var u = require('../dist/main');
 
 describe('Passing index to functions', function() {
     it('should pass index when needed', function() {
-        expect(dp()
+        expect(u()
             .map(function(x, i) {
                 return i;
             })
             .process([1, 2, 3, 4, 5])
         ).toEqual([0, 1, 2, 3, 4]);
 
-        expect(dp()
+        expect(u()
             .reduce(function(memo, x, i) {
                 return memo + i;
             }, 0)
             .process([1, 2, 3])
         ).toEqual(3);
 
-        expect(dp()
+        expect(u()
             .indexBy(function(x, i) {
                 return i;
             })
@@ -29,7 +29,7 @@ describe('Passing index to functions', function() {
     });
 
     it('When iterating an object, the index passed to the function should be the key of the entry, not the index.', function() {
-        expect(dp()
+        expect(u()
             .map(function(x, i) {
                 return i;
             })
@@ -42,7 +42,7 @@ describe('Passing index to functions', function() {
     });
 
     it('object to array transformation should change index', function() {
-        expect(dp()
+        expect(u()
             .map(function(a) {
                 return a;
             })
@@ -58,7 +58,7 @@ describe('Passing index to functions', function() {
     });
 
     it('should work with changing index, creating additional index variable', function() {
-        var process = dp()
+        var process = u()
             .filter(function(x) {
                 return x % 2 === 0;
             })
@@ -72,7 +72,7 @@ describe('Passing index to functions', function() {
     });
 
     it('after a changing index, creating one index variable for multiple steps', function() {
-        var process = dp()
+        var process = u()
             .filter(function(x) {
                 return x % 2 === 0;
             })
@@ -89,7 +89,7 @@ describe('Passing index to functions', function() {
     });
 
     it('should work when the same step modifies the index which uses it.', function() {
-        expect(dp()
+        expect(u()
             .filter(function(x, i) {
                 return i % 2 === 0;
             })
@@ -98,7 +98,7 @@ describe('Passing index to functions', function() {
     });
 
     it('should not create additional index variable when not using index', function() {
-        expect(dp()
+        expect(u()
             .filter(function() {
             })
             .map(function(x) {
@@ -110,13 +110,13 @@ describe('Passing index to functions', function() {
     });
 
     it('should generate lesser code when the index parameter is not used', function() {
-        expect(dp()
+        expect(u()
             .map(function() {
             })
             .fn()
             .toString()
             .length
-        ).toBeLessThan(dp()
+        ).toBeLessThan(u()
             .map(function(x, i) {
                 return i;
             })

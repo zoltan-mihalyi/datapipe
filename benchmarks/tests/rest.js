@@ -1,13 +1,13 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _rest = _.rest;
 var __rest = __.drop;
 
 
-var fn = dp('array').rest(3).fn();
+var fn = u('array').rest(3).fn();
 var nativeFn = function(array) {
     var length = array.length;
     var result = new Array(length <= 3 ? 0 : length - 3);

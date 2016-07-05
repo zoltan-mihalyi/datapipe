@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _indexOf = _.indexOf;
 var __indexOf = __.indexOf;
@@ -11,7 +11,7 @@ var item = array[3];
 
 var array2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
 
-var fn1 = dp('array').indexOf(item).fn();
+var fn1 = u('array').indexOf(item).fn();
 var nativeFn1 = function(array) {
     var length = array.length;
     for (var i = 0; i < length; ++i) {
@@ -22,7 +22,7 @@ var nativeFn1 = function(array) {
     return -1;
 };
 
-var fn2 = dp('array').indexOf(15, true).fn();
+var fn2 = u('array').indexOf(15, true).fn();
 
 var nativeFn2 = function(array) {
     var start = 0;

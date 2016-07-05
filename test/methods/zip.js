@@ -1,8 +1,8 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('zip tests', function() {
     it('zip simple case', function() {
-        expect(dp()
+        expect(u()
             .zip([true, false, true, false], ['a', 'b', 'c', 'd'])
             .process([1, 2, 3, 4])
         ).toEqual([
@@ -14,7 +14,7 @@ describe('zip tests', function() {
     });
 
     it('zip variable length', function() {
-        expect(dp()
+        expect(u()
             .zip([true, false], ['a', 'b', 'c'])
             .process([1, 2, 3, 4])
         ).toEqual([

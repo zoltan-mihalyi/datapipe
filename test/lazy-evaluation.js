@@ -1,8 +1,8 @@
-var dp = require('../dist/datapipe');
+var u = require('../dist/main');
 
 describe('Lazy evaluation', function() {
     it('map should do nothing if only length is needed', function() {
-        var fn = dp('array')
+        var fn = u('array')
             .map(function(x) {
                 return x;
             })
@@ -15,7 +15,7 @@ describe('Lazy evaluation', function() {
     });
 
     it('take should do nothing if only length is needed', function() {
-        var fn = dp('array')
+        var fn = u('array')
             .take(3)
             .size()
             .fn();
@@ -27,7 +27,7 @@ describe('Lazy evaluation', function() {
     });
 
     it('filter should do nothing if only length is needed', function() {
-        var fn = dp('array')
+        var fn = u('array')
             .filter(function(x) {
                 return x % 2 === 0
             })
@@ -40,7 +40,7 @@ describe('Lazy evaluation', function() {
     });
 
     it('shuffle should do nothing if only length is needed', function() {
-        var fn = dp('array')
+        var fn = u('array')
             .shuffle()
             .size()
             .fn();
@@ -51,7 +51,7 @@ describe('Lazy evaluation', function() {
     });
 
     it('empty steps caused by lazy evaluation should not use branches', function() {
-        expect(dp()
+        expect(u()
             .shuffle()
             .shuffle()
             .size()

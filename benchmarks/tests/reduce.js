@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _reduce = _.reduce;
 var __reduce = __.reduce;
@@ -15,7 +15,7 @@ function reducer(memo, x) {
     }
 }
 
-var fn = dp('array').reduce(reducer, 0).fn();
+var fn = u('array').reduce(reducer, 0).fn();
 var nativeFn = function(array) {
     var memo = 0;
     var length = array.length;

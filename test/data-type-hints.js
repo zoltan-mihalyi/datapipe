@@ -1,13 +1,13 @@
-var dp = require('../dist/datapipe');
+var u = require('../dist/main');
 
 describe('Data type hints', function() {
     describe('Giving hint of data type causes shorter functions to be generated, and the shorter function produces the same result.', function() {
-        var pluckX = dp()
+        var pluckX = u()
             .pluck('x')
             .fn();
 
         it('array hint', function() {
-            var pluckXArray = dp('array')
+            var pluckXArray = u('array')
                 .pluck('x')
                 .fn();
             expect(pluckXArray.toString().length)
@@ -18,7 +18,7 @@ describe('Data type hints', function() {
         });
 
         it('object hint', function() {
-            var pluckXObject = dp('object')
+            var pluckXObject = u('object')
                 .pluck('x')
                 .fn();
 
@@ -33,7 +33,7 @@ describe('Data type hints', function() {
     });
 
     it('array hint when using arrayIndex', function() {
-        expect(dp('array')
+        expect(u('array')
             .take(2)
             .pluck('x')
             .process([{x: 1}, {x: 3}, {x: 2}])
@@ -41,7 +41,7 @@ describe('Data type hints', function() {
     });
 
     it('When the previous step creates an array, the next step should not contain the object iteration, but should work.', function() {
-        var sortAndPluck = dp('array')
+        var sortAndPluck = u('array')
             .sortBy('x')
             .pluck('y')
             .fn();

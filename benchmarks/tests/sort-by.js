@@ -1,14 +1,14 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _sortBy = _.sortBy;
 var __sortBy = __.sortBy;
 
 var numberArray = [4, 2, 6, 1, 5, 3];
 
-var fn1 = dp('array').sortBy().fn();
+var fn1 = u('array').sortBy().fn();
 var nativeFn1 = function(array) {
     var length = array.length;
     var result = new Array(length);
@@ -23,7 +23,7 @@ function rank(x) {
     return x.x;
 }
 
-var fn2 = dp('array').sortBy(rank).fn();
+var fn2 = u('array').sortBy(rank).fn();
 var nativeFn2 = function(array) {
     var length = array.length;
     var result = new Array(length);

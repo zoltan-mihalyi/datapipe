@@ -1,42 +1,42 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('last tests', function() {
     it('Calling last should work as expected.', function() {
-        expect(dp().last(2).process([1, 2, 3, 4, 5, 6])).toEqual([5, 6]);
+        expect(u().last(2).process([1, 2, 3, 4, 5, 6])).toEqual([5, 6]);
     });
 
     it('last more than array length', function() {
-        expect(dp()
+        expect(u()
             .last(3)
             .process([1, 2])
         ).toEqual([1, 2])
     });
 
     it('last with map', function() {
-        expect(dp().last(2).process({a: 1, b: 2, c: 3, d: 4, e: 5, f: 6})).toEqual([5, 6]);
+        expect(u().last(2).process({a: 1, b: 2, c: 3, d: 4, e: 5, f: 6})).toEqual([5, 6]);
     });
 
     it('last without parameter', function() {
-        expect(dp().last().process([1, 2, 3])).toBe(3);
+        expect(u().last().process([1, 2, 3])).toBe(3);
     });
 
     it('last with map and without parameter', function() {
-        expect(dp().last().process({a: 1, b: 2, c: 3})).toBe(3);
+        expect(u().last().process({a: 1, b: 2, c: 3})).toBe(3);
     });
 
     it('last without parameter should not use loop', function() {
-        expect(dp('array').last().fn().toString()).not.toContain('for');
+        expect(u('array').last().fn().toString()).not.toContain('for');
     });
 
     it('last and sortBy', function() {
         var array = [[3, 2, 1, 4]];
-        var sorted = dp().last().sortBy().process(array);
+        var sorted = u().last().sortBy().process(array);
         expect(sorted).toEqual([1, 2, 3, 4]);
         expect(sorted).not.toBe(array[0]);
     });
 
     it('using last after map should use fixed array length', function() {
-        expect(dp()
+        expect(u()
             .map(function() {
             })
             .last(2)
@@ -46,7 +46,7 @@ describe('last tests', function() {
     });
 
     it('using last twice should iterate until the smaller number', function() {
-        expect(dp('array')
+        expect(u('array')
             .last(2)
             .last(3)
             .fn()
@@ -55,7 +55,7 @@ describe('last tests', function() {
     });
 
     it('last and initial', function() {
-        expect(dp()
+        expect(u()
             .last(2)
             .initial(2)
             .process([1, 2, 3])
@@ -63,7 +63,7 @@ describe('last tests', function() {
     });
 
     it('last and rest', function() {
-        expect(dp()
+        expect(u()
             .last(3)
             .rest(2)
             .process([1, 2, 3, 4])
@@ -71,7 +71,7 @@ describe('last tests', function() {
     });
 
     it('last, rest, last', function() {
-        expect(dp()
+        expect(u()
             .last(4)
             .rest(2)
             .last(3)
@@ -80,13 +80,13 @@ describe('last tests', function() {
     });
 
     it('last and size', function() {
-        expect(dp()
+        expect(u()
             .last(2)
             .size()
             .process([1, 2, 3])
         ).toBe(2);
 
-        expect(dp()
+        expect(u()
             .last(4)
             .size()
             .process([1, 2, 3])

@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _size = _.size;
 var __size = __.size;
@@ -13,13 +13,14 @@ var obj = {
     d: 4
 };
 
-var fn1 = dp('array').size().fn();
+var fn1 = u('array').size().fn();
 var nativeFn1 = function(array) {
     return array.length
 };
-var fn2 = dp('map').size().fn();
+var fn2 = u('map').size().fn();
 var nativeFn2 = function(obj) {
     var result = 0;
+    //noinspection JSUnusedLocalSymbols
     for (var i in obj) {
         ++result;
     }

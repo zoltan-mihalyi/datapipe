@@ -1,6 +1,6 @@
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var array = [1, 2, 3];
 var union1 = [1, 3];
@@ -11,7 +11,7 @@ var _union = _.union;
 var __union = __.union;
 
 
-var fn = dp('array').union(union1, union2, union3).fn();
+var fn = u('array').union(union1, union2, union3).fn();
 var nativeFn = function(array) {
     var length = array.length;
     var result = new Array(length);

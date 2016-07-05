@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _filter = _.filter;
 var __filter = __.filter;
@@ -10,7 +10,7 @@ function filter(x) {
     return x.x === 1;
 }
 
-var fn1 = dp('array').filter(filter).fn();
+var fn1 = u('array').filter(filter).fn();
 var nativeFn1 = function(array) {
     var result = [];
     var length = array.length;
@@ -23,10 +23,11 @@ var nativeFn1 = function(array) {
     return result;
 };
 
+//noinspection JSUnusedLocalSymbols
 function filter2(x, i) {
     return i % 2 === 0;
 }
-var fn2 = dp('array').filter(filter2).fn();
+var fn2 = u('array').filter(filter2).fn();
 var nativeFn2 = function(array) {
     var result = [];
     var length = array.length;
@@ -42,10 +43,11 @@ var context = {
     modulo: 0
 };
 
+//noinspection JSUnusedLocalSymbols
 function filter3(x, i) {
     return i % 2 === this.modulo;
 }
-var fn3 = dp('array').filter(filter3, context).fn();
+var fn3 = u('array').filter(filter3, context).fn();
 var nativeFn3 = function(array) {
     var result = [];
     var length = array.length;

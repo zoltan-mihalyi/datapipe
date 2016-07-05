@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _partition = _.partition;
 var __partition = __.partition;
@@ -10,7 +10,7 @@ function predicate(x) {
     return x.x % 2 === 0;
 }
 
-var fn = dp('array').partition(predicate).fn();
+var fn = u('array').partition(predicate).fn();
 var nativeFn = function(array) {
     var part1 = [];
     var part2 = [];

@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _min = _.min;
 var __min = __.min;
@@ -9,7 +9,7 @@ var __minBy = __.minBy;
 
 var numberArray = [4, 2, 6, 1, 5, 3];
 
-var fn1 = dp('array').min().fn();
+var fn1 = u('array').min().fn();
 var nativeFn1 = function(array) {
     var min = Infinity;
     var length = array.length;
@@ -22,7 +22,7 @@ var nativeFn1 = function(array) {
     return min;
 };
 
-var fn2 = dp('array').min('x').fn();
+var fn2 = u('array').min('x').fn();
 var nativeFn2 = function(array) {
     var minValue = Infinity;
     var minObject;
@@ -42,7 +42,7 @@ function getX(obj) {
     return obj.x;
 }
 
-var fn3 = dp('array').min(getX).fn();
+var fn3 = u('array').min(getX).fn();
 var nativeFn3 = function(array) {
     var minValue = Infinity;
     var minObject;

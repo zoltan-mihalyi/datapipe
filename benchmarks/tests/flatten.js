@@ -1,6 +1,6 @@
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _flatten = _.flatten;
 var __flatten = __.flatten;
@@ -10,7 +10,7 @@ var isArray = Array.isArray;
 
 var array = [1, [2, [3, [4]], 5]];
 
-var fn1 = dp('array').flatten(true).fn();
+var fn1 = u('array').flatten(true).fn();
 var nativeFn1 = function(array) {
     var result = [];
     var length = array.length;
@@ -29,7 +29,7 @@ var nativeFn1 = function(array) {
     return result;
 };
 
-var fn2 = dp('array').flatten().fn();
+var fn2 = u('array').flatten().fn();
 var nativeFn2 = function(array, result) {
     result || (result = []);
     var length = array.length;

@@ -1,8 +1,8 @@
-var dp = require('../dist/datapipe');
+var u = require('../dist/main');
 
 describe('Test functions with chaining', function() {
     it('map and filter', function() {
-        expect(dp()
+        expect(u()
             .map(tenTimes)
             .filter(function(x) {
                 return x % 20 === 0;
@@ -12,7 +12,7 @@ describe('Test functions with chaining', function() {
 
     it('map and each', function() {
         var result = [];
-        dp()
+        u()
             .map(tenTimes)
             .each(function(x) {
                 result.push(x);
@@ -23,7 +23,7 @@ describe('Test functions with chaining', function() {
     });
 
     it('map and reduce', function() {
-        expect(dp()
+        expect(u()
             .map(tenTimes)
             .reduce(function(memo, x) {
                 return memo + x;
@@ -32,7 +32,7 @@ describe('Test functions with chaining', function() {
     });
 
     it('map and reduceRight', function() {
-        expect(dp()
+        expect(u()
             .map(tenTimes)
             .reduceRight(function(memo, x) {
                 return memo + x;
@@ -43,21 +43,21 @@ describe('Test functions with chaining', function() {
 
     describe('Chaining with take', function() {
         it('take, take', function() {
-            expect(dp()
+            expect(u()
                 .take(3)
                 .take(2)
                 .process([1, 2, 3, 4, 5])).toEqual([1, 2]);
         });
 
         it('map and take', function() {
-            expect(dp()
+            expect(u()
                 .map(tenTimes)
                 .take(2)
                 .process([1, 2, 3, 4])).toEqual([10, 20]);
         });
 
         it('filter and take', function() {
-            expect(dp()
+            expect(u()
                 .filter(function(x) {
                     return x % 2 === 0;
                 })
@@ -66,7 +66,7 @@ describe('Test functions with chaining', function() {
         });
 
         it('filter, take, filter, take', function() {
-            expect(dp()
+            expect(u()
                 .filter(function(x) {
                     return x % 2 === 0;
                 })
@@ -79,7 +79,7 @@ describe('Test functions with chaining', function() {
         });
 
         it('filter, take, take', function() {
-            expect(dp()
+            expect(u()
                 .filter(function(x) {
                     return x % 2 === 0;
                 })
@@ -90,7 +90,7 @@ describe('Test functions with chaining', function() {
     });
 
     it('sortBy twice', function() {
-        expect(dp()
+        expect(u()
             .sortBy('y')
             .sortBy('x')
             .pluck('y')

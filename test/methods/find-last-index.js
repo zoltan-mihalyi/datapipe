@@ -1,8 +1,8 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('findLastIndex tests', function() {
     it('findLastIndex when item is present', function() {
-        expect(dp()
+        expect(u()
             .findLastIndex(function(obj) {
                 return obj === 2;
             })
@@ -11,7 +11,7 @@ describe('findLastIndex tests', function() {
     });
 
     it('findLastIndex when item is not present', function() {
-        expect(dp()
+        expect(u()
             .findLastIndex(function(obj) {
                 return obj === 4;
             })
@@ -20,7 +20,7 @@ describe('findLastIndex tests', function() {
     });
 
     it('findLastIndex with context', function() {
-        expect(dp()
+        expect(u()
             .findLastIndex(function(obj) {
                 return obj === this.value;
             }, {value: 2})

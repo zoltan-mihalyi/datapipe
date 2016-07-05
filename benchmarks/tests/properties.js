@@ -1,13 +1,13 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _where = _.where;
 var __filter = __.filter;
 
 var filter = {x: 1, y: 2};
-var fn = dp('array').where(filter).fn();
+var fn = u('array').where(filter).fn();
 var nativeFn = function(array) {
     var result = [];
     var length = array.length;

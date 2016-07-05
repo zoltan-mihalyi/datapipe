@@ -56,3 +56,5 @@ type CodeProvider = {
 };
 
 type DynamicCode = Code|CodeProvider;
+
+type Mapper<I,O> = (data:I[])=>O[];

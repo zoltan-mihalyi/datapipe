@@ -1,10 +1,10 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('toArray tests', function() {
     var array = [1, 2, 3];
 
     it('toArray should create a copy of the original array', function() {
-        var result = dp()
+        var result = u()
             .toArray()
             .process(array);
 
@@ -13,7 +13,7 @@ describe('toArray tests', function() {
     });
 
     it('toArray should work on objects', function() {
-        var result = dp()
+        var result = u()
             .toArray()
             .process({a: 1, b: 2, c: 3});
 

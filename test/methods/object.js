@@ -1,8 +1,8 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('object tests', function() {
     it('object without parameter', function() {
-        expect(dp()
+        expect(u()
             .object()
             .process([['a', 1], ['b', 2], ['c', 3]])
         ).toEqual({
@@ -13,7 +13,7 @@ describe('object tests', function() {
     });
 
     it('object with parameter', function() {
-        expect(dp()
+        expect(u()
             .object([1, 2, 3])
             .process(['a', 'b', 'c'])
         ).toEqual({

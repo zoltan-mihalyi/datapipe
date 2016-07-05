@@ -1,7 +1,7 @@
 var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 var _map = _.map;
 var __map = __.map;
@@ -10,7 +10,7 @@ function map(x, i) {
     return x.x + i;
 }
 
-var fn = dp('array').map(map).fn();
+var fn = u('array').map(map).fn();
 var nativeFn = function(array) {
     var result = new Array(array.length);
     var length = array.length;

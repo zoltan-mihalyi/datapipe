@@ -1,4 +1,4 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('groupBy tests', function() {
     var data = [{x: 1, y: 2}, {z: 1}, {a: 3, x: 1}, {x: 2, y: 3}];
@@ -9,14 +9,14 @@ describe('groupBy tests', function() {
     };
 
     it('groupBy with property name', function() {
-        expect(dp()
+        expect(u()
             .groupBy('x')
             .process(data)
         ).toEqual(afterGroup);
     });
 
     it('groupBy with function', function() {
-        expect(dp()
+        expect(u()
             .groupBy(function(x) {
                 return x.x;
             })
@@ -25,7 +25,7 @@ describe('groupBy tests', function() {
     });
 
     it('groupBy with context', function() {
-        expect(dp()
+        expect(u()
             .groupBy(function(x) {
                 return x[this];
             }, 'x')

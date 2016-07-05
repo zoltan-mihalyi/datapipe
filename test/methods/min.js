@@ -1,15 +1,15 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('min tests', function() {
     it('min should work as expected', function() {
-        expect(dp()
+        expect(u()
             .min()
             .process([5, 6, 3, 2, 4])
         ).toBe(2);
     });
 
     it('min with iteratee', function() {
-        expect(dp()
+        expect(u()
             .min(function(x) {
                 return x.x;
             })
@@ -18,7 +18,7 @@ describe('min tests', function() {
     });
 
     it('min with context', function() {
-        expect(dp()
+        expect(u()
             .min(function(x) {
                 return x[this];
             }, 'x')
@@ -27,19 +27,19 @@ describe('min tests', function() {
     });
 
     it('min with property', function() {
-        expect(dp()
+        expect(u()
             .min('x')
             .process([{x: 3}, {x: 2}, {x: 1}, {x: 4}])
         ).toEqual({x: 1});
     });
 
     it('min with 0 element', function() {
-        expect(dp()
+        expect(u()
             .min()
             .process([])
         ).toBe(Infinity);
 
-        expect(dp()
+        expect(u()
             .min(function(x) {
                 return x.x;
             })

@@ -1,8 +1,8 @@
-var dp = require('../../dist/datapipe');
+var u = require('../../dist/main');
 
 describe('countBy tests', function() {
     it('countBy without parameters', function() {
-        expect(dp()
+        expect(u()
             .countBy()
             .process([1, 2, 1, 3, 3])
         ).toEqual({
@@ -13,7 +13,7 @@ describe('countBy tests', function() {
     });
 
     it('countBy with property name', function() {
-        expect(dp()
+        expect(u()
             .countBy('x')
             .process([{x: 1}, {x: 2}, {x: 1}, {x: 3}, {x: 3}])
         ).toEqual({
@@ -24,7 +24,7 @@ describe('countBy tests', function() {
     });
 
     it('countBy with function', function() {
-        expect(dp()
+        expect(u()
             .countBy(function(x) {
                 return x % 2 === 0 ? 'even' : 'odd';
             })
@@ -36,7 +36,7 @@ describe('countBy tests', function() {
     });
 
     it('countBy with context', function() {
-        expect(dp()
+        expect(u()
             .countBy(function(x) {
                 return x % this.value === 0 ? 'even' : 'odd';
             }, {value: 2})
