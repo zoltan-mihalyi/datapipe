@@ -44,4 +44,20 @@ describe('uniq tests', function() {
             .process([{x: 0}, {x: null}, {x: 1, a: 1}, {x: 1, a: 2}, {x: 0}, {}, {x: 1, a: 3}])
         ).toEqual([{x: 0}, {x: null}, {x: 1, a: 1}, {}]);
     });
+
+    it('uniq sorted array with iteratee', function() {
+        expect(u()
+            .uniq(true, 'x')
+            .process([{x: 0}, {x: null}, {x: 1, a: 1}, {x: 1, a: 2}, {}])
+        ).toEqual([{x: 0}, {x: null}, {x: 1, a: 1}, {}]);
+    });
+
+    it('uniq sorted array with iteratee and context', function() {
+        expect(u()
+            .uniq(true, function(x) {
+                return x[this.value];
+            }, {value: 'x'})
+            .process([{x: 0}, {x: null}, {x: 1, a: 1}, {x: 1, a: 2}, {}])
+        ).toEqual([{x: 0}, {x: null}, {x: 1, a: 1}, {}]);
+    });
 });

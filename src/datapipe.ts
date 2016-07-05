@@ -652,7 +652,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         if (typeof isSorted !== 'boolean') { //
             context = iteratee;
             iteratee = isSorted as Iteratee<T,any>;
-            //todo isSorted = false;
+            isSorted = false;
         }
         if (iteratee == null) {
             return this.filterLike(notContains(result, current), null, true);
@@ -661,10 +661,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         let seen = named<any[]>('seen');
         let computed = named<any>('computed');
         let declareComputed = declare(computed, access(toAccessible(iteratee), context));
-        let pushComputedToSeen = call(prop(seen, 'push'), [computed]);
+        let markAsSeen = isSorted ? assign(seen, computed) : call(prop(seen, 'push'), [computed]);
+        let predicate = isSorted ? eq(seen, computed) : notContains(seen, computed);
         return this //todo cannot use mergeEnd in situations like this
             .subPipe<T>(CollectionType.ARRAY, declare(seen, array()), ResultCreation.USES_PREVIOUS)
-            .filterLike(notContains(seen, computed), null, true, declareComputed, pushComputedToSeen);
+            .filterLike(predicate, null, true, declareComputed, markAsSeen);
     }
 
     zip(...arrays:any[][]):DataPipe<R,any[]> {
