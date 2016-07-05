@@ -42,4 +42,14 @@ describe('indexBy tests', function() {
             false: {x: 2, y: 3}
         });
     });
+
+    it('indexBy null', function() {
+        expect(u()
+            .indexBy()
+            .process([1, 2, 2])
+        ).toEqual({
+            1: 1,
+            2: 2
+        });
+    });
 });

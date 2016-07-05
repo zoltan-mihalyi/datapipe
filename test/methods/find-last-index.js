@@ -41,4 +41,11 @@ describe('findLastIndex tests', function() {
             .process([{a: 1}, {a: 2}, {a: 3}, {a: 4}, {a: 1}, {a: 2}, {a: 3}, {a: 4}])
         ).toBe(5);
     });
+
+    it('findLastIndex without parameters', function() {
+        expect(u()
+            .findLastIndex()
+            .process([1, false, true, 2, {}, 'a', null])
+        ).toBe(5);
+    });
 });

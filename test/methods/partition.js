@@ -23,4 +23,11 @@ describe('partition tests', function() {
             .process([{}, {a: 1, b: 1}, {a: 1, b: 2}, {a: 2}])
         ).toEqual([[{a: 1, b: 1}, {a: 1, b: 2}], [{}, {a: 2}]]);
     });
+
+    it('partition without parameter', function() {
+        expect(u()
+            .partition()
+            .process([0, 1, 2, void 0, true, false, null, 'a', ''])
+        ).toEqual([[1, 2, true, 'a'], [0, void 0, false, null, '']]);
+    });
 });

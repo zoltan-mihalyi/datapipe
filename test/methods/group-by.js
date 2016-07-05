@@ -42,4 +42,15 @@ describe('groupBy tests', function() {
             false: [{z: 1}, {x: 2, y: 3}]
         });
     });
+
+    it('groupBy without parameters', function() {
+        expect(u()
+            .groupBy()
+            .process([3, 1, 3, 3, 2, 2])
+        ).toEqual({
+            1: [1],
+            2: [2, 2],
+            3: [3, 3, 3]
+        });
+    });
 });

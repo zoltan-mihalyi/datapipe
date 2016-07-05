@@ -87,11 +87,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     constructor(public type:CollectionType) {
     }
 
-    map<O>(iteratee:Iteratee<T,O>, context?:any):DataPipe<R,O> { //todo is there a correlation between fields?
+    map<O>(iteratee?:Iteratee<T,O>, context?:any):DataPipe<R,O> { //todo is there a correlation between fields?
         return this.mapLike<O>(assign(current, access(toAccessible(iteratee), context)));
     }
 
-    filter(predicate:Predicate<T>, context?:any):DataPipe<R,T> { //todo filter with properties and regexp
+    filter(predicate?:Predicate<T>, context?:any):DataPipe<R,T> { //todo filter with properties and regexp
         return this.filterLike(predicate, context);
     }
 
@@ -116,7 +116,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.reduceLikeWithProvider<M>(reducer, memo, context, true);
     }
 
-    find(predicate:Predicate<T>, context?:any):DataPipeResult<R,T> {
+    find(predicate?:Predicate<T>, context?:any):DataPipeResult<R,T> {
         return this.subPipe(CollectionType.UNKNOWN, {
             rename: true,
             before: setResult(undef),
@@ -332,15 +332,15 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.find(properties);
     }
 
-    reject(predicate:Predicate<T>, context?:any):DataPipe<R,T> {
+    reject(predicate?:Predicate<T>, context?:any):DataPipe<R,T> {
         return this.filterLike(predicate, context, true);
     }
 
-    every(predicate:Predicate<T>, context?:any):DataPipeResult<R, boolean> {
+    every(predicate?:Predicate<T>, context?:any):DataPipeResult<R, boolean> {
         return this.everyLike(predicate, context);
     }
 
-    some(predicate:Predicate<T>, context?:any):DataPipeResult<R, boolean> {
+    some(predicate?:Predicate<T>, context?:any):DataPipeResult<R, boolean> {
         return this.everyLike(predicate, context, true);
     }
 
@@ -411,7 +411,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.edge(negativeInfinity, gt, iteratee, context);
     }
 
-    groupBy(iteratee:Iteratee<T,string|number>, context?:any):DataPipe<R,T[]> {
+    groupBy(iteratee?:Iteratee<T,string|number>, context?:any):DataPipe<R,T[]> {
         var group = named<string>('group');
         var text:CodeText<any> = seq([
             declare(group, access(toAccessible(iteratee), context)),
@@ -425,12 +425,12 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.reduceLike<T[]>(CollectionType.MAP, setResult(obj()), text, false);
     }
 
-    indexBy(iteratee:Iteratee<T,string|number>, context?:any):DataPipe<R,T> {
+    indexBy(iteratee?:Iteratee<T,string|number>, context?:any):DataPipe<R,T> {
         var assignment = assign(prop(result, access(toAccessible(iteratee), context)), current);
         return this.reduceLike<T>(CollectionType.MAP, setResult(obj()), assignment, false); //todo dont care order?
     }
 
-    sortBy(iteratee:Iteratee<T,string|number>, context?:any):DataPipe<R,T> {
+    sortBy(iteratee?:Iteratee<T,string|number>, context?:any):DataPipe<R,T> {
         //todo advanced logic, when used after map-like processors
         var text:CodeText<any>;
         if (!this.hasNewResult() || this.type !== CollectionType.ARRAY) {
@@ -517,7 +517,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         });
     }
 
-    partition(predicate:Predicate<T>, context?:any) { //todo predicate type with index and list
+    partition(predicate?:Predicate<T>, context?:any) { //todo predicate type with index and list
         var part1 = named('part1');
         var part2 = named('part2');
         return this.subPipe(CollectionType.UNKNOWN, {
@@ -711,11 +711,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.sortedIndexLike(item, false, iteratee, context);
     }
 
-    findIndex(predicate:Predicate<T>, context?:any):DataPipeResult<R,number> {
+    findIndex(predicate?:Predicate<T>, context?:any):DataPipeResult<R,number> {
         return this.indexOfLike(predicate, false, true, context);
     }
 
-    findLastIndex(predicate:Predicate<T>, context?:any):DataPipeResult<R,number> {
+    findLastIndex(predicate?:Predicate<T>, context?:any):DataPipeResult<R,number> {
         return this.indexOfLike(predicate, true, true, context);
     }
 
@@ -987,7 +987,7 @@ function flattenTo(array, result) {
     return result;
 }
 
-function toAccessible<T,R>(iteratee:Iteratee<T,R>):Accessible<T,R> {
+function toAccessible<T,R>(iteratee?:Iteratee<T,R>):Accessible<T,R> {
     if (typeof iteratee === 'string' || typeof iteratee === 'number' || iteratee == null || typeof  iteratee === 'function') {
         return iteratee as any;
     } else {

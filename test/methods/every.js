@@ -19,6 +19,13 @@ describe('every tests', function() {
         ).toBe(true);
     });
 
+    it('every without parameter', function() {
+        expect(u()
+            .every()
+            .process([{}, true, 1])
+        ).toBe(true);
+    });
+
     it('every with property', function() {
         expect(u()
             .every('a')

@@ -46,4 +46,11 @@ describe('filter tests', function() {
             .process([{x: 1, y: 2}, {x: 2, y: 2}, {x: 1, y: 1}, {x: 2, y: 1}])
         ).toEqual([{x: 1, y: 2}, {x: 2, y: 2}]);
     });
+
+    it('filter without parameter', function() {
+        expect(u()
+            .filter()
+            .process([0, 1, 2, 'a', true, false, null, void 0, {}])
+        ).toEqual([1, 2, 'a', true, {}]);
+    })
 });

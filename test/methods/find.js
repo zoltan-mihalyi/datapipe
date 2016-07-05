@@ -33,6 +33,13 @@ describe('Test "find"', function() {
         ).toEqual({a: 1});
     });
 
+    it('find without parameter', function() {
+        expect(u()
+            .find()
+            .process([null, 0, void 0, '', 1])
+        ).toEqual(1);
+    });
+
     it('find and sortBy', function() {
         var array = [[2, 1]];
         var result = u()

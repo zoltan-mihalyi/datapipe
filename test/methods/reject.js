@@ -26,4 +26,11 @@ describe('reject tests', function() {
             .process([{x: 1}, {a: 1}, {}, {a: 2}])
         ).toEqual([{x: 1}, {}, {a: 2}]);
     });
+
+    it('reject without parameter', function() {
+        expect(u()
+            .reject()
+            .process(['a', void 0, true, 0, 1, null])
+        ).toEqual([void 0, 0, null]);
+    });
 });

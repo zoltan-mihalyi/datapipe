@@ -34,6 +34,13 @@ describe('some tests', function() {
         ).toBe(false);
     });
 
+    it('some without parameter', function() {
+        expect(u()
+            .some()
+            .process([null, 1, 0, false])
+        ).toBe(true);
+    });
+
     it('some with properties with match', function() {
         expect(u()
             .some({a: 1})

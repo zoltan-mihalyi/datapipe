@@ -55,4 +55,11 @@ describe('findIndex tests', function() {
             })
         ).toBe('c');
     });
+
+    it('findIndex without parameter', function() {
+        expect(u()
+            .findIndex()
+            .process([false, 0, 2, 'a'])
+        ).toBe(2);
+    });
 });

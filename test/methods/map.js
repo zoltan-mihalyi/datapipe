@@ -19,6 +19,13 @@ describe('map tests', function() {
         ).toEqual([0, 1, 2]);
     });
 
+    it('map with null', function() {
+        expect(u()
+            .map(null)
+            .process([1, 2, 3])
+        ).toEqual([1, 2, 3]);
+    });
+
     it('map with property', function() {
         expect(u()
             .map('a')
