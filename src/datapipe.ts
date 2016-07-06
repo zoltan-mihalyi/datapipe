@@ -324,11 +324,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.filterLike(current, null, false);
     }
 
-    where(properties:PropertyOrProperties):DataPipe<R,T> { //todo alias
+    where(properties:PropertyOrProperties):DataPipe<R,T> {
         return this.filter(properties);
     }
 
-    findWhere(properties:PropertyOrProperties):DataPipeResult<R,any> { //todo alias
+    findWhere(properties:PropertyOrProperties):DataPipeResult<R,any> {
         return this.find(properties);
     }
 
@@ -982,6 +982,12 @@ function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
                 ret(falseValue)
             ));
         }
+    }
+    if (statements.length > 0) {
+        statements.unshift(conditional(
+            eql(current, literal(null)),
+            ret(falseValue)
+        ));
     }
     statements.push(ret(trueValue));
 

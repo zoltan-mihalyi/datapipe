@@ -13,11 +13,25 @@ describe('filter tests', function() {
         }, {value: 0}).process([0, 1, 2, 3, 4])).toEqual([0, 2, 4]);
     });
 
-    it('filter properties', function() {
+    it('filter properties with null values', function() {
         expect(u()
             .filter({x: 1})
-            .process([{x: 1}, {x: 2, y: 3}, {x: 1, y: 4}])
-        ).toEqual([{x: 1}, {x: 1, y: 4}]);
+            .process([null, void 0, 0, false])
+        ).toEqual([]);
+    });
+
+    it('filter properties with null values and empty filter', function() {
+        expect(u()
+            .filter({})
+            .process([null, void 0, 0, false, 'a'])
+        ).toEqual([null, void 0, 0, false, 'a']);
+    });
+
+    it('filter properties with primitive properties', function() {
+        expect(u()
+            .filter({hasOwnProperty: Object.prototype.hasOwnProperty})
+            .process([null, void 0, 0, false, 'a'])
+        ).toEqual([0, false, 'a']);
     });
 
     it('filter property', function() {
