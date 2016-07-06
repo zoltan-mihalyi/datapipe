@@ -764,6 +764,21 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, CollectionType.ARRAY);
     }
 
+    allKeys():DataPipe<R,string> {
+        return this.transform<string>(function (obj) {
+            var type = typeof obj;
+            if (type === 'function' || type === 'object' && obj !== null) { //todo common
+                var keys = [];
+                for (var key in obj) {
+                    //noinspection JSUnfilteredForInLoop
+                    keys.push(key);
+                }
+                return keys;
+            }
+            return [];
+        }, CollectionType.ARRAY);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];

@@ -1,14 +1,14 @@
 var u = require('../../dist/main');
 
-describe('keys tests', function() {
-    it('object keys', function() {
+describe('allKeys tests', function() {
+    it('object allKeys', function() {
         expect(u()
-            .keys()
+            .allKeys()
             .process({a: 1, b: null, c: void 0})
         ).toEqual(['a', 'b', 'c']);
     });
 
-    it('object with parent keys', function() {
+    it('object with parent allKeys', function() {
         function Obj() {
             this.a = 1;
             this.b = null;
@@ -19,13 +19,12 @@ describe('keys tests', function() {
         Obj.prototype.e = null;
         Obj.prototype.f = void 0;
         expect(u()
-            .keys()
+            .allKeys()
             .process(new Obj())
-        ).toEqual(['a', 'b', 'c']);
+        ).toEqual(['a', 'b', 'c', 'd', 'e', 'f']);
     });
 
-
-    it('function keys', function() {
+    it('function allKeys', function() {
         function f() {
         }
 
@@ -33,26 +32,26 @@ describe('keys tests', function() {
         f.b = 2;
 
         expect(u()
-            .keys()
+            .allKeys()
             .process(f)
         ).toEqual(['a', 'b']);
     });
 
-    it('null and undefined keys', function() {
+    it('null and undefined allKeys', function() {
         expect(u()
-            .keys()
+            .allKeys()
             .process(null)
         ).toEqual([]);
 
         expect(u()
-            .keys()
+            .allKeys()
             .process()
         ).toEqual([]);
     });
 
-    it('string keys', function() {
+    it('string allKeys', function() {
         expect(u()
-            .keys()
+            .allKeys()
             .process('abc')
         ).toEqual([]);
     });
