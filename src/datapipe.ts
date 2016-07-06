@@ -58,7 +58,9 @@ import {
     iterSimple,
     iter,
     divide,
-    toInt
+    toInt,
+    isObjectConditional,
+    itin
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
@@ -755,28 +757,28 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     keys():DataPipe<R,string> {
-        return this.transform<string>(function (obj) {
-            var type = typeof obj;
-            if (type === 'function' || type === 'object' && obj !== null) {
-                return Object.keys(obj);
-            }
-            return [];
-        }, CollectionType.ARRAY);
+        return this.subPipe<string>(CollectionType.ARRAY, isObjectConditional(
+            result,
+            setResult(call(param(Object.keys), [result])),
+            setResult(array())
+        ), ResultCreation.NEW_OBJECT);
     }
 
     allKeys():DataPipe<R,string> {
-        return this.transform<string>(function (obj) {
-            var type = typeof obj;
-            if (type === 'function' || type === 'object' && obj !== null) { //todo common
-                var keys = [];
-                for (var key in obj) {
-                    //noinspection JSUnfilteredForInLoop
-                    keys.push(key);
-                }
-                return keys;
-            }
-            return [];
-        }, CollectionType.ARRAY);
+        var keys = named<string[]>('keys');
+        return this.subPipe<string>(CollectionType.ARRAY, isObjectConditional(
+            result,
+            seq([
+                declare(keys, array()),
+                itin(
+                    result,
+                    call(prop<any>(keys, 'push'), [index]),
+                    true
+                ),
+                setResult(keys)
+            ]),
+            setResult(array())
+        ), ResultCreation.NEW_OBJECT);
     }
 
     abstract process(data:R[]):T[];
@@ -788,10 +790,6 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     abstract fn():Mapper<R, T>;
 
     abstract hasNewResult():boolean;
-
-    private transform<O>(fn:(t:any)=>any, type:CollectionType):DataPipe<R,O> { //todo public, better signature
-        return this.subPipe<O>(type, setResult(callParam(fn, null, [result])), ResultCreation.NEW_OBJECT);
-    }
 
     private filterLike(predicate:CodeText<boolean>|Predicate<T>, context:any, inverted?:boolean, textBefore?:CodeText<any>, elseCode?:CodeText<any>):DataPipe<R,T> { //todo rearrange for safety
         var condition:CodeText<boolean>;

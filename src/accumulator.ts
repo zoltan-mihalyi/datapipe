@@ -1,6 +1,6 @@
 ///<reference path="interfaces.ts"/>
 import {CollectionType, isProvider} from "./common";
-import {codeTextToString, result, seq, prop, conditional, and, type, codeTextEquals} from "./code-helpers";
+import {codeTextToString, result, seq, prop, conditional, and, type, codeTextEquals, eq, literal} from "./code-helpers";
 import {codeBlockConstructor} from "./code-blocks";
 
 class MultiCode {
@@ -38,7 +38,7 @@ class MultiCode {
             } else {
                 loops = seq([
                     conditional(
-                        and(result, type(prop<boolean>(result, 'length'), 'number')),
+                        and(result, eq(type(prop<boolean>(result, 'length')), literal('number'))),
                         arrayText,
                         mapText
                     ),

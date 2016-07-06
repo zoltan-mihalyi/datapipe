@@ -44,6 +44,7 @@ export var add = operatorWithNullValue('+', 0);
 export var multiply = operator<number,number>('*');
 export var divide = operator<number,number>('/');
 export var and = operator<boolean,boolean>('&&');
+export var or = operator<boolean,boolean>('||');
 
 export var not = prefixOperator<boolean,boolean>('!');
 export var increment = prefixOperator<number,number>('++');
@@ -247,8 +248,20 @@ export function cast<T>(text:CodeText<any>):CodeText<T> {
     return text;
 }
 
-export function type(text:CodeText<any>, type:string):CodeText<boolean> {
-    return ['typeof ', ...eq(text, literal(type))];
+export function type(text:CodeText<any>):CodeText<string> {
+    return ['typeof ', ...text];
+}
+
+export function isObjectConditional(object:CodeText<any>, statement:CodeText<any>, elseStatement:CodeText<any>):CodeText<void> {
+    var typeVar = named<string>('type');
+    return seq([
+        declare(typeVar, type(object)),
+        conditional(
+            or(eq(typeVar, literal('function')), and(eq(typeVar, literal('object')), neq(result, literal(null)))),
+            statement,
+            elseStatement
+        )
+    ]);
 }
 
 interface ItarOpts {
@@ -427,11 +440,14 @@ function substitute(codeText:CodeText<any>, find:string, replace:CodeText<any>) 
     return resultCodeText;
 }
 
-export function itin(object:CodeText<{[index:string]:any}>, block:CodeText<any>):CodeText<void> {
-    block = conditional(
-        call(param(Object.prototype.hasOwnProperty), [index], object),
-        ensureCurrentInitialized(object, block)
-    );
+export function itin(object:CodeText<{[index:string]:any}>, block:CodeText<any>, includeOwn?:boolean):CodeText<void> {
+    block = ensureCurrentInitialized(object, block);
+    if (!includeOwn) {
+        block = conditional(
+            call(param(Object.prototype.hasOwnProperty), [index], object),
+            block
+        );
+    }
 
     return ['for(var ', ...index, ' in ', ...object, '){\n', ...block, '\n}'];
 }
