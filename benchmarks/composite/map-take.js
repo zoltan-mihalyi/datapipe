@@ -1,7 +1,7 @@
-var array = require('../../array');
+var array = require('../array');
 var _ = require('underscore');
 var __ = require('lodash');
-var u = require('../../../dist/main');
+var u = require('../../dist/main');
 
 var _map = _.map;
 var __map = __.map;

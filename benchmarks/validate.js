@@ -4,9 +4,12 @@ var path = require('path');
 var NO_RESULT = {}; //for reference equality
 
 describe('benchmark tests', function() {
-    var dir = 'benchmarks/tests';
+    var dir = 'benchmarks';
     filesRecursive(dir, function(file) {
         var filename = file.substr(dir.length + 1);
+        if (filename.indexOf('/') === -1) { //not inside subdirectory
+            return;
+        }
         var suites = require(path.resolve(file));
         if (!Array.isArray(suites)) {
             suites = [suites];

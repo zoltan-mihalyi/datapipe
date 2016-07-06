@@ -71,7 +71,7 @@ module.exports = function(grunt) {
         },
         benchmark: {
             all: {
-                src: ['benchmarks/tests/**/*.js'],
+                src: ['benchmarks/*/**/*.js'],
                 options: {
                     verifyFastest: {
                         fastest: 'undersorcery',
