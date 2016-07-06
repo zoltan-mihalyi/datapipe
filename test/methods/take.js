@@ -20,6 +20,31 @@ describe('take tests', function() {
         expect(u().take().process([1, 2, 3])).toBe(1);
     });
 
+    it('take and index', function() {
+        expect(u()
+            .take(3)
+            .map(function(x, i) {
+                return i;
+            })
+            .process([1, 2, 3, 4, 5])
+        ).toEqual([0, 1, 2]);
+    });
+
+    it('take and object index', function() {
+        expect(u()
+            .take(3)
+            .map(function(x, i) {
+                return i;
+            })
+            .process({
+                a: 1,
+                b: 2,
+                c: 3,
+                d: 4
+            })
+        ).toEqual([0, 1, 2]);
+    });
+
     it('take and sortBy', function() {
         var array = [[3, 2, 1, 4]];
         var sorted = u().take().sortBy().process(array);

@@ -70,7 +70,7 @@ abstract class LoopBlock implements CodeBlock {
             this.keyIndex = null;
         }
 
-        if (changesIndex(text)) {
+        if (rangeChangesIndex(loop.range) || changesIndex(text)) {
             this.arrayIndex = null;
             this.keyIndex = null; //todo only when creating array
         }
@@ -208,6 +208,10 @@ class MapLoopBlock extends LoopBlock { //todo reversed?
     protected isArray():boolean {
         return false;
     }
+}
+
+function rangeChangesIndex(range:LoopRange):boolean {
+    return range && range.definesStart;
 }
 
 function changesIndex(text:CodeText<any>):boolean {

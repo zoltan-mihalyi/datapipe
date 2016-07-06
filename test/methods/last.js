@@ -28,6 +28,41 @@ describe('last tests', function() {
         expect(u('array').last().fn().toString()).not.toContain('for');
     });
 
+    it('last and index', function() {
+        expect(u()
+            .last(3)
+            .map(function(x, i) {
+                return i;
+            })
+            .process([1, 2, 3, 4, 5])
+        ).toEqual([0, 1, 2]);
+    });
+
+    it('last and object index', function() {
+        expect(u()
+            .last(3)
+            .map(function(x, i) {
+                return i;
+            })
+            .process({
+                a: 1,
+                b: 2,
+                c: 3,
+                d: 4
+            })
+        ).toEqual([0, 1, 2]);
+    });
+
+    it('last and index in previous step', function() {
+        expect(u()
+            .map(function(x, i) {
+                return i;
+            })
+            .last(3)
+            .process([1, 2, 3, 4, 5])
+        ).toEqual([2, 3, 4]);
+    });
+
     it('last and sortBy', function() {
         var array = [[3, 2, 1, 4]];
         var sorted = u().last().sortBy().process(array);

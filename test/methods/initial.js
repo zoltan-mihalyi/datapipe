@@ -13,6 +13,31 @@ describe('initial tests', function() {
         expect(u().initial().process([1, 2, 3])).toEqual([1, 2]);
     });
 
+    it('initial and index', function() {
+        expect(u()
+            .initial(2)
+            .map(function(x, i) {
+                return i;
+            })
+            .process([1, 2, 3, 4, 5])
+        ).toEqual([0, 1, 2]);
+    });
+
+    it('initial and object index', function() {
+        expect(u()
+            .initial(2)
+            .map(function(x, i) {
+                return i;
+            })
+            .process({
+                a: 1,
+                b: 2,
+                c: 3,
+                d: 4
+            })
+        ).toEqual([0, 1]);
+    });
+
     it('using initial after map should use fixed array length', function() {
         expect(u()
             .map(function() {

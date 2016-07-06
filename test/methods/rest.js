@@ -13,6 +13,41 @@ describe('rest tests', function() {
         expect(u().rest().process([1, 2, 3])).toEqual([2, 3]);
     });
 
+    it('rest and index', function() {
+        expect(u()
+            .rest(2)
+            .map(function(x, i) {
+                return i;
+            })
+            .process([1, 2, 3, 4, 5])
+        ).toEqual([0, 1, 2]);
+    });
+
+    it('rest and object index', function() {
+        expect(u()
+            .rest(2)
+            .map(function(x, i) {
+                return i;
+            })
+            .process({
+                a: 1,
+                b: 2,
+                c: 3,
+                d: 4
+            })
+        ).toEqual([0, 1]);
+    });
+
+    it('rest and index in previous step', function() {
+        expect(u()
+            .map(function(x, i) {
+                return i;
+            })
+            .rest(3)
+            .process([1, 2, 3, 4, 5])
+        ).toEqual([3, 4]);
+    });
+
     it('using rest after map should use fixed array length', function() {
         expect(u()
             .map(function() {
