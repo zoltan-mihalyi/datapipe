@@ -2,8 +2,8 @@ var u = require('../../dist/main');
 
 describe('shuffle tests', function() {
     var array = [1, 2, 3, 4, 5, 6];
-    it('shuffled array has the same items', function() {
 
+    it('shuffled array has the same items', function() {
         expect(u()
             .shuffle()
             .process(array)

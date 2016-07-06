@@ -50,7 +50,7 @@ export var not = prefixOperator<boolean,boolean>('!');
 export var increment = prefixOperator<number,number>('++');
 export var decrement = prefixOperator<number,number>('--');
 
-export var toInt = suffixOperator('| 0');
+export var toInt = suffixOperator<number,number>('| 0');
 
 export var result = named<any>('data');
 export var current = named<any>('x');

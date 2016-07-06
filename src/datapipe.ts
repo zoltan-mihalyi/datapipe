@@ -507,6 +507,17 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
 
+    sample():DataPipeResult<R,T>;
+    sample(count:number):DataPipe<R,T>;
+    sample(count?:number) { //todo code contains toArray code in array part?
+        if (count == null) {
+            var math:CodeText<{[index:string]:()=>number}> = named<any>('Math');
+            var code = setResult(prop(result, toInt(multiply(call(prop(math, 'random')), prop<number>(result, 'length')))));
+            return this.toArray().subPipe(CollectionType.UNKNOWN, code, ResultCreation.EXISTING_OBJECT) as any;
+        }
+        return this.shuffle().take(count); //todo should be faster
+    }
+
     toArray():DataPipe<R,T> {
         return this.mapLike<T>(empty); //todo optimize here, not in the accumulator
     }
