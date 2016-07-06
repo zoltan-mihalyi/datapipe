@@ -48,4 +48,26 @@ describe('map tests', function() {
             .toString()
         ).toContain('new Array');
     });
+
+    it('map object', function() {
+        expect(u()
+            .map(function(x) {
+                return x + 1;
+            })
+            .process({a: 1, b: 2, c: 3})
+        ).toEqual([2, 3, 4]);
+    });
+
+    it('map object with parent', function() {
+        function Obj() {
+            this.x = 1;
+        }
+
+        Obj.prototype.y = 2;
+
+        expect(u()
+            .map()
+            .process(new Obj())
+        ).toEqual([1]);
+    });
 });

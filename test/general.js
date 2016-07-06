@@ -51,14 +51,14 @@ describe('Test general usage', function() {
     });
 
     it('Calling functions with context should use .call, but without context should not.', function() {
-        expect(u()
+        expect(u('array')
             .map(function() {
             }, {})
             .fn()
             .toString()
         ).toContain('.call');
 
-        expect(u()
+        expect(u('array')
             .map(function() {
             })
             .fn()
@@ -76,7 +76,7 @@ describe('Test general usage', function() {
                 .map(identity)
                 .fn()
                 .toString()
-            ).not.toContain(codeHelpers.paramName(1));
+            ).not.toContain(codeHelpers.paramName(2)); //hasOwnProperty and identity is allowed
         });
 
         it('Reuse parameters across steps and loops', function() {

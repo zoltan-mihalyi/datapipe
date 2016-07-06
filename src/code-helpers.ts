@@ -112,7 +112,7 @@ export function callParam<T>(fn:(...args)=>T, context:any, params?:CodeText<any>
     return call(param(fn), usedParams, contextCodeText);
 }
 
-export function call<T>(fn:CodeText<()=>T>, params?:CodeText<any>[], context?:CodeText<any>):CodeText<T> {
+export function call<T>(fn:CodeText<(...args)=>T>, params?:CodeText<any>[], context?:CodeText<any>):CodeText<T> {
     var call:string;
     if (context) {
         call = '.call';
@@ -427,8 +427,13 @@ function substitute(codeText:CodeText<any>, find:string, replace:CodeText<any>) 
     return resultCodeText;
 }
 
-export function itin(map:CodeText<{[index:string]:any}>, block:CodeText<any>):CodeText<void> {
-    return ['for(var ', ...index, ' in ', ...map, '){\n', ...ensureCurrentInitialized(map, block), '\n}'];
+export function itin(object:CodeText<{[index:string]:any}>, block:CodeText<any>):CodeText<void> {
+    block = conditional(
+        call(param(Object.prototype.hasOwnProperty), [index], object),
+        ensureCurrentInitialized(object, block)
+    );
+
+    return ['for(var ', ...index, ' in ', ...object, '){\n', ...block, '\n}'];
 }
 
 function ensureCurrentInitialized(collection:CodeText<any>, codeText:CodeText<any>, level?:number):CodeText<any> {
