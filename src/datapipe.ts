@@ -754,6 +754,16 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.subPipe<number>(CollectionType.ARRAY, createArray, ResultCreation.NEW_OBJECT);
     }
 
+    keys():DataPipe<R,string> {
+        return this.transform<string>(function (obj) {
+            var type = typeof obj;
+            if (type === 'function' || type === 'object' && obj !== null) {
+                return Object.keys(obj);
+            }
+            return [];
+        }, CollectionType.ARRAY);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
@@ -763,6 +773,10 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     abstract fn():Mapper<R, T>;
 
     abstract hasNewResult():boolean;
+
+    private transform<O>(fn:(t:any)=>any, type:CollectionType):DataPipe<R,O> { //todo public, better signature
+        return this.subPipe<O>(type, setResult(callParam(fn, null, [result])), ResultCreation.NEW_OBJECT);
+    }
 
     private filterLike(predicate:CodeText<boolean>|Predicate<T>, context:any, inverted?:boolean, textBefore?:CodeText<any>, elseCode?:CodeText<any>):DataPipe<R,T> { //todo rearrange for safety
         var condition:CodeText<boolean>;
