@@ -48,8 +48,7 @@ interface CodeBlock {
 
 type IterateeFunction<T,R> = (t?:T) => R;
 type Properties = {[index:string]:any};
-type PropertyOrProperties = string|number|Properties;
-type Iteratee<T,R> =  IterateeFunction<T,R> | PropertyOrProperties;
+type Iteratee<T,R> =  string|number|IterateeFunction<T,R>|Properties;
 type Predicate<T> =  Iteratee<T,boolean>;
 type Accessible<T,R> = string|number|IterateeFunction<T,R|boolean>
 

@@ -324,12 +324,12 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.filterLike(current, null, false);
     }
 
-    where(properties:PropertyOrProperties):DataPipe<R,T> {
-        return this.filter(properties);
+    where(properties:Properties):DataPipe<R,T> {
+        return this.filter(whereFilter(properties));
     }
 
-    findWhere(properties:PropertyOrProperties):DataPipeResult<R,any> {
-        return this.find(properties);
+    findWhere(properties:Properties):DataPipeResult<R,any> {
+        return this.find(whereFilter(properties));
     }
 
     reject(predicate?:Predicate<T>, context?:any):DataPipe<R,T> {
@@ -972,15 +972,17 @@ function isPrimitive(value:any) {
 function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
 
     var statements:CodeText<void|Ret<boolean>>[] = [];
-    for (let i in properties) {
-        if (properties.hasOwnProperty(i)) {
-            statements.push(conditional(
-                neq(
-                    prop(current, i),
-                    prop(named<{[idx:string]:any}>('properties'), i)
-                ),
-                ret(falseValue)
-            ));
+    if (typeof properties !== 'string') {
+        for (let i in properties) {
+            if (properties.hasOwnProperty(i)) {
+                statements.push(conditional(
+                    neq(
+                        prop(current, i),
+                        prop(named<{[idx:string]:any}>('properties'), i)
+                    ),
+                    ret(falseValue)
+                ));
+            }
         }
     }
     if (statements.length > 0) {
