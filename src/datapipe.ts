@@ -806,18 +806,15 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     mapObject<O>(iteratee?:Iteratee<T,O>, context?:any):DataPipe<R,O> {
-        return this.toIterable().subPipe<O>(CollectionType.MAP, {
-            rename: true,
-            before: setResult(obj()),
-            after: assign(prop(result, index), current),
-            text: assign(current, access(toAccessible(iteratee), context)),
-            mergeStart: true,
-            mergeEnd: true
-        }, ResultCreation.NEW_OBJECT);
+        return this.mapObjectLike<O>(assign(current, access(toAccessible(iteratee), context)));
     }
 
     pairs():DataPipe<R,{0:string,1:T}> {
         return this.toIterable().mapLike<any>(assign(current, array(index, current))); //todo assignCurrent method
+    }
+
+    invert():DataPipe<R,string> {
+        return this.mapObjectLike<string>(empty, assign(prop(result, current), index));
     }
 
     abstract process(data:R[]):T[];
@@ -958,6 +955,18 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             handlesSize: true
         }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
+
+    private mapObjectLike<O>(text:CodeText<any>, after?:CodeText<any>):DataPipe<R,O> {
+        return this.toIterable().subPipe<O>(CollectionType.MAP, {
+            rename: true,
+            before: setResult(obj()),
+            after: after || assign(prop(result, index), current),
+            text: text,
+            mergeStart: true,
+            mergeEnd: true
+        }, ResultCreation.NEW_OBJECT);
+    }
+
 
     private reduceLikeWithProvider<M>(reducer:(memo?:M, t?:T) => M, memo:Provider<M>, context:any, reversed:boolean) {
         var initial:CodeText<M|Provider<M>> = param(memo);
