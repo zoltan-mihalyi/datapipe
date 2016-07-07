@@ -29,8 +29,8 @@ describe('sample tests', function() {
         expect(u()
             .sample(4)
             .uniq()
+            .size()
             .process(array)
-            .length
         ).toBe(4);
     });
 
@@ -38,8 +38,8 @@ describe('sample tests', function() {
         expect(u()
             .sample(4)
             .intersection(array)
+            .size()
             .process(array)
-            .length
         ).toBe(4);
     });
 
@@ -62,8 +62,8 @@ describe('sample tests', function() {
         expect(u()
             .sample(2)
             .intersection([1, 2, 3])
+            .size()
             .process({a: 1, b: 2, c: 3})
-            .length
         ).toBe(2);
     });
 });

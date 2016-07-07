@@ -662,23 +662,36 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     uniq(isSorted:boolean, iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T>;
     uniq(iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T>;
     uniq(isSorted?:boolean|Iteratee<T,any>, iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T> {
-        if (typeof isSorted !== 'boolean') { //
+        if (typeof isSorted !== 'boolean') {
             context = iteratee;
             iteratee = isSorted as Iteratee<T,any>;
             isSorted = false;
         }
+        var seen = named<any[]>('seen');
+        //todo we cannot merge into the existing loop!
+        var target = this.subPipe<T>(this.type, declare(seen, array()), ResultCreation.USES_PREVIOUS);
+
+        var computed:CodeText<any>;
+        var declareComputed:CodeText<any>;
         if (iteratee == null) {
-            return this.filterLike(notContains(result, current), null, true);
+            computed = current;
+            declareComputed = null;
+        } else {
+            computed = named<any>('computed');
+            declareComputed = declare(computed, access(toAccessible(iteratee), context));
         }
 
-        let seen = named<any[]>('seen');
-        let computed = named<any>('computed');
-        let declareComputed = declare(computed, access(toAccessible(iteratee), context));
-        let markAsSeen = isSorted ? assign(seen, computed) : call(prop(seen, 'push'), [computed]);
-        let predicate = isSorted ? eq(seen, computed) : notContains(seen, computed);
-        return this //todo cannot use mergeEnd in situations like this
-            .subPipe<T>(CollectionType.ARRAY, declare(seen, array()), ResultCreation.USES_PREVIOUS)
-            .filterLike(predicate, null, true, declareComputed, markAsSeen);
+        var markAsSeen:CodeText<any>;
+        var predicate:CodeText<boolean>;
+        if (isSorted) {
+            markAsSeen = assign(seen, computed);
+            predicate = eq(seen, computed);
+        } else {
+            markAsSeen = call(prop(seen, 'push'), [computed]);
+            predicate = neq(call(prop<()=>number>(seen, 'indexOf'), [computed]), literal(-1));
+        }
+
+        return target.filterLike(predicate, null, true, declareComputed, markAsSeen);
     }
 
     zip(...arrays:any[][]):DataPipe<R,any[]> {
@@ -1061,8 +1074,4 @@ function toAccessible<T,R>(iteratee?:Iteratee<T,R>):Accessible<T,R> {
     } else {
         return whereFilter(iteratee as Properties);
     }
-}
-
-function notContains(array:CodeText<any[]>, object:CodeText<any>):CodeText<boolean> {
-    return neq(call(prop<()=>number>(array, 'indexOf'), [object]), literal(-1));
 }

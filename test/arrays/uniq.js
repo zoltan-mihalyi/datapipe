@@ -36,6 +36,19 @@ describe('uniq tests', function() {
         ).toEqual([{x: 0}, {x: null}, {x: 1, a: 1}, {}]);
     });
 
+    it('uniq with iteratee and object', function() {
+        expect(u()
+            .uniq(function(x) {
+                return Math.abs(x)
+            })
+            .process({
+                a: 1,
+                b: -1,
+                c: 2
+            })
+        ).toEqual([1, 2]);
+    });
+
     it('uniq with iteratee and context', function() {
         expect(u()
             .uniq(function(x) {
@@ -59,5 +72,46 @@ describe('uniq tests', function() {
             }, {value: 'x'})
             .process([{x: 0}, {x: null}, {x: 1, a: 1}, {x: 1, a: 2}, {}])
         ).toEqual([{x: 0}, {x: null}, {x: 1, a: 1}, {}]);
+    });
+
+    it('uniq and size', function() {
+        expect(u()
+            .uniq()
+            .size()
+            .process([1, 2, 1, 3, 4])
+        ).toBe(4);
+    });
+
+    it('uniq and map', function() {
+        expect(u()
+            .uniq()
+            .map(function(x) {
+                return x * 10;
+            })
+            .process([1, 2, 1, 3, 4])
+        ).toEqual([10, 20, 30, 40]);
+    });
+
+    it('uniq with iteratee and map', function() {
+        expect(u()
+            .uniq(function(x) {
+                return Math.abs(x)
+            })
+            .map(function(x) {
+                return x * 10;
+            })
+            .process([1, 2, 1, 3, 4, -2])
+        ).toEqual([10, 20, 30, 40]);
+    });
+
+    it('uniq map uniq', function() {
+        expect(u()
+            .uniq()
+            .map(function(x, i) {
+                return x * 10 - i * 10;
+            })
+            .uniq()
+            .process([1, 3, 1, 4, 6])
+        ).toEqual([10, 20, 30]);
     });
 });
