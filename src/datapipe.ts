@@ -805,6 +805,25 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         ), ResultCreation.NEW_OBJECT);
     }
 
+    mapObject<O>(iteratee?:Iteratee<T,O>, context?:any):DataPipe<R,O> {
+        var target:DataPipe<R,T> = this;
+        if (this.type === CollectionType.UNKNOWN) {
+            target = this.subPipe<T>(CollectionType.UNKNOWN, isObjectConditional(
+                result,
+                empty,
+                setResult(array())
+            ), ResultCreation.USES_PREVIOUS);
+        }
+        return target.subPipe<O>(CollectionType.MAP, {
+            rename: true,
+            before: setResult(obj()),
+            after: assign(prop(result, index), current),
+            text: assign(current, access(toAccessible(iteratee), context)),
+            mergeStart: true,
+            mergeEnd: true
+        }, ResultCreation.NEW_OBJECT);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
