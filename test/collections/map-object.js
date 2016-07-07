@@ -49,6 +49,40 @@ describe('mapObject tests', function() {
         ).toEqual({0: 2, 1: 3, 2: 4});
     });
 
+    it('mapObject array with extra properties', function() {
+        var array = [1, 2];
+        array.x = 3;
+        expect(u()
+            .mapObject(function(x) {
+                return x + 1;
+            })
+            .process(array)
+        ).toEqual({0: 2, 1: 3, x: 4});
+    });
+
+    it('mapObject should not contain object check if data type is specified', function() {
+        expect(u()
+            .mapObject(function() {
+            })
+            .fn()
+            .toString()
+        ).toContain('object');
+
+        expect(u('object')
+            .mapObject(function() {
+            })
+            .fn()
+            .toString()
+        ).not.toContain('object');
+
+        expect(u('array')
+            .mapObject(function() {
+            })
+            .fn()
+            .toString()
+        ).not.toContain('object');
+    });
+
     it('mapObject object with parent', function() {
         function Obj() {
             this.x = 1;

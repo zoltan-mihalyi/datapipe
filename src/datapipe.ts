@@ -806,15 +806,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     mapObject<O>(iteratee?:Iteratee<T,O>, context?:any):DataPipe<R,O> {
-        var target:DataPipe<R,T> = this;
-        if (this.type === CollectionType.UNKNOWN) {
-            target = this.subPipe<T>(CollectionType.UNKNOWN, isObjectConditional(
-                result,
-                empty,
-                setResult(array())
-            ), ResultCreation.USES_PREVIOUS);
-        }
-        return target.subPipe<O>(CollectionType.MAP, {
+        return this.toIterable().subPipe<O>(CollectionType.MAP, {
             rename: true,
             before: setResult(obj()),
             after: assign(prop(result, index), current),
@@ -833,6 +825,17 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     abstract fn():Mapper<R, T>;
 
     abstract hasNewResult():boolean;
+
+    private toIterable():DataPipe<R,T> {
+        if (this.type === CollectionType.UNKNOWN) {
+            return this.subPipe<T>(CollectionType.MAP, isObjectConditional(
+                result,
+                empty,
+                setResult(obj())
+            ), ResultCreation.USES_PREVIOUS);
+        }
+        return this;
+    }
 
     private filterLike(predicate:CodeText<boolean>|Predicate<T>, context:any, inverted?:boolean, textBefore?:CodeText<any>, elseCode?:CodeText<any>):DataPipe<R,T> { //todo rearrange for safety
         var condition:CodeText<boolean>;

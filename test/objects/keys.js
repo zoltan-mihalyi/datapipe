@@ -8,6 +8,22 @@ describe('keys tests', function() {
         ).toEqual(['a', 'b', 'c']);
     });
 
+    it('array keys', function() {
+        expect(u()
+            .keys()
+            .process([1, 2, 3])
+        ).toEqual(['0', '1', '2']);
+    });
+
+    it('array with extra properties keys', function() {
+        var array = [1, 2];
+        array.x = 3;
+        expect(u()
+            .keys()
+            .process(array)
+        ).toEqual(['0', '1', 'x']);
+    });
+
     it('object with parent keys', function() {
         function Obj() {
             this.a = 1;
