@@ -816,6 +816,10 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT);
     }
 
+    pairs():DataPipe<R,{0:string,1:T}> {
+        return this.toIterable().mapLike<any>(assign(current, array(index, current))); //todo assignCurrent method
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
