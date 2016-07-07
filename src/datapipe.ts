@@ -135,7 +135,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.EXISTING_OBJECT) as any;
     }
 
-    take(cnt?:number):DataPipe<R,T> {
+    first(cnt?:number):DataPipe<R,T> {
         //todo if length >= data.length, do nothing
         if (cnt == null) {
             return this.subPipe<T>(CollectionType.UNKNOWN, {
@@ -198,7 +198,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
 
-    last(cnt?:number):DataPipe<R,T> { //todo very similar to take
+    last(cnt?:number):DataPipe<R,T> { //todo very similar to first
         if (this.type !== CollectionType.ARRAY) {
             return this.toArray().last(cnt);
         }
@@ -515,7 +515,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             var code = setResult(prop(result, toInt(multiply(call(prop(math, 'random')), prop<number>(result, 'length')))));
             return this.toArray().subPipe(CollectionType.UNKNOWN, code, ResultCreation.EXISTING_OBJECT) as any;
         }
-        return this.shuffle().take(count); //todo should be faster
+        return this.shuffle().first(count); //todo should be faster
     }
 
     toArray():DataPipe<R,T> {
@@ -548,12 +548,12 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.USES_PREVIOUS).subPipe(CollectionType.ARRAY, setResult(array(part1, part2)), ResultCreation.NEW_OBJECT);
     }
 
-    first(cnt?:number):DataPipe<R,T> {
-        return this.take(cnt);
+    take(cnt?:number):DataPipe<R,T> {
+        return this.first(cnt);
     }
 
     head(cnt?:number):DataPipe<R,T> {
-        return this.take(cnt);
+        return this.first(cnt);
     }
 
     without(...items:any[]):DataPipe<R,T> {
@@ -747,7 +747,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     lastIndexOf(item:any, fromIndex?:number):DataPipeResult<R,number> {
-        var target:this = fromIndex ? this.take(fromIndex) as any : this;
+        var target:this = fromIndex ? this.first(fromIndex) as any : this;
         return target.indexOfLike(item, true);
     }
 

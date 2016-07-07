@@ -6,8 +6,8 @@ var u = require('../../dist/main');
 var _map = _.map;
 var __map = __.map;
 
-var _take = _.take;
-var __take = __.take;
+var _first = _.first;
+var __first = __.take;
 
 var _chain = _.chain;
 var __chain = __.chain;
@@ -16,7 +16,7 @@ function map(x, i) {
     return x.x + i;
 }
 
-var fn = u('array').map(map).take(3).fn();
+var fn = u('array').map(map).first(3).fn();
 var nativeFn = function(array) {
     var length = array.length;
     if (length > 3) {
@@ -30,7 +30,7 @@ var nativeFn = function(array) {
 };
 
 module.exports = {
-    name: 'map and take',
+    name: 'map and first',
     tests: {
         native: function() {
             return nativeFn(array);
@@ -39,13 +39,13 @@ module.exports = {
             return fn(array);
         },
         underscore: function() {
-            return _take(_map(array, map), 3);
+            return _first(_map(array, map), 3);
         },
         lodash: function() {
-            return __take(__map(array, map), 3);
+            return __first(__map(array, map), 3);
         },
         'underscore chaining': function() {
-            return _chain(array).map(map).take(3).value();
+            return _chain(array).map(map).first(3).value();
         },
         'lodash chaining': function() {
             return __chain(array).map(map).take(3).value();

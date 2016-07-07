@@ -34,7 +34,7 @@ describe('Data type hints', function() {
 
     it('array hint when using arrayIndex', function() {
         expect(u('array')
-            .take(2)
+            .first(2)
             .pluck('x')
             .process([{x: 1}, {x: 3}, {x: 2}])
         ).toEqual([1, 3]);

@@ -135,7 +135,7 @@ abstract class LoopBlock implements CodeBlock {
         if (array) {
             if (!this.arrayIndex) {
                 this.arrayIndex = this.createIndex();
-                if (!this.keyIndex) { //todo because take creates an array.
+                if (!this.keyIndex) { //todo because 'first' creates an array.
                     this.keyIndex = this.arrayIndex;
                 }
             }

@@ -55,11 +55,13 @@ describe('sortBy tests', function() {
 
     it('sortBy does not copy the array when the array is created by a previous step.', function() {
         expect(u()
-            .take(2)
+            .first(2)
             .sortBy()
             .fn()
             .toString()
-        ).not.toContain('slice');
+            .match(/new Array/g)
+            .length
+        ).toBe(1);
     });
 
     it('shortBy should work on objects', function() {

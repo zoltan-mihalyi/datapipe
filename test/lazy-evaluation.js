@@ -14,9 +14,9 @@ describe('Lazy evaluation', function() {
         expect(fn([1, 2, 3])).toBe(3);
     });
 
-    it('take should do nothing if only length is needed', function() {
+    it('first should do nothing if only length is needed', function() {
         var fn = u('array')
-            .take(3)
+            .first(3)
             .size()
             .fn();
 

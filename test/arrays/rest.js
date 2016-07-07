@@ -74,9 +74,9 @@ describe('rest tests', function() {
         ).toEqual([]);
     });
 
-    it('using rest after take', function() {
+    it('using rest after first', function() {
         expect(u()
-            .take(2)
+            .first(2)
             .rest(1)
             .process([1, 2, 3])
         ).toEqual([2]);

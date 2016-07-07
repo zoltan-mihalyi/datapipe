@@ -3,11 +3,11 @@ var _ = require('underscore');
 var __ = require('lodash');
 var u = require('../../dist/main');
 
-var _take = _.take;
-var __take = __.take;
+var _first = _.first;
+var __first = __.take;
 var __head = __.head;
 
-var fn1 = u('array').take(5).fn();
+var fn1 = u('array').first(5).fn();
 var nativeFn1 = function(array) {
     var length = array.length;
     if (length > 5) {
@@ -20,13 +20,13 @@ var nativeFn1 = function(array) {
     return result;
 };
 
-var fn2 = u('array').take().fn();
+var fn2 = u('array').first().fn();
 var nativeFn2 = function(array) {
     return array[0];
 };
 
 module.exports = [{
-    name: 'take 5',
+    name: 'first 5',
     tests: {
         native: function() {
             return nativeFn1(array);
@@ -35,14 +35,14 @@ module.exports = [{
             return fn1(array);
         },
         underscore: function() {
-            return _take(array, 5);
+            return _first(array, 5);
         },
         lodash: function() {
-            return __take(array, 5);
+            return __first(array, 5);
         }
     }
 }, {
-    name: 'take first',
+    name: 'first',
     tests: {
         native: function() {
             return nativeFn2(array);
@@ -51,7 +51,7 @@ module.exports = [{
             return fn2(array);
         },
         underscore: function() {
-            return _take(array);
+            return _first(array);
         },
         lodash: function() {
             return __head(array);

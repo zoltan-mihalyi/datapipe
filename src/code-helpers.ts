@@ -280,7 +280,7 @@ function compatible(lastRange:LoopRange, range:LoopRange):boolean {
 function put(lastRange:LoopRange, range:LoopRange) {
     if (lastRange.definesStart === lastRange.relativeToStart) { //rest or initial
         lastRange.value += range.value;
-    } else { //take or last
+    } else { //first or last
         if (range.value < lastRange.value) {
             lastRange.value = range.value;
         }
@@ -359,7 +359,7 @@ export function itar(init:CodeText<any>, array:CodeText<any[]>, block:CodeText<a
 
 
         } else {
-            if (range.relativeToStart) {//take
+            if (range.relativeToStart) {//first
                 let endLiteral = literal(value);
                 declarations.push(conditional(
                     gt(loopLength, endLiteral),

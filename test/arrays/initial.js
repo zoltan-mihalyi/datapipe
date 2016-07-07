@@ -65,10 +65,10 @@ describe('initial tests', function() {
     });
 
 
-    it('initial and take', function() {
+    it('initial and first', function() {
         expect(u()
             .initial(2)
-            .take(2)
+            .first(2)
             .process([1, 2, 3, 4, 5])
         ).toEqual([1, 2]);
     });
@@ -81,19 +81,19 @@ describe('initial tests', function() {
         ).toEqual(3);
     });
 
-    it('initial, take and size', function() {
+    it('initial, first and size', function() {
         expect(u()
             .initial(2)
-            .take(2)
+            .first(2)
             .size()
             .process([1, 2, 3, 4, 5])
         ).toEqual(2);
     });
 
-    it('initial and take', function() {
+    it('initial and first', function() {
         expect(u()
             .initial(2)
-            .take(2)
+            .first(2)
             .process([1, 2, 3])
         ).toEqual([1]);
     });

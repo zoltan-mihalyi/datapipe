@@ -41,50 +41,50 @@ describe('Test functions with chaining', function() {
     });
 
 
-    describe('Chaining with take', function() {
-        it('take, take', function() {
+    describe('Chaining with first', function() {
+        it('first, first', function() {
             expect(u()
-                .take(3)
-                .take(2)
+                .first(3)
+                .first(2)
                 .process([1, 2, 3, 4, 5])).toEqual([1, 2]);
         });
 
-        it('map and take', function() {
+        it('map and first', function() {
             expect(u()
                 .map(tenTimes)
-                .take(2)
+                .first(2)
                 .process([1, 2, 3, 4])).toEqual([10, 20]);
         });
 
-        it('filter and take', function() {
+        it('filter and first', function() {
             expect(u()
                 .filter(function(x) {
                     return x % 2 === 0;
                 })
-                .take(2)
+                .first(2)
                 .process([1, 2, 3, 4, 5, 6, 7])).toEqual([2, 4]);
         });
 
-        it('filter, take, filter, take', function() {
+        it('filter, first, filter, first', function() {
             expect(u()
                 .filter(function(x) {
                     return x % 2 === 0;
                 })
-                .take(10)
+                .first(10)
                 .filter(function(x) {
                     return x !== 4;
                 })
-                .take(2)
+                .first(2)
                 .process([1, 2, 3, 4, 5, 6, 7, 8, 9])).toEqual([2, 6]);
         });
 
-        it('filter, take, take', function() {
+        it('filter, first, first', function() {
             expect(u()
                 .filter(function(x) {
                     return x % 2 === 0;
                 })
-                .take(3)
-                .take(2)
+                .first(3)
+                .first(2)
                 .process([1, 2, 3, 4, 5, 6, 7, 8, 9])).toEqual([2, 4]);
         });
     });
