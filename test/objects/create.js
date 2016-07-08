@@ -30,4 +30,16 @@ describe('create tests', function() {
         expect(result.c).toBeUndefined();
         expect(result.p).toBe(1);
     });
+
+    it('create with props with parent', function() {
+        function Obj() {
+        }
+
+        Obj.prototype.x = 1;
+        var result = u()
+            .create(new Obj())
+            .process(Base.prototype);
+
+        expect(result.x).toBeUndefined();
+    });
 });
