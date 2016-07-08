@@ -817,6 +817,26 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.mapObjectLike<string>(empty, assign(prop(result, current), index));
     }
 
+    create(props):DataPipe<R,T> {
+        var propAssignments:CodeText<void>[] = [];
+        if (props) {
+            for (var i in props) {
+                if (props.hasOwnProperty(i)) {
+                    propAssignments.push(assign(prop(result, i), param(props[i])));
+                }
+            }
+        }
+
+        return this.subPipe<T>(CollectionType.MAP, seq([ //todo simplify with object results
+            isObjectConditional(
+                result,
+                setResult(callParam(Object.create, null, [result])),
+                setResult(obj())
+            ),
+            seq(propAssignments)
+        ]), ResultCreation.NEW_OBJECT);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];

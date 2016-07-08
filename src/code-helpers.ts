@@ -149,8 +149,10 @@ export function conditional(condition:CodeText<boolean>, statement:CodeText<any>
 }
 
 export function param<T>(param:T):CodeText<T> {
-    if (typeof param === 'string' || typeof param === 'number') {
+    if (typeof param === 'string' || typeof param === 'number' || typeof param === 'boolean' || param === null) {
         return [JSON.stringify(param)];
+    } else if (param === void 0) {
+        return undef as any;
     }
     return [[param]];
 }
