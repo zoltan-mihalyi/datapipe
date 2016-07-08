@@ -806,6 +806,10 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             setResult(array())
         ), ResultCreation.NEW_OBJECT);
     }
+    
+    values():DataPipe<R,T>{
+        return this.toIterable().map<T>();
+    }
 
     mapObject<O>(iteratee?:Iteratee<T,O>, context?:any):DataPipe<R,O> {
         return this.mapObjectLike<O>(assign(current, access(toAccessible(iteratee), context)));
