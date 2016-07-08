@@ -19,6 +19,7 @@ interface Loop {
     reversed?:boolean;
     rename?:boolean;
     range?:LoopRange;
+    includeParent?:boolean;
 }
 
 interface Ret<T> {

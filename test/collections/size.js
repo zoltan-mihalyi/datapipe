@@ -31,4 +31,12 @@ describe('size tests', function() {
             .toString()
         ).not.toContain('<');
     });
+
+    it('size should not evaluate the values of the object', function() {
+        expect(u()
+            .size()
+            .fn()
+            .toString()
+        ).not.toContain('[');
+    });
 });

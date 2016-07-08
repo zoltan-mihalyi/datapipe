@@ -53,6 +53,7 @@ abstract class LoopBlock implements CodeBlock {
     protected keyIndex:string = keyIndexName;
     protected createdArray:boolean = false;
     protected lengthDirty:boolean = false; //todo same as indexDirty?
+    protected includeParent = null;
     private indexDeclarations:CodeText<any>[] = [];
     private lastMergeEnd = true;
     private rename = false;
@@ -60,6 +61,9 @@ abstract class LoopBlock implements CodeBlock {
     put(loop:Loop):void {
         this.rename = this.rename || loop.rename;
         this.lastMergeEnd = loop.mergeEnd;
+        if (this.includeParent === null) {
+            this.includeParent = !!loop.includeParent;
+        }
         var text:CodeText<any> = this.replaceIndexes(loop.text);
 
         this.lengthDirty = this.lengthDirty || changesLength(text);
@@ -201,7 +205,7 @@ class MapLoopBlock extends LoopBlock { //todo reversed?
     protected wrapLoop(init:CodeText<any>, input:CodeText<any>, block:CodeText<any>):CodeText<void> {
         return seq([
             init,
-            itin(input, block)
+            itin(input, block, this.includeParent)
         ]);
     }
 

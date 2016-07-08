@@ -59,8 +59,7 @@ import {
     iter,
     divide,
     toInt,
-    isObjectConditional,
-    itin
+    isObjectConditional
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
@@ -790,24 +789,10 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     allKeys():DataPipe<R,string> {
-        var keys = named<string[]>('keys');
-        return this.subPipe<string>(CollectionType.ARRAY, isObjectConditional(
-            this.type,  
-            result,
-            seq([
-                declare(keys, array()),
-                itin(
-                    result,
-                    call(prop<any>(keys, 'push'), [index]),
-                    true
-                ),
-                setResult(keys)
-            ]),
-            setResult(array())
-        ), ResultCreation.NEW_OBJECT);
+        return this.toIterable().mapLike<string>(assign(current, index), true);
     }
-    
-    values():DataPipe<R,T>{
+
+    values():DataPipe<R,T> {
         return this.toIterable().map<T>();
     }
 
@@ -960,7 +945,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT) as DataPipeResult<R, any>;
     }
 
-    private mapLike<O>(text:CodeText<any>):DataPipe<R,O> {
+    private mapLike<O>(text:CodeText<any>, includeParent?:boolean):DataPipe<R,O> {
         return this.subPipe<O>(CollectionType.ARRAY, {
             createCode: (ctx:Context, needs:Needs)=> {
                 if (needs.size) {
@@ -973,7 +958,8 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
                     after: filterMapAfter,
                     text: text,
                     mergeStart: true,
-                    mergeEnd: true
+                    mergeEnd: true,
+                    includeParent: includeParent
                 };
 
                 optimizeMap(loop, ctx);

@@ -221,6 +221,9 @@ export function ternary<T>(condition:CodeText<boolean>, trueExpr:CodeText<T>, fa
 }
 
 export function declare<T>(variable:CodeText<T>, initial:CodeText<T>):CodeText<void> {
+    if (!initial) {
+        return [`var ${variable[0]};`];
+    }
     return [`var ${variable[0]}=`, ...initial, ';'];
 }
 
@@ -446,9 +449,9 @@ function substitute(codeText:CodeText<any>, find:string, replace:CodeText<any>) 
     return resultCodeText;
 }
 
-export function itin(object:CodeText<{[index:string]:any}>, block:CodeText<any>, includeOwn?:boolean):CodeText<void> {
+export function itin(object:CodeText<{[index:string]:any}>, block:CodeText<any>, includeParent?:boolean):CodeText<void> {
     block = ensureCurrentInitialized(object, block);
-    if (!includeOwn) {
+    if (!includeParent) {
         block = conditional(
             call(param(Object.prototype.hasOwnProperty), [index], object),
             block
@@ -460,7 +463,12 @@ export function itin(object:CodeText<{[index:string]:any}>, block:CodeText<any>,
 
 function ensureCurrentInitialized(collection:CodeText<any>, codeText:CodeText<any>, level?:number):CodeText<any> {
     if (typeof level !== 'number' && usesCurrent(codeText)) {
-        return seq([declare(current, prop(collection, index)), codeText]);
+        var initial:CodeText<any> = null;
+        if (!initialValueIsUnused(codeText, current)) {
+            initial = prop(collection, index);
+        }
+
+        return seq([declare(current, initial), codeText]);
     }
     return codeText;
 }
@@ -480,6 +488,31 @@ export function rename(orig:CodeText<any>, level:number) {
 
 function usesCurrent(text:CodeText<any>):boolean {
     return codeTextContains(text, current);
+}
+
+function initialValueIsUnused(text:CodeText<any>, variable:CodeText<any>) {
+    var name = variable[0];
+    for (var i = 0; i < text.length; i++) {
+        var fragment = text[i];
+        if (fragment === 'if(' || fragment === '?') { //we cannot be sure that the variable is unused in all branches
+            return false;
+        }
+        if (fragment === name) {
+            if (text[i + 1] === '=') {
+                for (var j = i + 2; j < text.length; j++) {
+                    var fr = text[j];
+                    if (fr === name) {
+                        return false;
+                    }
+                    if (fr === ';') {
+                        return true;
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+    }
 }
 
 export function codeTextContains(text:CodeText<any>, part:CodeText<any>):boolean {
