@@ -782,6 +782,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     keys():DataPipe<R,string> {
         return this.subPipe<string>(CollectionType.ARRAY, isObjectConditional(
+            this.type,
             result,
             setResult(call(param(Object.keys), [result])),
             setResult(array())
@@ -791,6 +792,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     allKeys():DataPipe<R,string> {
         var keys = named<string[]>('keys');
         return this.subPipe<string>(CollectionType.ARRAY, isObjectConditional(
+            this.type,  
             result,
             seq([
                 declare(keys, array()),
@@ -827,8 +829,9 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             }
         }
 
-        return this.subPipe<T>(CollectionType.MAP, seq([ //todo simplify with object results
+        return this.subPipe<T>(CollectionType.MAP, seq([
             isObjectConditional(
+                this.type,
                 result,
                 setResult(callParam(Object.create, null, [result])),
                 setResult(obj())
@@ -850,6 +853,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     private toIterable():DataPipe<R,T> {
         if (this.type === CollectionType.UNKNOWN) {
             return this.subPipe<T>(CollectionType.MAP, isObjectConditional(
+                this.type,
                 result,
                 empty,
                 setResult(obj())

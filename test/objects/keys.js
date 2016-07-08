@@ -72,4 +72,36 @@ describe('keys tests', function() {
             .process('abc')
         ).toEqual([]);
     });
+
+    it('if result is array or object, should avoid isObject check', function() {
+        expect(u()
+            .keys()
+            .fn()
+            .toString()
+        ).toContain('object');
+
+        expect(u('array')
+            .keys()
+            .fn()
+            .toString()
+        ).not.toContain('object');
+
+        expect(u('object')
+            .keys()
+            .fn()
+            .toString()
+        ).not.toContain('object');
+    });
+
+    it('if result is array or object, keys should work as well', function() {
+        expect(u('object')
+            .keys()
+            .process({a: 1, b: null, c: void 0})
+        ).toEqual(['a', 'b', 'c']);
+
+        expect(u('array')
+            .keys()
+            .process([1, 2, 3])
+        ).toEqual(['0', '1', '2']);
+    })
 });

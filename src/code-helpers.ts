@@ -1,3 +1,4 @@
+import {CollectionType} from "./common";
 var push = Array.prototype.push;
 
 export type Operator<P,R> = (a:CodeText<P>, b:CodeText<P>) => CodeText<R>;
@@ -254,8 +255,11 @@ export function type(text:CodeText<any>):CodeText<string> {
     return ['typeof ', ...text];
 }
 
-export function isObjectConditional(object:CodeText<any>, statement:CodeText<any>, elseStatement:CodeText<any>):CodeText<void> {
+export function isObjectConditional(collectionType:CollectionType, object:CodeText<any>, statement:CodeText<any>, elseStatement:CodeText<any>):CodeText<void> {
     var typeVar = named<string>('type');
+    if (collectionType !== CollectionType.UNKNOWN) {
+        return statement;
+    }
     return seq([
         declare(typeVar, type(object)),
         conditional(
