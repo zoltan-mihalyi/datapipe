@@ -83,6 +83,7 @@ interface IndexOfLikeParams {
     reversed?:boolean;
     isPredicate?:boolean;
     context?:any;
+    defaultValue?:CodeText<any>;
 }
 
 type Primitive = string|number|boolean|void;
@@ -746,7 +747,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     indexOf(item:any, sorted?:boolean):DataPipeResult<R,number> {
         if (!sorted) {
-            return this.indexOfLike({item: item});
+            return this.indexOfLike<number>({item: item});
         }
 
         return this.sortedIndexLike(item, true);
@@ -754,7 +755,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     lastIndexOf(item:any, fromIndex?:number):DataPipeResult<R,number> {
         var target:this = fromIndex ? this.first(fromIndex) as any : this;
-        return target.indexOfLike({item: item, reversed: true});
+        return target.indexOfLike<number>({item: item, reversed: true});
     }
 
     sortedIndex(item:any, iteratee?:Iteratee<T,string|number>, context?:any):DataPipeResult<R,number> {
@@ -764,11 +765,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     findIndex(predicate?:Predicate<T>, context?:any):DataPipeResult<R,number> {
         return this
             .subPipe(CollectionType.ARRAY, empty, ResultCreation.USES_PREVIOUS) //to use result as an array
-            .indexOfLike({item: predicate, isPredicate: true, context});
+            .indexOfLike<number>({item: predicate, isPredicate: true, context});
     }
 
     findLastIndex(predicate?:Predicate<T>, context?:any):DataPipeResult<R,number> {
-        return this.indexOfLike({item: predicate, reversed: true, isPredicate: true, context});
+        return this.indexOfLike<number>({item: predicate, reversed: true, isPredicate: true, context});
     }
 
     range(start?:number, stop?:number, step?:number):DataPipe<R,number> {
@@ -836,6 +837,15 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             ),
             seq(propAssignments)
         ]), ResultCreation.NEW_OBJECT);
+    }
+
+    findKey(predicate?:Predicate<T>, context?:any):DataPipeResult<R,string> {
+        return this.toIterable().indexOfLike<string>({
+            item: predicate,
+            isPredicate: true,
+            context: context,
+            defaultValue: undef
+        });
     }
 
     abstract process(data:R[]):T[];
@@ -1016,14 +1026,14 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT);
     }
 
-    private indexOfLike(params:IndexOfLikeParams):DataPipeResult<R,number> {
+    private indexOfLike<O extends number|string>(params:IndexOfLikeParams):DataPipeResult<R,O> {
         var condition:CodeText<boolean>;
         if (params.isPredicate) {
             condition = access(toAccessible(params.item), params.context)
         } else {
             condition = eq(current, param(params.item));
         }
-        return this.reduceLike(CollectionType.UNKNOWN, setResult(literal(-1)), conditional(
+        return this.reduceLike(CollectionType.UNKNOWN, setResult(params.defaultValue || literal(-1)), conditional(
             condition,
             seq([
                 setResult(index),
