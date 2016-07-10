@@ -78,6 +78,13 @@ interface DataPipeResult<R,T> {
     compile():DataPipeResult<R,T>;
 }
 
+interface IndexOfLikeParams {
+    item:any;
+    reversed?:boolean;
+    isPredicate?:boolean;
+    context?:any;
+}
+
 type Primitive = string|number|boolean|void;
 
 type Provider<T> = {():T}|Primitive&T;
@@ -739,7 +746,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     indexOf(item:any, sorted?:boolean):DataPipeResult<R,number> {
         if (!sorted) {
-            return this.indexOfLike(item, false);
+            return this.indexOfLike({item: item});
         }
 
         return this.sortedIndexLike(item, true);
@@ -747,7 +754,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     lastIndexOf(item:any, fromIndex?:number):DataPipeResult<R,number> {
         var target:this = fromIndex ? this.first(fromIndex) as any : this;
-        return target.indexOfLike(item, true);
+        return target.indexOfLike({item: item, reversed: true});
     }
 
     sortedIndex(item:any, iteratee?:Iteratee<T,string|number>, context?:any):DataPipeResult<R,number> {
@@ -757,11 +764,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     findIndex(predicate?:Predicate<T>, context?:any):DataPipeResult<R,number> {
         return this
             .subPipe(CollectionType.ARRAY, empty, ResultCreation.USES_PREVIOUS) //to use result as an array
-            .indexOfLike(predicate, false, true, context);
+            .indexOfLike({item: predicate, isPredicate: true, context});
     }
 
     findLastIndex(predicate?:Predicate<T>, context?:any):DataPipeResult<R,number> {
-        return this.indexOfLike(predicate, true, true, context);
+        return this.indexOfLike({item: predicate, reversed: true, isPredicate: true, context});
     }
 
     range(start?:number, stop?:number, step?:number):DataPipe<R,number> {
@@ -1009,15 +1016,20 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.NEW_OBJECT);
     }
 
-    private indexOfLike(item:any, reversed:boolean, predicate?:boolean, context?:any):DataPipeResult<R,number> { //todo rearrange properties
-        var condition = predicate ? access(toAccessible(item), context) : eq(current, param(item));
+    private indexOfLike(params:IndexOfLikeParams):DataPipeResult<R,number> {
+        var condition:CodeText<boolean>;
+        if (params.isPredicate) {
+            condition = access(toAccessible(params.item), params.context)
+        } else {
+            condition = eq(current, param(params.item));
+        }
         return this.reduceLike(CollectionType.UNKNOWN, setResult(literal(-1)), conditional(
             condition,
             seq([
                 setResult(index),
                 br
             ])
-        ), reversed) as any;
+        ), params.reversed) as any;
     }
 
     private sortedIndexLike(item:any, exactMatch:boolean, iteratee?:Iteratee<T,string|number>, context?:any):DataPipeResult<R,number> {
