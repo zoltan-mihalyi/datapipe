@@ -755,7 +755,9 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     findIndex(predicate?:Predicate<T>, context?:any):DataPipeResult<R,number> {
-        return this.indexOfLike(predicate, false, true, context);
+        return this
+            .subPipe(CollectionType.ARRAY, empty, ResultCreation.USES_PREVIOUS) //to use result as an array
+            .indexOfLike(predicate, false, true, context);
     }
 
     findLastIndex(predicate?:Predicate<T>, context?:any):DataPipeResult<R,number> {

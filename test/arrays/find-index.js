@@ -45,15 +45,23 @@ describe('findIndex tests', function() {
     it('findIndex with object', function() {
         expect(u()
             .findIndex(function(x) {
-                return x === 3;
+                return x === 2;
             })
             .process({
                 'a': 1,
                 'b': 2,
-                'c': 3,
-                'd': 4
+                'c': 3
             })
-        ).toBe('c');
+        ).toBe(-1);
+    });
+
+    it('findIndex with string', function() {
+        expect(u()
+            .findIndex(function(x) {
+                return x === 'b';
+            })
+            .process('abc')
+        ).toBe(1);
     });
 
     it('findIndex without parameter', function() {
