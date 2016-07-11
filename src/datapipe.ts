@@ -60,7 +60,8 @@ import {
     divide,
     toInt,
     isObjectConditional,
-    neql
+    neql,
+    itin
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
@@ -855,6 +856,44 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     extendOwn(...sources:any[]):DataPipe<R,T> {
         return this.extendLike(sources, false);
+    }
+
+    pick(predicate:(prop?:string)=>boolean, context?:any):DataPipe<R,T>
+    pick(...properties:string[]):DataPipe<R,T>
+    pick(predicate:string|((prop?:string)=>boolean), context?:any):DataPipe<R,T> {
+        var dataOld = named<{[index:string]:any}>('dataOld'); //todo make it common
+
+        var statements:CodeText<void>[] = [];
+
+        if (typeof predicate === 'function') {
+            statements.push(itin( //todo create filterMap step which can be merged
+                dataOld,
+                seq([
+                    declare(current, prop(dataOld, index)),
+                    conditional(
+                        not(callParam(predicate, context)),
+                        cont,
+                        assign(prop(result, index), current)
+                    )
+                ])
+            ));
+        } else {
+            let properties:string[] = [];
+            flattenTo(arguments, properties);
+            for (var i = 0; i < properties.length; i++) {
+                var property = properties[i] + '';
+                statements.push(assign(prop(result, property), prop(dataOld, property)));
+            }
+        }
+
+        return this.subPipe<T>(CollectionType.MAP, seq([
+            declare(dataOld, result),
+            assign(result, obj()),
+            conditional(
+                neql(dataOld, nullValue),
+                seq(statements)
+            )
+        ]), ResultCreation.NEW_OBJECT);
     }
 
     abstract process(data:R[]):T[];
