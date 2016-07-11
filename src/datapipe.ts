@@ -850,25 +850,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     extend(...sources:any[]):DataPipe<R,T> {
-        var merged = {};
-        for (var i = 0; i < sources.length; i++) {
-            var source = sources[i];
-            for (var key in source) {
-                //noinspection JSUnfilteredForInLoop
-                merged[key] = source[key];
-            }
-        }
-        var statements:CodeText<void>[] = [];
-        for (var key in merged) {
-            /* istanbul ignore else  */
-            if (merged.hasOwnProperty(key)) {
-                statements.push(assign(prop(result, key), param(merged[key])));
-            }
-        }
-        return this.subPipe<T>(CollectionType.MAP, conditional(
-            neql(result, nullValue),
-            seq(statements)
-        ), ResultCreation.USES_PREVIOUS);
+        return this.extendLike(sources, true);
+    }
+
+    extendOwn(...sources:any[]):DataPipe<R,T> {
+        return this.extendLike(sources, false);
     }
 
     abstract process(data:R[]):T[];
@@ -1104,6 +1090,29 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             extractResult
         ]);
         return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
+    }
+
+    private extendLike(sources:any[], includeOwn:boolean) {
+        var merged = {};
+        for (var i = 0; i < sources.length; i++) {
+            var source = sources[i];
+            for (var key in source) {
+                if (source.hasOwnProperty(key) || includeOwn) {
+                    merged[key] = source[key];
+                }
+            }
+        }
+        var statements:CodeText<void>[] = [];
+        for (var key in merged) {
+            /* istanbul ignore else  */
+            if (merged.hasOwnProperty(key)) {
+                statements.push(assign(prop(result, key), param(merged[key])));
+            }
+        }
+        return this.subPipe<T>(CollectionType.MAP, conditional(
+            neql(result, nullValue),
+            seq(statements)
+        ), ResultCreation.USES_PREVIOUS);
     }
 
     private subPipe<X>(type:CollectionType, code:DynamicCode, resultCreation:ResultCreation, np?:NeedsProvider):DataPipe<R,X> {
