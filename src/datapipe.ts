@@ -59,7 +59,8 @@ import {
     iter,
     divide,
     toInt,
-    isObjectConditional
+    isObjectConditional,
+    neql
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
@@ -846,6 +847,28 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             context: context,
             defaultValue: undef
         });
+    }
+
+    extend(...sources:any[]):DataPipe<R,T> {
+        var merged = {};
+        for (var i = 0; i < sources.length; i++) {
+            var source = sources[i];
+            for (var key in source) {
+                //noinspection JSUnfilteredForInLoop
+                merged[key] = source[key];
+            }
+        }
+        var statements:CodeText<void>[] = [];
+        for (var key in merged) {
+            /* istanbul ignore else  */
+            if (merged.hasOwnProperty(key)) {
+                statements.push(assign(prop(result, key), param(merged[key])));
+            }
+        }
+        return this.subPipe<T>(CollectionType.MAP, conditional(
+            neql(result, nullValue),
+            seq(statements)
+        ), ResultCreation.USES_PREVIOUS);
     }
 
     abstract process(data:R[]):T[];

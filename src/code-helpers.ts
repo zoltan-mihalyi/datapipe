@@ -36,6 +36,7 @@ function suffixOperator<I,O>(suffix):(text:CodeText<I>)=>CodeText<O> {
 
 export var eql = operator<any,boolean>('==');
 export var eq = operator<any,boolean>('===');
+export var neql = operator<any,boolean>('!=');
 export var neq = operator<any,boolean>('!==');
 export var lt = operator<number,boolean>('<');
 export var gt = operator<number, boolean>('>');
