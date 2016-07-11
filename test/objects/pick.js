@@ -22,6 +22,13 @@ describe('pick tests', function() {
         ).toEqual({});
     });
 
+    it('pick from primitive', function() {
+        expect(u()
+            .pick('toString')
+            .process(1)
+        ).toEqual({});
+    });
+
     it('pick with function', function() {
         expect(u()
             .pick(function(value, key) {
