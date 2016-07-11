@@ -1094,16 +1094,19 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     private extendLike(sources:any[], includeOwn:boolean) {
         var merged = {};
-        for (var i = 0; i < sources.length; i++) {
-            var source = sources[i];
-            for (var key in source) {
-                if (source.hasOwnProperty(key) || includeOwn) {
-                    merged[key] = source[key];
+        for (let i = 0; i < sources.length; i++) {
+            let source = sources[i];
+            let type = typeof source;
+            if (type === 'object' || type === 'function') {
+                for (let key in source) {
+                    if (source.hasOwnProperty(key) || includeOwn) {
+                        merged[key] = source[key];
+                    }
                 }
             }
         }
         var statements:CodeText<void>[] = [];
-        for (var key in merged) {
+        for (let key in merged) {
             /* istanbul ignore else  */
             if (merged.hasOwnProperty(key)) {
                 statements.push(assign(prop(result, key), param(merged[key])));

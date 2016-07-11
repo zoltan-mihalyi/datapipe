@@ -56,4 +56,22 @@ describe('extend tests', function() {
             .process(42)
         ).toBe(42);
     });
+
+    it('extend with string source', function() {
+        expect(u()
+            .extend('abc')
+            .process({})
+        ).toEqual({});
+    });
+
+    it('extend with function source', function() {
+        function fn() {
+        }
+
+        fn.x = 1;
+        expect(u()
+            .extend(fn)
+            .process({})
+        ).toEqual({x: 1});
+    });
 });
