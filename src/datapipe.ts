@@ -871,6 +871,10 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.pickLike(arguments, true);
     }
 
+    defaults(...defaults:any[]):DataPipe<R,T> {
+        return this.extendLike(defaults, true, true);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
@@ -1106,15 +1110,17 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
     }
 
-    private extendLike(sources:any[], includeOwn:boolean) {
+    private extendLike(sources:any[], includeParent:boolean, undefinedOnly?:boolean) {
         var merged = {};
         for (let i = 0; i < sources.length; i++) {
             let source = sources[i];
             let type = typeof source;
             if (type === 'object' || type === 'function') {
                 for (let key in source) {
-                    if (source.hasOwnProperty(key) || includeOwn) {
-                        merged[key] = source[key];
+                    if (source.hasOwnProperty(key) || includeParent) {
+                        if (!undefinedOnly || merged[key] === void 0) {
+                            merged[key] = source[key];
+                        }
                     }
                 }
             }
@@ -1123,7 +1129,14 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         for (let key in merged) {
             /* istanbul ignore else  */
             if (merged.hasOwnProperty(key)) {
-                statements.push(assign(prop(result, key), param(merged[key])));
+                var assignment = assign(prop(result, key), param(merged[key]));
+                var statement:CodeText<void>;
+                if (undefinedOnly) {
+                    statement = conditional(eq(prop(result, key), undef), assignment);
+                } else {
+                    statement = assignment;
+                }
+                statements.push(statement);
             }
         }
         return this.subPipe<T>(CollectionType.MAP, conditional(
