@@ -67,7 +67,8 @@ import {
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
 
-var isArray = Array.isArray;
+const isArray = Array.isArray;
+const hasOwnProperty = Object.prototype.hasOwnProperty; //todo use everywhere
 
 const filterMapBefore = setResult(array());
 const filterMapAfter = call(prop<()=>any>(result, 'push'), [current]);
@@ -906,6 +907,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     tap(interceptor:(t?:T)=>any):DataPipe<R,T> {
         var code = statement(callParam(interceptor, null, [result]));
         return this.subPipe<T>(this.type, code, ResultCreation.USES_PREVIOUS);
+    }
+
+    has(property:string):DataPipeResult<R,boolean> {
+        var value = and(neql(result, nullValue), call(param(hasOwnProperty), [param(property)], result));
+        return this.subPipe(CollectionType.UNKNOWN, setResult(value), ResultCreation.NEW_OBJECT) as any;
     }
 
     abstract process(data:R[]):T[];
