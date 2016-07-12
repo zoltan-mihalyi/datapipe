@@ -62,13 +62,13 @@ import {
     isObjectConditional,
     neql,
     itin,
-    or
+    or,
+    hasOwnProperty
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
 
 const isArray = Array.isArray;
-const hasOwnProperty = Object.prototype.hasOwnProperty; //todo use everywhere
 
 const filterMapBefore = setResult(array());
 const filterMapAfter = call(prop<()=>any>(result, 'push'), [current]);
@@ -826,7 +826,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         var propAssignments:CodeText<void>[] = [];
         if (props) {
             for (var i in props) {
-                if (props.hasOwnProperty(i)) {
+                if (hasOwnProperty.call(props, i)) {
                     propAssignments.push(assign(prop(result, i), param(props[i])));
                 }
             }
@@ -1152,11 +1152,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     private extendLike(sources:any[], includeParent:boolean, undefinedOnly?:boolean) {
         var merged = {};
         for (let i = 0; i < sources.length; i++) {
-            let source = sources[i];
+            var source:Object = sources[i];
             let type = typeof source;
             if (type === 'object' || type === 'function') {
                 for (let key in source) {
-                    if (source.hasOwnProperty(key) || includeParent) {
+                    if (hasOwnProperty.call(source, key) || includeParent) {
                         if (!undefinedOnly || merged[key] === void 0) {
                             merged[key] = source[key];
                         }
@@ -1167,7 +1167,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         var statements:CodeText<void>[] = [];
         for (let key in merged) {
             /* istanbul ignore else  */
-            if (merged.hasOwnProperty(key)) {
+            if (hasOwnProperty.call(merged, key)) {
                 var assignment = assign(prop(result, key), param(merged[key]));
                 var statement:CodeText<void>;
                 if (undefinedOnly) {
@@ -1265,7 +1265,7 @@ function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
     var statements:CodeText<void|Ret<boolean>>[] = [];
     if (typeof properties !== 'string') {
         for (let i in properties) {
-            if (properties.hasOwnProperty(i)) {
+            if (hasOwnProperty.call(properties, i)) {
                 statements.push(conditional(
                     neq(
                         prop(current, i),

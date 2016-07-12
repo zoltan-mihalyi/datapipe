@@ -72,6 +72,8 @@ export var empty:CodeText<void> = [];
 export var itarMapBefore = named('itarMapBefore');
 export var itarMapAfter = named('itarMapAfter');
 
+export var hasOwnProperty = Object.prototype.hasOwnProperty;
+
 export function paramName(index:number) {
     return '_p' + index;
 }
@@ -454,7 +456,7 @@ export function itin(object:CodeText<{[index:string]:any}>, block:CodeText<any>,
     block = ensureCurrentInitialized(object, block);
     if (!includeParent) {
         block = conditional(
-            call(param(Object.prototype.hasOwnProperty), [index], object),
+            call(param(hasOwnProperty), [index], object),
             block
         );
     }
