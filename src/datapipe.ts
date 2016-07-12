@@ -903,6 +903,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         }
     }
 
+    tap(interceptor:(t?:T)=>any):DataPipe<R,T> {
+        var code = statement(callParam(interceptor, null, [result]));
+        return this.subPipe<T>(this.type, code, ResultCreation.USES_PREVIOUS);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
