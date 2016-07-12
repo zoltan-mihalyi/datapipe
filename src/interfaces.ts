@@ -59,6 +59,7 @@ type Code = Loop | CodeText<any>;
 
 type CodeProvider = {
     createCode:(ctx:Context, needs:Needs) => Code;
+    primitiveCode?:CodeText<any>;
     handlesSize:boolean;
 };
 

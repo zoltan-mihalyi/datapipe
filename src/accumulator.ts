@@ -1,11 +1,24 @@
 ///<reference path="interfaces.ts"/>
 import {CollectionType, isProvider} from "./common";
-import {codeTextToString, result, seq, prop, conditional, and, type, codeTextEquals, eq, literal} from "./code-helpers";
+import {
+    codeTextToString,
+    result,
+    seq,
+    prop,
+    conditional,
+    and,
+    type,
+    codeTextEquals,
+    eq,
+    literal,
+    isObjectConditional
+} from "./code-helpers";
 import {codeBlockConstructor} from "./code-blocks";
 
 class MultiCode {
     private arrayBlock:CodeBlock[] = [];
     private mapBlock:CodeBlock[] = [];
+    private primitiveCode:CodeText<any>[] = [];
     private empty:boolean = true;
 
     constructor(private type:CollectionType) {
@@ -14,6 +27,9 @@ class MultiCode {
     put(dynamicCode:DynamicCode, needs:Needs, parentType:CollectionType) {
         this.putToBlock(dynamicCode, needs, parentType, true);
         this.putToBlock(dynamicCode, needs, parentType, false);
+        if (isProvider(dynamicCode) && dynamicCode.primitiveCode) {
+            this.primitiveCode.push(dynamicCode.primitiveCode);
+        }
         this.empty = false;
     }
 
@@ -43,6 +59,14 @@ class MultiCode {
                         mapText
                     ),
                 ]);
+            }
+            if (this.primitiveCode.length > 0) {
+                loops = isObjectConditional(
+                    this.type,
+                    result,
+                    loops,
+                    seq(this.primitiveCode)
+                )
             }
         }
 

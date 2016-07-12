@@ -875,6 +875,34 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.extendLike(defaults, true, true);
     }
 
+    clone():DataPipe<R,T> {
+        if (this.hasNewResult()) {
+            return this;
+        }
+        switch (this.type) {
+            case CollectionType.ARRAY:
+                return this.toArray();
+            case CollectionType.MAP:
+                return this.mapObject<T>();
+            case CollectionType.UNKNOWN:
+                return this.subPipe<T>(CollectionType.UNKNOWN, {
+                    createCode: (ctx:Context)=> {
+                        return {
+                            rename: true,
+                            before: ctx.array ? itarMapBefore : setResult(obj()),
+                            after: ctx.array ? itarMapAfter : assign(prop(result, index), current),
+                            text: empty,
+                            mergeStart: true,
+                            mergeEnd: true,
+                            includeParent: true
+                        };
+                    },
+                    primitiveCode: empty,
+                    handlesSize: false
+                }, ResultCreation.NEW_OBJECT);
+        }
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
