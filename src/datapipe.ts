@@ -63,7 +63,8 @@ import {
     neql,
     itin,
     or,
-    hasOwnProperty
+    hasOwnProperty,
+    type
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
@@ -72,6 +73,9 @@ const isArray = Array.isArray;
 
 const filterMapBefore = setResult(array());
 const filterMapAfter = call(prop<()=>any>(result, 'push'), [current]);
+
+const filterMapObjectBefore = setResult(obj());
+const filterMapObjectAfter = assign(prop(result, index), current);
 
 const NEEDS_SAME:NeedsProvider = (needs:Needs)=> {
     return needs;
@@ -843,6 +847,23 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         ]), ResultCreation.NEW_OBJECT);
     }
 
+    functions():DataPipe<R,string> { //todo find similar
+        return this.toIterable()
+            .subPipe<T>(CollectionType.MAP, {
+                rename: true,
+                before: filterMapObjectBefore,
+                after: filterMapObjectAfter,
+                text: conditional(
+                    neq(type(current), literal('function')),
+                    cont
+                ),
+                mergeStart: true,
+                mergeEnd: true,
+                includeParent: true
+            }, ResultCreation.NEW_OBJECT)
+            .mapLike<string>(assign(current, index), true);
+    }
+
     findKey(predicate?:Predicate<T>, context?:any):DataPipeResult<R,string> {
         return this.toIterable().indexOfLike<string>({
             item: predicate,
@@ -890,8 +911,8 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
                     createCode: (ctx:Context)=> {
                         return {
                             rename: true,
-                            before: ctx.array ? itarMapBefore : setResult(obj()),
-                            after: ctx.array ? itarMapAfter : assign(prop(result, index), current),
+                            before: ctx.array ? itarMapBefore : filterMapObjectBefore,
+                            after: ctx.array ? itarMapAfter : filterMapObjectAfter,
                             text: empty,
                             mergeStart: true,
                             mergeEnd: true,
@@ -1058,8 +1079,8 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     private mapObjectLike<O>(text:CodeText<any>, after?:CodeText<any>):DataPipe<R,O> {
         return this.toIterable().subPipe<O>(CollectionType.MAP, {
             rename: true,
-            before: setResult(obj()),
-            after: after || assign(prop(result, index), current),
+            before: filterMapObjectBefore,
+            after: after || filterMapObjectAfter,
             text: text,
             mergeStart: true,
             mergeEnd: true
@@ -1203,7 +1224,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
                     conditional(
                         callPredicate,
                         cont,
-                        assign(prop(result, index), current)
+                        filterMapObjectAfter
                     )
                 ])
             ));

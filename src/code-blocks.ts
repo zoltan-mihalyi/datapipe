@@ -76,7 +76,9 @@ abstract class LoopBlock implements CodeBlock {
 
         if (rangeChangesIndex(loop.range) || changesIndex(text)) {
             this.arrayIndex = null;
-            this.keyIndex = null; //todo only when creating array
+            if (this.isArray()) {
+                this.keyIndex = null;
+            }
         }
 
         this.rows.push(text);
