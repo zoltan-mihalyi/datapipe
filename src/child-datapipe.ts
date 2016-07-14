@@ -1,7 +1,7 @@
 ///<reference path="interfaces.ts"/>
 import DataPipe = require('./datapipe');
 import {Step, CollectionType, ResultCreation, isProvider} from "./common";
-import {setResult, prop, result, literal, empty, increment, paramName} from "./code-helpers";
+import {setResult, prop, result, literal, empty, increment, getParamNames} from "./code-helpers";
 import Accumulator = require("./accumulator");
 
 const NEEDS_ALL:NeedsProvider = () => {
@@ -96,11 +96,8 @@ class ChildDataPipe<R,T> extends DataPipe<R,T> {
         var params:any[] = accumulator.getParams();
 
         var fnBody = `return function(data){\n${codeStr}\nreturn data;\n}`;
-        var paramNames = [];
-        for (let i = 0; i < params.length; i++) {
-            paramNames.push(paramName(i));
-        }
-        return (new Function(paramNames.join(','), fnBody)).apply(null, params);
+
+        return (new Function(getParamNames(params), fnBody)).apply(null, params);
     }
 
     private processNeeds(steps:Step[]) {

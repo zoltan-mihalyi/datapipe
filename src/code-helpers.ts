@@ -97,6 +97,14 @@ export function codeTextToString(text:CodeText<any>, params:any[]):string {
     return result;
 }
 
+export function getParamNames(params:any[]):string {
+    var paramNames = [];
+    for (let i = 0; i < params.length; i++) {
+        paramNames.push(paramName(i));
+    }
+    return paramNames.join(',');
+}
+
 export function assign<T>(lhs:CodeText<T>, rhs:CodeText<T>):CodeText<void> {
     return [...lhs, '=', ...rhs, ';'];
 }

@@ -64,7 +64,8 @@ import {
     itin,
     or,
     hasOwnProperty,
-    type
+    type,
+    getParamNames
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
@@ -1287,7 +1288,6 @@ function isPrimitive(value:any) {
 }
 
 function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
-
     var statements:CodeText<void|Ret<boolean>>[] = [];
     if (typeof properties !== 'string') {
         for (let i in properties) {
@@ -1295,7 +1295,7 @@ function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
                 statements.push(conditional(
                     neq(
                         prop(current, i),
-                        prop(named<{[idx:string]:any}>('properties'), i)
+                        param(properties[i])
                     ),
                     ret(falseValue)
                 ));
@@ -1310,8 +1310,9 @@ function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
     }
     statements.push(ret(trueValue));
 
-    var fn:string = codeTextToString(ret(func(['x'], retSeq(statements))), null); //todo inline
-    return (new Function('properties', fn))(properties);
+    var params = [];
+    var fn:string = codeTextToString(ret(func(['x'], retSeq(statements))), params);
+    return (new Function(getParamNames(params), fn)).apply(null, params);
 }
 
 function matcher(attrs:Object):(object?:any)=>boolean {
