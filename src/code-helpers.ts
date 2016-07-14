@@ -492,6 +492,10 @@ export function par<T>(text:CodeText<T>):CodeText<T> {
     return ['(', ...text, ')'];
 }
 
+export function isIn<T>(property:CodeText<string>, text:CodeText<T>):CodeText<T> {
+    return [...property, ' in ', ...text];
+}
+
 export function rename(orig:CodeText<any>, level:number) {
     return named<number>(orig[0] + '' + level);
 }

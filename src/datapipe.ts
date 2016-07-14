@@ -65,7 +65,8 @@ import {
     or,
     hasOwnProperty,
     type,
-    getParamNames
+    getParamNames,
+    isIn
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
 import ChildDataPipe = require("./child-datapipe");
@@ -1292,11 +1293,15 @@ function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
     if (typeof properties !== 'string') {
         for (let i in properties) {
             if (hasOwnProperty.call(properties, i)) {
+                var condition = neq(
+                    prop(current, i),
+                    param(properties[i])
+                );
+                if (properties[i] === void 0) {
+                    condition = or(condition, not(par(isIn(literal(i), current))))
+                }
                 statements.push(conditional(
-                    neq(
-                        prop(current, i),
-                        param(properties[i])
-                    ),
+                    condition,
                     ret(falseValue)
                 ));
             }
@@ -1326,6 +1331,7 @@ function matcher(attrs:Object):(object?:any)=>boolean {
     return function (object?:any):boolean {
         object = Object(object);
         for (var key in attrs) {
+            /* istanbul ignore else */
             if (hasOwnProperty.call(attrs, key)) {
                 if (attrs[key] !== object[key] || !(key in object)) {
                     return false;

@@ -36,6 +36,13 @@ describe('where tests', function() {
         ).toEqual([null, void 0, 'a', 1, 0, false, {x: 1}, {}]);
     });
 
+    it('where with undefined properties', function() {
+        expect(u()
+            .where({x: void 0})
+            .process([{x: 1}, {}, {x: void 0}])
+        ).toEqual([{x: void 0}]);
+    });
+
     it('Where with changing properties', function() {
         var attrs = {x: 1};
         var fn = u()
