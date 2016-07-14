@@ -947,6 +947,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.subPipe(CollectionType.UNKNOWN, setResult(fn), ResultCreation.NEW_OBJECT) as any;
     }
 
+    propertyOf():DataPipeResult<R,(s:string)=>any> {
+        var code = setResult(callParam(createPropertyOf, null, [result]));
+        return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
@@ -1351,6 +1356,17 @@ function createPropertyMatcher(key) {
     return function (obj) {
         return obj == null ? void 0 : obj[key];
     };
+}
+
+function createPropertyOf(obj) {
+    if (obj === null) {
+        return function () {
+        };
+    } else {
+        return function (key) {
+            return obj[key];
+        };
+    }
 }
 
 function optimizeMap(loop:Loop, ctx:Context):void { //todo auto
