@@ -935,6 +935,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.subPipe(CollectionType.UNKNOWN, setResult(value), ResultCreation.NEW_OBJECT) as any;
     }
 
+    matcher():DataPipeResult<R,(o:any)=>boolean> {
+        var code = setResult(callParam(matcher, null, [result]));
+        return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
@@ -1307,6 +1312,27 @@ function whereFilter(properties:Properties):IterateeFunction<any,boolean> {
 
     var fn:string = codeTextToString(ret(func(['x'], retSeq(statements))), null); //todo inline
     return (new Function('properties', fn))(properties);
+}
+
+function matcher(attrs:Object):(object?:any)=>boolean {
+    var copy = {};
+    for (var key in attrs) {
+        if (hasOwnProperty.call(attrs, key)) {
+            copy[key] = attrs[key];
+        }
+    }
+    attrs = copy;
+    return function (object?:any):boolean {
+        object = Object(object);
+        for (var key in attrs) {
+            if (hasOwnProperty.call(attrs, key)) {
+                if (attrs[key] !== object[key] || !(key in object)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
 }
 
 function optimizeMap(loop:Loop, ctx:Context):void { //todo auto
