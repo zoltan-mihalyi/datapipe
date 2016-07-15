@@ -66,9 +66,11 @@ import {
     hasOwnProperty,
     type,
     getParamNames,
-    isIn
+    isIn,
+    toStr
 } from "./code-helpers";
 import {CollectionType, Step, ResultCreation} from "./common";
+import {createIsEqualCode} from "./is-equal";
 import ChildDataPipe = require("./child-datapipe");
 
 const isArray = Array.isArray;
@@ -943,13 +945,17 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     property():DataPipeResult<R,(o:any)=>any> {
-        var fn = callParam(createPropertyMatcher, null, [add(result, cast<number>(literal('')))]);
+        var fn = callParam(createPropertyMatcher, null, [toStr(result)]);
         return this.subPipe(CollectionType.UNKNOWN, setResult(fn), ResultCreation.NEW_OBJECT) as any;
     }
 
     propertyOf():DataPipeResult<R,(s:string)=>any> {
         var code = setResult(callParam(createPropertyOf, null, [result]));
         return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
+    }
+
+    isEqual(obj:any):DataPipeResult<R,boolean> {
+        return this.subPipe(CollectionType.UNKNOWN, createIsEqualCode(obj), ResultCreation.NEW_OBJECT) as any;
     }
 
     abstract process(data:R[]):T[];

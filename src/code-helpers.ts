@@ -105,8 +105,12 @@ export function getParamNames(params:any[]):string {
     return paramNames.join(',');
 }
 
-export function assign<T>(lhs:CodeText<T>, rhs:CodeText<T>):CodeText<void> {
-    return [...lhs, '=', ...rhs, ';'];
+export function assign<T>(lhs:CodeText<T>, rhs:CodeText<T>, expression?:boolean):CodeText<void> {
+    var result = [...lhs, '=', ...rhs];
+    if (!expression) {
+        result.push(';');
+    }
+    return result;
 }
 
 export function named<T>(name:string):CodeText<T> {
@@ -114,6 +118,9 @@ export function named<T>(name:string):CodeText<T> {
 }
 
 export function literal<T extends string|number>(value:T):CodeText<T> {
+    if (value as any === Infinity) {
+        return infinity as any;
+    }
     return [JSON.stringify(value)];
 }
 
@@ -129,23 +136,12 @@ export function call<T>(fn:CodeText<(...args)=>T>, params?:CodeText<any>[], cont
     var call:string;
     if (context) {
         call = '.call';
-        params = [context].concat(params);
+        params = params ? [context].concat(params) : [context];
     } else {
         call = '';
     }
 
-    var result:CodeText<T> = [...fn, call + '('];
-    if (params) {
-        for (var i = 0; i < params.length; i++) {
-            push.apply(result, params[i]);
-            if (i < params.length - 1) {
-                result.push(',');
-            }
-        }
-    }
-    result.push(')');
-
-    return result;
+    return [...fn, call + '(', ...comma.apply(null, params), ')'];
 }
 
 function getUsedParams(fn:Function, params:CodeText<any>[]):CodeText<any>[] {
@@ -231,7 +227,7 @@ export function ternary<T>(condition:CodeText<boolean>, trueExpr:CodeText<T>, fa
     return [...condition, '?', ...trueExpr, ':', ...falseExpr];
 }
 
-export function declare<T>(variable:CodeText<T>, initial:CodeText<T>):CodeText<void> {
+export function declare<T>(variable:CodeText<T>, initial?:CodeText<T>):CodeText<void> {
     if (!initial) {
         return [`var ${variable[0]};`];
     }
@@ -267,6 +263,25 @@ export function cast<T>(text:CodeText<any>):CodeText<T> {
 
 export function type(text:CodeText<any>):CodeText<string> {
     return ['typeof ', ...text];
+}
+
+export function toStr(text:CodeText<any>):CodeText<string> {
+    return add(text, cast<number>(literal(''))) as any;
+}
+
+export function toNum(text:CodeText<any>):CodeText<string> {
+    return ['+', ...text];
+}
+
+export function comma(...expressions:CodeText<any>[]) {
+    var result:CodeText<any> = [];
+    for (var i = 0; i < expressions.length; i++) {
+        push.apply(result, expressions[i]);
+        if (i < expressions.length - 1) {
+            result.push(',');
+        }
+    }
+    return result;
 }
 
 export function isObjectConditional(collectionType:CollectionType, object:CodeText<any>, statement:CodeText<any>, elseStatement:CodeText<any>):CodeText<void> {
