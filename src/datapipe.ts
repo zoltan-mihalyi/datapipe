@@ -956,6 +956,10 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.resultPipe<boolean>(createIsEqualCode(obj), true);
     }
 
+    isMatch(properties:Properties):DataPipeResult<R,boolean> {
+        return this.resultPipe<boolean>(setResult(callParam(whereFilter(properties), null, [result])), true);
+    }
+
     abstract process(data:R[]):T[];
 
     abstract getSteps():Step[];
