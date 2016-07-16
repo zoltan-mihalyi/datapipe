@@ -138,7 +138,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
     }
 
     find(predicate?:Predicate<T>, context?:any):DataPipeResult<R,T> {
-        return this.subPipe(CollectionType.UNKNOWN, {
+        return this.resultPipe<T>({
             rename: true,
             before: setResult(undef),
             after: empty,
@@ -151,7 +151,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             ),
             mergeStart: true,
             mergeEnd: false
-        }, ResultCreation.EXISTING_OBJECT) as any;
+        }, false);
     }
 
     first(cnt?:number):DataPipe<R,T> {
@@ -528,11 +528,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     sample():DataPipeResult<R,T>;
     sample(count:number):DataPipe<R,T>;
-    sample(count?:number) { //todo code contains toArray code in array part?
+    sample(count?:number):any { //todo code contains toArray code in array part?
         if (count == null) {
             var math:CodeText<{[index:string]:()=>number}> = named<any>('Math');
             var code = setResult(prop(result, toInt(multiply(call(prop(math, 'random')), prop<number>(result, 'length')))));
-            return this.toArray().subPipe(CollectionType.UNKNOWN, code, ResultCreation.EXISTING_OBJECT) as any;
+            return this.toArray().resultPipe<T>(code, false);
         }
         return this.shuffle().first(count); //todo should be faster
     }
@@ -936,26 +936,24 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     has(property:string):DataPipeResult<R,boolean> {
         var value = and(neql(result, nullValue), call(param(hasOwnProperty), [param(property)], result));
-        return this.subPipe(CollectionType.UNKNOWN, setResult(value), ResultCreation.NEW_OBJECT) as any;
+        return this.resultPipe<any>(setResult(value), true);
     }
 
     matcher():DataPipeResult<R,(o:any)=>boolean> {
-        var code = setResult(callParam(matcher, null, [result]));
-        return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
+        return this.resultPipe<any>(setResult(callParam(matcher, null, [result])), true);
     }
 
     property():DataPipeResult<R,(o:any)=>any> {
         var fn = callParam(createPropertyMatcher, null, [toStr(result)]);
-        return this.subPipe(CollectionType.UNKNOWN, setResult(fn), ResultCreation.NEW_OBJECT) as any;
+        return this.resultPipe<any>(setResult(fn), true);
     }
 
     propertyOf():DataPipeResult<R,(s:string)=>any> {
-        var code = setResult(callParam(createPropertyOf, null, [result]));
-        return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
+        return this.resultPipe<any>(setResult(callParam(createPropertyOf, null, [result])), true);
     }
 
     isEqual(obj:any):DataPipeResult<R,boolean> {
-        return this.subPipe(CollectionType.UNKNOWN, createIsEqualCode(obj), ResultCreation.NEW_OBJECT) as any;
+        return this.resultPipe<boolean>(createIsEqualCode(obj), true);
     }
 
     abstract process(data:R[]):T[];
@@ -1058,7 +1056,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
         var initial = inverted ? falseValue : trueValue;
         var noMatch = inverted ? trueValue : falseValue;
-        return this.subPipe(CollectionType.UNKNOWN, { //todo throw error when creating subpipe from a guaranteed primitive
+        return this.resultPipe<boolean>({ //todo throw error when creating subpipe from a guaranteed primitive
             rename: true,
             before: setResult(initial),
             after: empty,
@@ -1071,7 +1069,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             ),
             mergeStart: true,
             mergeEnd: false
-        }, ResultCreation.NEW_OBJECT) as DataPipeResult<R, any>;
+        }, true);
     }
 
     private mapLike<O>(text:CodeText<any>, includeParent?:boolean):DataPipe<R,O> {
@@ -1190,7 +1188,7 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
             ])),
             extractResult
         ]);
-        return this.subPipe(CollectionType.UNKNOWN, code, ResultCreation.NEW_OBJECT) as any;
+        return this.resultPipe<number>(code, true);
     }
 
     private extendLike(sources:any[], includeParent:boolean, undefinedOnly?:boolean) {
@@ -1296,6 +1294,11 @@ abstract class DataPipe<R,T> implements DataPipeResult<R,T[]> {
 
     private subPipe<X>(type:CollectionType, code:DynamicCode, resultCreation:ResultCreation, np?:NeedsProvider):DataPipe<R,X> {
         return new DataPipe.ChildDataPipe<R,X>(type, this, code, resultCreation, np);
+    }
+
+    private resultPipe<X>(code:DynamicCode, newResult:boolean):DataPipeResult<R,X> {
+        var resultCreation = newResult ? ResultCreation.NEW_OBJECT : ResultCreation.EXISTING_OBJECT;
+        return this.subPipe(CollectionType.UNKNOWN, code, resultCreation) as any;
     }
 }
 export = DataPipe;
