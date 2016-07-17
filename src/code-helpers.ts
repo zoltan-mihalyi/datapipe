@@ -284,6 +284,10 @@ export function comma(...expressions:CodeText<any>[]) {
     return result;
 }
 
+export function isObjectType(typeVar:CodeText<string>):CodeText<boolean> {
+    return or(eq(typeVar, literal('function')), and(eq(typeVar, literal('object')), neq(result, literal(null))));
+}
+
 export function isObjectConditional(collectionType:CollectionType, object:CodeText<any>, statement:CodeText<any>, elseStatement:CodeText<any>):CodeText<void> {
     var typeVar = named<string>('type');
     if (collectionType !== CollectionType.UNKNOWN) {
@@ -292,7 +296,7 @@ export function isObjectConditional(collectionType:CollectionType, object:CodeTe
     return seq([
         declare(typeVar, type(object)),
         conditional(
-            or(eq(typeVar, literal('function')), and(eq(typeVar, literal('object')), neq(result, literal(null)))),
+            isObjectType(typeVar),
             statement,
             elseStatement
         )

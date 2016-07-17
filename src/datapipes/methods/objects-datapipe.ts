@@ -42,9 +42,10 @@ import {
     divide,
     comma,
     trueValue,
-    falseValue
+    falseValue,
+    isObjectType
 } from "../../code-helpers";
-import {ResultCreation, toAccessible, DataPipeResult, whereFilter, flattenTo} from "../datapipe-common";
+import {ResultCreation, toAccessible, DataPipeResult, whereFilter, flattenTo, isArray} from "../datapipe-common";
 import DataPipe = require("../datapipe");
 
 interface IndexOfLikeParams {
@@ -75,22 +76,22 @@ const booleanClassName = '[object Boolean]';
 const dateClassName = '[object Date]';
 const arrayClassName = '[object Array]';
 const objectClassName = '[object Object]';
+const toString = Object.prototype.toString;
 
+function isClass(obj:CodeText<any>, name:string):CodeText<boolean> {
+    return eq(call(param(toString), null, obj), literal(name));
+}
 
 function comparator(params:ComparatorParams):CodeText<boolean> {
     var obj:any = params.obj;
     var runtimeObj:CodeText<any> = params.runtimeObj;
 
-    function isClass(name):CodeText<boolean> {
-        return eq(call(param(Object.prototype.toString), null, runtimeObj), literal(name));
-    }
-
     if (obj == null) {
         return eq(runtimeObj, obj === null ? nullValue : undef);
     }
-    var objClassName = Object.prototype.toString.call(obj);
+    var objClassName = toString.call(obj);
     if (objClassName === numberClassName) {
-        var isNumberClass = isClass(numberClassName);
+        var isNumberClass = isClass(runtimeObj, numberClassName);
         if (+obj === 0) {
             return and(
                 par(or(eq(runtimeObj, literal(0)), par(and(isNumberClass, eq(toNum(runtimeObj), literal(0)))))),
@@ -105,11 +106,11 @@ function comparator(params:ComparatorParams):CodeText<boolean> {
         if (objClassName === stringClassName) {
             obj = obj + '';
         }
-        return or(eq(runtimeObj, param(obj)), par(and(isClass(objClassName), eq(toStr(runtimeObj), literal(obj + '')))));
+        return or(eq(runtimeObj, param(obj)), par(and(isClass(runtimeObj, objClassName), eq(toStr(runtimeObj), literal(obj + '')))));
     } else if (objClassName === dateClassName || objClassName === booleanClassName) {
-        return and(isClass(objClassName), eq(toNum(runtimeObj), literal(+obj)));
+        return and(isClass(runtimeObj, objClassName), eq(toNum(runtimeObj), literal(+obj)));
     } else if (objClassName === arrayClassName || objClassName === objectClassName) {
-        return and(isClass(objClassName), par(collectionComparator(params)));
+        return and(isClass(runtimeObj, objClassName), par(collectionComparator(params)));
     } else {
         return eq(runtimeObj, param(obj));
     }
@@ -419,6 +420,76 @@ abstract class ObjectsDataPipe<R,T> extends CollectionsDataPipe<R,T> {
         }, true);
     }
 
+    isArray():DataPipeResult<R,boolean> {
+        var value:CodeText<boolean>;
+        if (this.type === CollectionType.ARRAY) {
+            value = trueValue;
+        } else {
+            value = call(param(isArray), [result]);
+        }
+        return this.resultPipe<boolean>(setResult(value), true);
+    }
+
+    isObject():DataPipeResult<R,boolean> {
+        var value:CodeText<boolean>;
+        if (this.type === CollectionType.UNKNOWN) {
+            value = isObjectType(type(result));
+        } else {
+            value = trueValue;
+        }
+        return this.resultPipe<boolean>(setResult(value), true);
+    }
+
+    isArguments():DataPipeResult<R,boolean> { //todo use hint in every is... method
+        return this.is('[object Arguments]');
+    }
+
+    isFunction():DataPipeResult<R,boolean> {
+        return this.resultPipe<boolean>(setResult(eq(type(result), literal('function'))), true);
+    }
+
+    isString():DataPipeResult<R,boolean> {
+        return this.is(stringClassName);
+    }
+
+    isNumber():DataPipeResult<R,boolean> {
+        return this.is(numberClassName);
+    }
+
+    isFinite():DataPipeResult<R,boolean> {
+        var value = and(call(param(isFinite), [result]), not(call(param(isNaN), [call(param(parseFloat), [result])])));
+        return this.resultPipe<boolean>(setResult(value), true);
+    }
+
+    isBoolean():DataPipeResult<R,boolean> {
+        return this.is(booleanClassName);
+    }
+
+    isDate():DataPipeResult<R,boolean> {
+        return this.is(dateClassName);
+    }
+
+    isRegExp():DataPipeResult<R,boolean> {
+        return this.is(regExpClassName);
+    }
+
+    isError():DataPipeResult<R,boolean> {
+        return this.is('[object Error]');
+    }
+
+    isNaN():DataPipeResult<R,boolean> {
+        var code = setResult(and(isClass(result, numberClassName), neq(toNum(result), toNum(result))));
+        return this.resultPipe<boolean>(code, true);
+    }
+
+    isNull():DataPipeResult<R,boolean> {
+        return this.resultPipe<boolean>(setResult(eq(result, nullValue)), true);
+    }
+
+    isUndefined():DataPipeResult<R,boolean> {
+        return this.resultPipe<boolean>(setResult(eq(result, undef)), true);
+    }
+
     protected indexOfLike<O extends number|string>(params:IndexOfLikeParams):DataPipeResult<R,O> {
         var condition:CodeText<boolean>;
         if (params.isPredicate) {
@@ -557,6 +628,10 @@ abstract class ObjectsDataPipe<R,T> extends CollectionsDataPipe<R,T> {
             neql(result, nullValue),
             seq(statements)
         ), ResultCreation.USES_PREVIOUS);
+    }
+
+    private is(className:string):DataPipeResult<R,boolean> {
+        return this.resultPipe<boolean>(setResult(isClass(result, className)), true);
     }
 }
 
