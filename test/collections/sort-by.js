@@ -70,4 +70,11 @@ describe('sortBy tests', function() {
             .process({a: 2, b: 1, c: 3})
         ).toEqual([1, 2, 3]);
     });
+
+    it('shortBy with string', function() {
+        expect(u()
+            .sortBy()
+            .process('bcdafe')
+        ).toEqual(['a', 'b', 'c', 'd', 'e', 'f']);
+    });
 });

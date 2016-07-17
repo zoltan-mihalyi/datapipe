@@ -66,4 +66,21 @@ describe('sample tests', function() {
             .process({a: 1, b: 2, c: 3})
         ).toBe(2);
     });
+
+    it('sample string', function() {
+        var str = 'abcde';
+        expect(str.indexOf(u()
+            .sample()
+            .process(str))
+        ).not.toBe(-1);
+    });
+
+    it('sample items string', function() {
+        var str = 'abcde';
+        var sample = u()
+            .sample(2)
+            .process(str);
+        expect(str.indexOf(sample[0])).not.toBe(-1);
+        expect(str.indexOf(sample[1])).not.toBe(-1);
+    });
 });

@@ -42,4 +42,12 @@ describe('shuffle tests', function() {
             .sort()
         ).toEqual([1, 2, 3]);
     });
+
+    it('shuffle string', function() {
+        expect(u()
+            .shuffle()
+            .process('abcd')
+            .sort()
+        ).toEqual(['a', 'b', 'c', 'd']);
+    });
 });
