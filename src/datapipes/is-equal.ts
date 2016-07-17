@@ -22,7 +22,7 @@ import {
     named,
     result,
     seq
-} from "./code-helpers";
+} from "../code-helpers";
 
 var numberClassName = '[object Number]';
 var stringClassName = '[object String]';

@@ -1,8 +1,10 @@
-///<reference path="interfaces.ts"/>
+///<reference path="../interfaces.ts"/>
 import DataPipe = require('./datapipe');
-import {Step, CollectionType, ResultCreation, isProvider} from "./common";
-import {setResult, prop, result, literal, empty, increment, getParamNames} from "./code-helpers";
-import Accumulator = require("./accumulator");
+import {CollectionType, isProvider} from "../common";
+import {setResult, prop, result, literal, empty, increment, getParamNames} from "../code-helpers";
+import {ResultCreation, Step} from "./datapipe-common";
+import Accumulator = require("../accumulator");
+import CollectionsDataPipe = require("./methods/collections-datapipe");
 
 const NEEDS_ALL:NeedsProvider = () => {
     return {};
@@ -31,7 +33,7 @@ class ChildDataPipe<R,T> extends DataPipe<R,T> {
     private newResult:boolean;
     private needsProvider:NeedsProvider;
 
-    constructor(type:CollectionType, private parent:DataPipe<R,any>, private code:DynamicCode, resultCreation:ResultCreation, np?:NeedsProvider) {
+    constructor(type:CollectionType, private parent:CollectionsDataPipe<R,any>, private code:DynamicCode, resultCreation:ResultCreation, np?:NeedsProvider) {
         super(type);
         switch (resultCreation) {
             case ResultCreation.NEW_OBJECT:
@@ -76,6 +78,10 @@ class ChildDataPipe<R,T> extends DataPipe<R,T> {
 
     hasNewResult():boolean {
         return this.newResult;
+    }
+
+    newChild<R,T>(type, parent, code, rc, np):ChildDataPipe<R,T> {
+        return new ChildDataPipe<R,T>(type, parent, code, rc, np);
     }
 
     private createProcessor():Mapper<R,T> {

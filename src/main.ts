@@ -1,8 +1,5 @@
 import {CollectionType} from "./common";
-import DataPipe = require("./datapipe");
-import RootDataPipe = require("./root-datapipe");
-import ChildDataPipe = require("./child-datapipe");
-DataPipe.ChildDataPipe = ChildDataPipe;
+import RootDataPipe = require("./datapipes/root-datapipe");
 
 export = <T>(typeName?:string) => {
     var type:CollectionType;
