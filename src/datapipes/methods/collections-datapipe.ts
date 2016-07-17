@@ -69,6 +69,8 @@ abstract class CollectionsDataPipe<R,T> implements DataPipeResult<R,T[]> {
     constructor(public type:CollectionType) {
     }
 
+    forEach:typeof CollectionsDataPipe.prototype.each;
+
     each(callback:(t?:T)=>any, context?:any):DataPipe<R,T> {
         return this.subPipe<T>(this.type, {
             text: statement(callParam(callback, context)),
@@ -78,9 +80,14 @@ abstract class CollectionsDataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, ResultCreation.USES_PREVIOUS);
     }
 
+    collect:typeof CollectionsDataPipe.prototype.map;
+
     map<O>(iteratee?:Iteratee<T,O>, context?:any):DataPipe<R,O> { //todo is there a correlation between fields?
         return this.mapLike<O>(assign(current, access(toAccessible(iteratee), context)));
     }
+
+    inject:typeof CollectionsDataPipe.prototype.reduce;
+    foldl:typeof CollectionsDataPipe.prototype.reduce;
 
     reduce<M>(reducer:(memo:M[], t:T)=>M[], memo:Provider<M[]>):DataPipe<R,M>;
     reduce<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>):DataPipeResult<R,M>;
@@ -88,12 +95,15 @@ abstract class CollectionsDataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.reduceLikeWithProvider<M>(reducer, memo, context, false);
     }
 
+    foldr:typeof CollectionsDataPipe.prototype.reduceRight;
 
     reduceRight<M>(reducer:(memo:M[], t:T)=>M[], memo:Provider<M[]>):DataPipe<R,M>;
     reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>):DataPipeResult<R,M>;
     reduceRight<M>(reducer:(memo:M, t:T)=>M, memo:Provider<M>, context?:any) {
         return this.reduceLikeWithProvider<M>(reducer, memo, context, true);
     }
+
+    detect:typeof CollectionsDataPipe.prototype.find;
 
     find(predicate?:Predicate<T>, context?:any):DataPipeResult<R,T> {
         return this.resultPipe<T>({
@@ -112,6 +122,8 @@ abstract class CollectionsDataPipe<R,T> implements DataPipeResult<R,T[]> {
         }, false);
     }
 
+    select:typeof CollectionsDataPipe.prototype.filter;
+
     filter(predicate?:Predicate<T>, context?:any):DataPipe<R,T> { //todo filter with properties and regexp
         return this.filterLike(predicate, context);
     }
@@ -128,13 +140,19 @@ abstract class CollectionsDataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.filterLike(predicate, context, true);
     }
 
+    all:typeof CollectionsDataPipe.prototype.every;
+
     every(predicate?:Predicate<T>, context?:any):DataPipeResult<R, boolean> {
         return this.everyLike(predicate, context);
     }
 
+    any:typeof CollectionsDataPipe.prototype.some;
+
     some(predicate?:Predicate<T>, context?:any):DataPipeResult<R, boolean> {
         return this.everyLike(predicate, context, true);
     }
+
+    includes:typeof CollectionsDataPipe.prototype.contains;
 
     contains(value:T):DataPipeResult<R, boolean> {
         return this.some(x => x === value); //todo fromIndex parameter, use indexOf if not merged
@@ -484,4 +502,15 @@ abstract class CollectionsDataPipe<R,T> implements DataPipeResult<R,T[]> {
         return this.reduceLike(CollectionType.UNKNOWN, seq([initialize, declare(edge, initial)]), text, false) as any;
     }
 }
+CollectionsDataPipe.prototype.forEach = CollectionsDataPipe.prototype.each;
+CollectionsDataPipe.prototype.collect = CollectionsDataPipe.prototype.map;
+CollectionsDataPipe.prototype.inject = CollectionsDataPipe.prototype.reduce;
+CollectionsDataPipe.prototype.foldl = CollectionsDataPipe.prototype.reduce;
+CollectionsDataPipe.prototype.foldr = CollectionsDataPipe.prototype.reduceRight;
+CollectionsDataPipe.prototype.any = CollectionsDataPipe.prototype.some;
+CollectionsDataPipe.prototype.detect = CollectionsDataPipe.prototype.find;
+CollectionsDataPipe.prototype.select = CollectionsDataPipe.prototype.filter;
+CollectionsDataPipe.prototype.all = CollectionsDataPipe.prototype.every;
+CollectionsDataPipe.prototype.includes = CollectionsDataPipe.prototype.contains;
+
 export = CollectionsDataPipe;

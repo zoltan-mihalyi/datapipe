@@ -52,14 +52,6 @@ describe('first tests', function() {
         expect(sorted).not.toBe(array[0]);
     });
 
-    it('take is identical to first', function() {
-        expect(u().take().process([1, 2, 3])).toBe(1);
-    });
-
-    it('head is identical to first', function() {
-        expect(u().head().process([1, 2, 3])).toBe(1);
-    });
-
     it('using first after map should use fixed array length', function() {
         expect(u()
             .map(function() {
@@ -129,5 +121,10 @@ describe('first tests', function() {
             }, '')
             .process([1, 2, 3])
         ).toEqual('21');
+    });
+
+    it('first alias', function() {
+        expect(u().head).toBe(u().first);
+        expect(u().take).toBe(u().first);
     });
 });

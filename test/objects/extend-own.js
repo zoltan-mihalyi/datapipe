@@ -19,4 +19,8 @@ describe('extendOwn tests', function() {
             .process({a: 0, b: 1})
         ).toEqual({a: 1, b: 1});
     });
+
+    it('extendOwn alias', function() {
+        expect(u().assign).toBe(u().extendOwn);
+    });
 });

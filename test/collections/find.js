@@ -51,4 +51,8 @@ describe('Test "find"', function() {
         expect(result).not.toBe(array[0]);
         expect(result).toEqual([1, 2]);
     });
+
+    it('find alias', function() {
+        expect(u().detect).toBe(u().find);
+    });
 });

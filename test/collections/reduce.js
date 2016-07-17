@@ -71,4 +71,9 @@ describe('reduce tests', function() {
             .toString()
         ).toContain(' in ');
     });
+
+    it('reduce alias', function() {
+        expect(u().inject).toBe(u().reduce);
+        expect(u().foldl).toBe(u().reduce);
+    });
 });

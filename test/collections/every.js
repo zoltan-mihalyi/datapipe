@@ -71,4 +71,8 @@ describe('every tests', function() {
             .process([2, 4, 5, 8])
         ).toBe(false);
     });
+
+    it('every alias', function() {
+        expect(u().all).toBe(u().every);
+    });
 });

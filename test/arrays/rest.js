@@ -100,4 +100,9 @@ describe('rest tests', function() {
         expect(fn([1, 2, 3, 4, 5])).toBe(3);
         expect(fn([1])).toBe(0);
     });
+
+    it('rest alias', function() {
+        expect(u().tail).toBe(u().rest);
+        expect(u().drop).toBe(u().rest);
+    });
 });

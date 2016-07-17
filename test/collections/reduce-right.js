@@ -29,4 +29,8 @@ describe('reduceRight tests', function() {
             .process([1, 2, 3, 4, 5])
         ).toEqual([4, 3, 2, 1, 0]);
     });
+
+    it('reduceRight alias', function() {
+        expect(u().foldr).toBe(u().reduceRight);
+    });
 });

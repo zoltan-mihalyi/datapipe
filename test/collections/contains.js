@@ -21,4 +21,8 @@ describe('contains tests', function() {
             .process([])
         ).toBe(false);
     });
+
+    it('contains alias', function() {
+        expect(u().includes).toBe(u().contains);
+    });
 });

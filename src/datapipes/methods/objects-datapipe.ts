@@ -273,6 +273,8 @@ abstract class ObjectsDataPipe<R,T> extends CollectionsDataPipe<R,T> {
         ]), ResultCreation.NEW_OBJECT);
     }
 
+    methods:typeof ObjectsDataPipe.prototype.functions;
+
     functions():DataPipe<R,string> { //todo find similar
         return this.toIterable()
             .subPipe<T>(CollectionType.MAP, {
@@ -302,6 +304,8 @@ abstract class ObjectsDataPipe<R,T> extends CollectionsDataPipe<R,T> {
     extend(...sources:any[]):DataPipe<R,T> {
         return this.extendLike(sources, true);
     }
+
+    assign:typeof ObjectsDataPipe.prototype.extendOwn;
 
     extendOwn(...sources:any[]):DataPipe<R,T> {
         return this.extendLike(sources, false);
@@ -360,6 +364,8 @@ abstract class ObjectsDataPipe<R,T> extends CollectionsDataPipe<R,T> {
         var value = and(neql(result, nullValue), call(param(hasOwnProperty), [param(property)], result));
         return this.resultPipe<any>(setResult(value), true);
     }
+
+    matches:typeof ObjectsDataPipe.prototype.matcher;
 
     matcher():DataPipeResult<R,(o:any)=>boolean> {
         return this.resultPipe<any>(setResult(callParam(matcher, null, [result])), true);
@@ -634,5 +640,8 @@ abstract class ObjectsDataPipe<R,T> extends CollectionsDataPipe<R,T> {
         return this.resultPipe<boolean>(setResult(isClass(result, className)), true);
     }
 }
+ObjectsDataPipe.prototype.matches = ObjectsDataPipe.prototype.matcher;
+ObjectsDataPipe.prototype.methods = ObjectsDataPipe.prototype.functions;
+ObjectsDataPipe.prototype.assign = ObjectsDataPipe.prototype.extendOwn;
 
 export = ObjectsDataPipe;

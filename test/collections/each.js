@@ -25,4 +25,8 @@ describe('each tests', function() {
             .process(arr)
         ).toBe(arr);
     });
+
+    it('each alias', function() {
+        expect(u().forEach).toBe(u().each);
+    });
 });

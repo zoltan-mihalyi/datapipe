@@ -70,4 +70,8 @@ describe('map tests', function() {
             .process(new Obj())
         ).toEqual([1]);
     });
+
+    it('map alias', function() {
+        expect(u().collect).toBe(u().map);
+    });
 });

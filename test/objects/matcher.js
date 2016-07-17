@@ -42,4 +42,8 @@ describe('matcher tests', function() {
 
         expect(matcher({x: 1})).toBe(true);
     });
+
+    it('matcher alias', function() {
+        expect(u().matches).toBe(u().matcher);
+    });
 });

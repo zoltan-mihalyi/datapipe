@@ -66,5 +66,9 @@ describe('filter tests', function() {
             .filter()
             .process([0, 1, 2, 'a', true, false, null, void 0, {}])
         ).toEqual([1, 2, 'a', true, {}]);
-    })
+    });
+
+    it('filter alias', function() {
+        expect(u().select).toBe(u().filter);
+    });
 });

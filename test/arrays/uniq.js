@@ -114,4 +114,8 @@ describe('uniq tests', function() {
             .process([1, 3, 1, 4, 6])
         ).toEqual([10, 20, 30]);
     });
+
+    it('uniq alias', function() {
+        expect(u().unique).toBe(u().uniq);
+    });
 });

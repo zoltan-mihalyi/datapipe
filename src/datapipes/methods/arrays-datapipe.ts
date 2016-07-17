@@ -57,8 +57,8 @@ import {
 import ObjectsDataPipe = require("./objects-datapipe");
 
 abstract class ArraysDataPipe<R,T> extends ObjectsDataPipe<R,T> {
-    head:(cnt?:number)=>DataPipe<R,T>;
-    take:(cnt?:number)=>DataPipe<R,T>;
+    head:typeof ArraysDataPipe.prototype.first;
+    take:typeof ArraysDataPipe.prototype.first;
 
     first(cnt?:number):DataPipe<R,T> {
         //todo if length >= data.length, do nothing
@@ -202,7 +202,10 @@ abstract class ArraysDataPipe<R,T> extends ObjectsDataPipe<R,T> {
         }, ResultCreation.NEW_OBJECT, NEEDS_SAME);
     }
 
-    rest(cnt?:number):DataPipe<R,T> { //todo tail, drop
+    tail:typeof ArraysDataPipe.prototype.rest;
+    drop:typeof ArraysDataPipe.prototype.rest;
+
+    rest(cnt?:number):DataPipe<R,T> {
         if (cnt == null) {
             cnt = 1;
         }
@@ -376,6 +379,8 @@ abstract class ArraysDataPipe<R,T> extends ObjectsDataPipe<R,T> {
         return this.without.apply(this, concatenated);
     }
 
+    unique:typeof ArraysDataPipe.prototype.uniq;
+
     uniq(isSorted:boolean, iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T>;
     uniq(iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T>;
     uniq(isSorted?:boolean|Iteratee<T,any>, iteratee?:Iteratee<T,any>, context?:any):DataPipe<R,T> {
@@ -542,5 +547,7 @@ abstract class ArraysDataPipe<R,T> extends ObjectsDataPipe<R,T> {
 }
 
 ArraysDataPipe.prototype.head = ArraysDataPipe.prototype.take = ArraysDataPipe.prototype.first;
+ArraysDataPipe.prototype.unique = ArraysDataPipe.prototype.uniq;
+ArraysDataPipe.prototype.tail = ArraysDataPipe.prototype.drop = ArraysDataPipe.prototype.rest;
 
 export = ArraysDataPipe;

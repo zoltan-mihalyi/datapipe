@@ -72,4 +72,8 @@ describe('some tests', function() {
             .process([1, 3, 4, 5])
         ).toBe(true);
     });
+
+    it('some alias', function() {
+        expect(u().any).toBe(u().some);
+    });
 });

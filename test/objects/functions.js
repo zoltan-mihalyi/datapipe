@@ -41,4 +41,8 @@ describe('functions tests', function() {
             }, 'c'])
         ).toEqual(['1']);
     });
+
+    it('functions alias', function() {
+        expect(u().methods).toBe(u().functions);
+    });
 });
