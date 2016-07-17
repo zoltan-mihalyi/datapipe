@@ -65,6 +65,7 @@ abstract class LoopBlock implements CodeBlock {
             this.includeParent = !!loop.includeParent;
         }
         var text:CodeText<any> = this.replaceIndexes(loop.text);
+        var after:CodeText<any> = loop.after ? this.replaceIndexes(loop.after) : null;
 
         this.lengthDirty = this.lengthDirty || changesLength(text);
 
@@ -85,8 +86,8 @@ abstract class LoopBlock implements CodeBlock {
         if (loop.before) {
             this.before = loop.before;
         }
-        if (loop.after) {
-            this.after = loop.after;
+        if (after) {
+            this.after = after;
         }
 
         this.createdArray = creatingArray;

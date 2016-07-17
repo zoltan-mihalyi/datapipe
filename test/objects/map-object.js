@@ -101,5 +101,17 @@ describe('mapObject tests', function() {
             .mapObject()
             .process('abc')
         ).toEqual({});
-    })
+    });
+
+    it('mapObject after map', function() {
+        expect(u()
+            .map(function(x) {
+                return x;
+            })
+            .mapObject(function(x) {
+                return x + 1;
+            })
+            .process({a: 1, b: 2})
+        ).toEqual({0: 2, 1: 3});
+    });
 });
