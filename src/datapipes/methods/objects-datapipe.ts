@@ -68,7 +68,6 @@ interface ComparatorParams {
 const filterMapObjectBefore = setResult(obj());
 const filterMapObjectAfter = assign(prop(result, index), current);
 
-
 const numberClassName = '[object Number]';
 const stringClassName = '[object String]';
 const regExpClassName = '[object RegExp]';
@@ -249,7 +248,7 @@ abstract class ObjectsDataPipe<R,T> extends CollectionsDataPipe<R,T> {
     }
 
     invert():DataPipe<R,string> {
-        return this.mapObjectLike<string>(empty, assign(prop(result, current), index));
+        return this.mapObjectLike<string>(empty, assign(prop(result, current), toStr(index)));
     }
 
     create(props):DataPipe<R,T> {

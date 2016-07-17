@@ -21,4 +21,15 @@ describe('invert tests', function() {
             .process({a: 1, b: 2, c: 2})
         ).toEqual({1: 'a', 2: 'c'});
     });
+
+    it('invert after map', function() {
+        expect(u()
+            .map(function(x) {
+                return x;
+            })
+            .invert()
+            .process({a: 1, b: 2})
+        ).toEqual({1: '0', 2: '1'});
+    });
+
 });
