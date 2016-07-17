@@ -40,7 +40,9 @@ import {
     par,
     toNum,
     divide,
-    comma
+    comma,
+    trueValue,
+    falseValue
 } from "../../code-helpers";
 import {ResultCreation, toAccessible, DataPipeResult, whereFilter, flattenTo} from "../datapipe-common";
 import DataPipe = require("../datapipe");
@@ -395,6 +397,26 @@ abstract class ObjectsDataPipe<R,T> extends CollectionsDataPipe<R,T> {
 
     isMatch(properties:Properties):DataPipeResult<R,boolean> {
         return this.resultPipe<boolean>(setResult(callParam(whereFilter(properties), null, [result])), true);
+    }
+
+    isEmpty():DataPipeResult<R,boolean> {
+        return this.resultPipe<boolean>({
+            createCode: (ctx:Context)=> {
+                if (ctx.array) {
+                    return setResult(eq(prop(result, 'length'), literal(0)));
+                } else {
+                    return {
+                        before: setResult(trueValue),
+                        after: seq([setResult(falseValue), br]),
+                        text: empty,
+                        mergeStart: true,
+                        mergeEnd: false,
+                        rename: true
+                    };
+                }
+            },
+            handlesSize: false
+        }, true);
     }
 
     protected indexOfLike<O extends number|string>(params:IndexOfLikeParams):DataPipeResult<R,O> {
