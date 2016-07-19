@@ -2,7 +2,7 @@
   "name": "undersorcery",
   "version": "1.0.0",
   "description": "super efficient functional helpers using compiled functions",
-  "main": "dist/datapipe.js",
+  "main": "dist/main.js",
   "scripts": {
     "prepublish": "grunt build",
     "test": "grunt test"

@@ -4,5 +4,12 @@
 /src
 /node_modules
 /**/.baseDir.js*
+/**/*.js.map
 /.tscache
 /coverage/
+/benchmarks
+/art
+/.travis.yml
+/tsconfig.json
+/tslint.json
+/Gruntfile.js
