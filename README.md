@@ -25,7 +25,7 @@ function findZoliScores(array) {
     for (var i = 0; i < length; ++i) {
         var x = array[i];
         if (x.name === 'Zoli') {
-            return x.id;
+            return x.score;
         }
     }
 }
