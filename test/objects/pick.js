@@ -26,7 +26,9 @@ describe('pick tests', function() {
         expect(u()
             .pick('toString')
             .process(1)
-        ).toEqual({});
+        ).toEqual({
+            toString: Number.prototype.toString
+        });
     });
 
     it('pick with function', function() {

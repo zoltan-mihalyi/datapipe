@@ -119,63 +119,55 @@ describe('isEqual tests', function() {
         expect(equal(0)).toBe(false);
     });
 
-    describe('isEqual arrays', function() {
-        it('simple arrays', function() {
-            var equal = u()
-                .isEqual([1, 2, 3])
-                .fn();
-            expect(equal([1, 2, 3])).toBe(true);
-            expect(equal([1, 3, 3])).toBe(false);
-            expect(equal([1, 2])).toBe(false);
-            expect(equal([1, 2, 3, 4])).toBe(false);
-        });
+    it('isEqual arrays', function() {
+        var equal = u()
+            .isEqual([1, 2, 3])
+            .fn();
+        expect(equal([1, 2, 3])).toBe(true);
+        expect(equal([1, 3, 3])).toBe(false);
+        expect(equal([1, 2])).toBe(false);
+        expect(equal([1, 2, 3, 4])).toBe(false);
     });
 
-    describe('isEqual arrays and strings', function() {
-        it('simple arrays', function() {
-            var equal = u()
-                .isEqual(['1', '2', '3'])
-                .fn();
-            expect(equal('123')).toBe(false);
-        });
+    it('isEqual arrays and strings', function() {
+        var equal = u()
+            .isEqual(['1', '2', '3'])
+            .fn();
+        expect(equal('123')).toBe(false);
     });
 
-    describe('isEqual arrays nested', function() {
-        it('simple arrays', function() {
-            var equal = u()
-                .isEqual([1, 2, [3, 4], [5]])
-                .fn();
-            expect(equal([1, 2, [3, 4], [5]])).toBe(true);
-            expect(equal([1, 0, [3, 4], [5]])).toBe(false);
-            expect(equal([1, 2, [3, 0], [5]])).toBe(false);
-            expect(equal([1, 3, 3, 4, 5])).toBe(false);
-            expect(equal([1, 2, [], []])).toBe(false);
-            expect(equal([1, 2, [3]])).toBe(false);
-            expect(equal([1, 2, [3, 4, 5]])).toBe(false);
-        });
+    it('isEqual arrays nested', function() {
+        var equal = u()
+            .isEqual([1, 2, [3, 4], [5]])
+            .fn();
+        expect(equal([1, 2, [3, 4], [5]])).toBe(true);
+        expect(equal([1, 0, [3, 4], [5]])).toBe(false);
+        expect(equal([1, 2, [3, 0], [5]])).toBe(false);
+        expect(equal([1, 3, 3, 4, 5])).toBe(false);
+        expect(equal([1, 2, [], []])).toBe(false);
+        expect(equal([1, 2, [3]])).toBe(false);
+        expect(equal([1, 2, [3, 4, 5]])).toBe(false);
     });
 
-    describe('isEqual arrays recursive', function() {
-        it('simple arrays', function() {
-            var array = [1, 2, 3];
-            array[3] = array;
-            var equal = u()
-                .isEqual(array)
-                .fn();
+    it('isEqual arrays recursive', function() {
+        var array = [1, 2, 3];
+        array[3] = array;
+        var equal = u()
+            .isEqual(array)
+            .fn();
 
 
-            var array2 = [1, 2, 3];
-            array2[3] = array2;
+        var array2 = [1, 2, 3];
+        array2[3] = array2;
 
-            expect(equal(array2)).toBe(true);
-            expect(equal([1, 3, 3])).toBe(false);
-            expect(equal([1, 2, 3, [1, 2, 3, [1, 2, 3, 4]]])).toBe(false);
-            expect(equal([1, 2, 3, array])).toBe(false);
-            expect(equal([1, 2, 3, array2])).toBe(false);
-        });
+        expect(equal(array2)).toBe(true);
+        expect(equal([1, 3, 3])).toBe(false);
+        expect(equal([1, 2, 3, [1, 2, 3, [1, 2, 3, 4]]])).toBe(false);
+        expect(equal([1, 2, 3, array])).toBe(false);
+        expect(equal([1, 2, 3, array2])).toBe(false);
     });
 
-    describe('isEqual objects', function() {
+    it('isEqual objects', function() {
         var equal = u()
             .isEqual({a: 1, b: 2, c: void 0})
             .fn();
@@ -188,7 +180,7 @@ describe('isEqual tests', function() {
         expect(equal({})).toBe(false);
     });
 
-    describe('isEqual objects recursive', function() {
+    it('isEqual objects recursive', function() {
         var obj = {a: 1};
         obj.b = obj;
         var equal = u()
@@ -205,7 +197,7 @@ describe('isEqual tests', function() {
         expect(equal({a: 1, b: obj2})).toBe(false);
     });
 
-    describe('isEqual objects with parent', function() {
+    it('isEqual objects with parent', function() {
         function Obj(x) {
             this.x = x;
         }
@@ -222,7 +214,7 @@ describe('isEqual tests', function() {
         expect(equal({x: 1, y: 2})).toBe(false);
     });
 
-    describe('isEqual objects without parent', function() {
+    it('isEqual objects without parent', function() {
         function Obj(x) {
             this.x = x;
         }
@@ -237,7 +229,7 @@ describe('isEqual tests', function() {
         expect(equal(new Obj(1))).toBe(false);
     });
 
-    describe('isEqual object with no constructor', function() {
+    it('isEqual object with no constructor', function() {
         var equal1 = u()
             .isEqual({})
             .fn();

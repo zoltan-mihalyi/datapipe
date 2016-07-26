@@ -5,12 +5,14 @@ module.exports = function(grunt) {
             options: {
                 showColors: true,
                 forceExit: true,
-                match: '.',
                 matchAll: false,
-                specFolders: ['test'],
-                extensions: 'js',
-                specNameMatcher: '',
-                captureExceptions: true
+                captureExceptions: true,
+                jasmine: {
+                    spec_dir: 'test',
+                    spec_files: [
+                        '**/*.js'
+                    ]
+                }
             },
             test: {
                 options: {
@@ -31,9 +33,12 @@ module.exports = function(grunt) {
             },
             validateBenchmarks: {
                 options: {
-                    match: '',
-                    specFolders: ['benchmarks'],
-                    specNameMatcher: 'validate',
+                    jasmine:{
+                        spec_dir:'benchmarks',
+                        spec_files: [
+                            'validate.js'
+                        ]
+                    },
                     coverage: {
                         excludes: ['**']
                     }
