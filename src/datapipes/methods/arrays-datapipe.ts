@@ -389,9 +389,9 @@ abstract class ArraysDataPipe<R,T> extends ObjectsDataPipe<R,T> {
             iteratee = isSorted as Iteratee<T,any>;
             isSorted = false;
         }
-        var seen = named<any[]>('seen');
+        var seen = named<any[]>('seen'); //todo don't create extra array when possible
         //todo we cannot merge into the existing loop!
-        var target = this.subPipe<T>(this.type, declare(seen, array()), ResultCreation.USES_PREVIOUS);
+        var target = this.subPipe<T>(this.type, declare(seen, isSorted ? param([]) : array()), ResultCreation.USES_PREVIOUS);
 
         var computed:CodeText<any>;
         var declareComputed:CodeText<any>;
