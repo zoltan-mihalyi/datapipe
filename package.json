@@ -13,7 +13,7 @@
     "grunt": "^1.0.1",
     "grunt-benchmark": "zoltan-mihalyi/grunt-benchmark",
     "grunt-contrib-clean": "^1.0.0",
-    "grunt-jasmine-node-coverage": "^1.0.0",
+    "grunt-jasmine-node-coverage": "zoltan-mihalyi/grunt-jasmine-node-coverage",
     "grunt-ts": "^5.5.1",
     "grunt-tslint": "^3.1.0",
     "lodash": "^4.13.1",
